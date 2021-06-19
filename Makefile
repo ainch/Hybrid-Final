@@ -6,7 +6,7 @@ OPENMP=-fopenmp
 OPENMP_CUDA=-Xcompiler -fopenmp -lgomp
 # CFLAGS = -O3
 CFLAGS =
-CUFLAGS= -arch=sm_75 -use_fast_math --ptxas-options=-v
+CUFLAGS= -arch=sm_52 -use_fast_math --ptxas-options=-v
 # CUFLAGS= -gencode arch=compute_52,code=sm_52 -use_fast_math --ptxas-options=-v
 LFLAGS = -lm
 CUDA_DIR=/usr/local/cuda
@@ -16,17 +16,18 @@ SRC_DIR := ./src
 OBJ_DIR := ./obj
 
 
-C_OBJS = $(OBJ_DIR)/main.o 
-#          $(OBJ_DIR)/start.o \
+C_OBJS = $(OBJ_DIR)/main.o \
+          $(OBJ_DIR)/parson.o
+#          $(OBJ_DIR)/main.o \
 #          $(OBJ_DIR)/load.o \
 #          $(OBJ_DIR)/savedata.o \
 #          $(OBJ_DIR)/mccTools.o \
 #          $(OBJ_DIR)/fluid.o \
 #          $(OBJ_DIR)/fdtd.o
 
-CU_OBJS = $(OBJ_DIR)/cuda_main.o 
+#CU_OBJS = $(OBJ_DIR)/cuda_run.o \
 #          $(OBJ_DIR)/cuda_start.o \
-#          $(OBJ_DIR)/cuda_run.o \
+#          $(OBJ_DIR)/cuda_main.o \
 #          $(OBJ_DIR)/cuda_field.o \
 #          $(OBJ_DIR)/cuda_move.o \
 #          $(OBJ_DIR)/cuda_rand.o \
@@ -36,16 +37,16 @@ CU_OBJS = $(OBJ_DIR)/cuda_main.o
 #          $(OBJ_DIR)/cuda_deposit.o \
 #          $(OBJ_DIR)/cuda_beam.o
 
-C_H_FILES = inc/xypic.h \   # c function
-            inc/global.h \  # extern c value 
-            inc/main.h \    # c value
-            inc/def.h       # structure, definition
+C_H_FILES = inc/xypic.h \
+            inc/global.h \
+            inc/main.h \
+            inc/def.h
 
-CU_H_FILES = inc/xypic.cuh \    # cu function
-             inc/global.h \     # extern c value
-             inc/main.h \       # c value
-             inc/interop.cuh \  # Field Solver
-             inc/def.h          # definition, structure
+CU_H_FILES = inc/xypic.cuh \
+             inc/global.h \
+             inc/main.h \
+             inc/interop.cuh \
+             inc/def.h
 
 all: $(OBJ_DIR) $(EXEC)
 
