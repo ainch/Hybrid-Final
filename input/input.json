@@ -17,7 +17,7 @@
     {
         "SystemSpec":
         {
-            "X_length(m)": 100,
+            "X_length(m)": 101,
             "Y_length(m)": 100,
             "Z_length(m)": 1,
             "NumCellx": 100,
