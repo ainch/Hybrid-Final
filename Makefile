@@ -1,4 +1,4 @@
-EXEC = 2D-PIC_cuda_com
+EXEC = 2D-Hybrid_PIC
 
 CC = gcc
 NVCC = nvcc
