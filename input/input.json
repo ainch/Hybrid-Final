@@ -1,0 +1,35 @@
+{
+    "GPU_Device_Number":
+    {
+        "Device#": 10
+    },
+    "SimulationMethod":
+    {
+
+    },
+    "TimeStepList":
+    {
+        "TimeStepForPIC": 5000,
+        "TimeStepForConti": 5,
+        "TimeStepForHybrid": 2500
+    },
+    "Geometry":
+    {
+        "SystemSpec":
+        {
+            "X_length(m)": 100,
+            "Y_length(m)": 100,
+            "Z_length(m)": 1,
+            "NumCellx": 100,
+            "NumCelly": 100
+        }
+    },
+    "GasSpecies":
+    {
+        
+    },
+    "Diagnostics":
+    {
+
+    }
+}
