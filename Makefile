@@ -18,7 +18,7 @@ OBJ_DIR := ./obj
 
 C_OBJS = $(OBJ_DIR)/main.o \
           $(OBJ_DIR)/parson.o
-#          $(OBJ_DIR)/main.o \
+#          $(OBJ_DIR)/start.o \
 #          $(OBJ_DIR)/load.o \
 #          $(OBJ_DIR)/savedata.o \
 #          $(OBJ_DIR)/mccTools.o \

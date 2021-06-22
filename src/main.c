@@ -6,7 +6,8 @@ void display_finish();
 
 int main(int argc, char *argv[])
 {
-	//t = 0;
+	t = 0;
+	tstep = 0;
 	display_title();       	/* Display 2D Field Solver title */
 	//start(argc,argv);   	/* Allocate arrays and initialize */
 	//main_cuda();			/* GPU Start */

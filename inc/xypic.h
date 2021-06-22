@@ -5,3 +5,9 @@
 #include <string.h>
 #include <time.h>
 #include "def.h"
+
+#ifndef __XYPIC_H__
+#define __XYPIC_H__
+// C Function declaration
+
+#endif
