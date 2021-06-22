@@ -6,7 +6,7 @@ void display_finish();
 
 int main(int argc, char *argv[])
 {
-	t = 0;
+	t = 0.0;
 	tstep = 0;
 	if (argc == 5) {
 		DumpFlag = 1;
