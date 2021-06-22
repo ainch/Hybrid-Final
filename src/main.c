@@ -8,6 +8,17 @@ int main(int argc, char *argv[])
 {
 	t = 0;
 	tstep = 0;
+	if (argc == 5) {
+		DumpFlag = 1;
+		strcpy(InputFile, argv[2]);
+		strcpy(DumpFile, argv[4]);
+	} else if (argc == 3) {
+		strcpy(InputFile, argv[2]);
+		DumpFlag = 0;
+	} else {
+		puts("\t2D XY PIC -i <inputdeck>");
+		exit(1);
+	}
 	display_title();       	/* Display 2D Field Solver title */
 	//start(argc,argv);   	/* Allocate arrays and initialize */
 	//main_cuda();			/* GPU Start */
