@@ -45,7 +45,30 @@
     },
     "GasSpecies":
     {
-        
+        "Type(0:Ar,1:O2,2:Ar/O2)":0,
+        "TotalPres(Torr)":1.0,
+        "Background":{
+            "Argon":{"Ratio":100,"Temp(eV)":0.026},
+            "Oxygen":{"Ratio":100,"Temp(eV)":0.026}
+        },
+        "NeutralSpecies":{
+            "Ar*":{"Density":3.00e+16,"Temp(eV)":0.026},
+            "OP":{"Density":3.00e+16,"Temp(eV)":0.026},
+            "OD":{"Density":3.00e+16,"Temp(eV)":0.026},
+            "O2A":{"Density":3.00e+16,"Temp(eV)":0.026},
+            "O2B":{"Density":3.00e+16,"Temp(eV)":0.026},
+            "Loadtype":0,
+            "LoadPosition(m)":{"X0":0.00,"X1":0.04,"Y0":0.00,"Y1":0.02}
+        },
+        "ChargeSpecies":{
+            "Electron":{"S_ID":0,"Temp(eV)":1.0,"Density":2.0e16,"np2c":5e7,"Max_np":13e7},
+            "Ar+":{"S_ID":1,"Temp(eV)":0.026,"Density":2.0e16,"np2c":5e7,"Max_np":13e7},
+            "O2+":{"S_ID":2,"Temp(eV)":0.026,"Density":2.0e16,"np2c":5e7,"Max_np":13e7},
+            "O+":{"S_ID":3,"Temp(eV)":0.026,"Density":2.0e16,"np2c":5e7,"Max_np":13e7},
+            "O-":{"S_ID":4,"Temp(eV)":0.026,"Density":2.0e16,"np2c":5e7,"Max_np":13e7},
+            "Loadtype":0,
+            "LoadPosition(m)":{"X0":0.00,"X1":0.04,"Y0":0.00,"Y1":0.02}
+        }
     },
     "SimulationMethod":
     {
@@ -74,15 +97,19 @@
                 {"LoadType":2,"X0":160,"X1":160,"Y0":0,"Y1":0,"IonizationRate":1e19}
             ]
         },
-        "ContinuityBreakPoint":{
+        "ContinuityBreakPoint":
+        {
             "Margin(%)":1.0 
         },
-        "PowerDrivenOption":{
+        "PowerDrivenOption":
+        {
             "VoltageUpRatio":0.05
         },
-        "SimulationStop":{
+        "SimulationStop":
+        {
             "EndTime(s)":1e-3,
-            "AutoSaturation":{
+            "AutoSaturation":
+            {
                 "Flag":0,
                 "AveMargin(%)":0.5,
                 "SatGoal":30
@@ -93,17 +120,20 @@
     "Diagnostics":
     {
         "BasicDiagnostic":0,
-        "ElectronRefection":{
+        "ElectronRefection":
+        {
             "Flag":0,
             "Material_ID":[1,2,3,4],
             "coefficient":[0.01,0.01,0.01,0.01]
         },
-        "SecondaryElectronEmission":{
+        "SecondaryElectronEmission":
+        {
             "Flag":0,
             "Material_ID":[1,2,3,4],
             "Coefficient":[0.01,0.01,0.01,0.01]
         },
-        "EnergyDistributionFunction":{
+        "EnergyDistributionFunction":
+        {
             "Flag":0,
             "RangeOfEnergyforElectron":[0.0,0.05,25.0],
             "RegionforElectron":
@@ -117,14 +147,16 @@
                 {"S_ID":1,"X0":10,"X1":20,"Y0":55,"Y1":60},
                 {"S_ID":1,"X0":140,"X1":150,"Y0":55,"Y1":60}
             ],
-            "Tecplot_Flag":0,
-            "1CycleMovie":{
+            "Tecplot_Save":0,
+            "1CycleMovie":
+            {
                 "Flag":0,
                 "PhaseResolveNum":100,
                 "AccumulationNUM":10
             }
         },
-        "IonEnergyAngularDistribution":{
+        "IonEnergyAngularDistribution":
+        {
             "RangeOfEnergy":[0.0,0.05,50.0],
             "RangeOfAngle":[-45.0,0.1,45.0],
             "Position":
@@ -132,14 +164,25 @@
                 {"M_ID":3,"X0":10,"X1":30,"Y0":19,"Y1":20},
                 {"M_ID":3,"X0":140,"X1":160,"Y0":19,"Y1":20}
             ],
-            "Tecplot_Flag":0,
-            "1CycleMovie":{
+            "Tecplot_Save":0,
+            "1CycleMovie":
+            {
                 "Flag":0,
                 "PhaseResolveNum":100,
                 "AccumulationNUM":10
             }
         },
-        "TecplotSave":{
+        "Test_Particle":
+        {
+            "Flag":0,
+            "MCC_Flag":0,
+            "NumberOfParticle":500,
+            "Init_Position":0,
+            "Init_Velocity":0,
+            "Tecplot_Save":0
+        },
+        "TecplotSave":
+        {
             "Tecplot2D":10,
             "Tec_Movie":10,
             "Tec_Movie_FrameNum":100,
@@ -147,7 +190,8 @@
             "Tec_Ave_Movie_Interval":1,
             "Tec_Ave_Movie_num":100
         },
-        "DumpFileSave":{
+        "DumpFileSave":
+        {
             "Cycle":
             [
                 {"Start":0.25,"End":1.0,"Term":0.25},
@@ -156,5 +200,183 @@
                 {"Start":1356.0,"End":13560.0,"Term":200.0}
             ]
         }   
+    },
+    "CollisionSelect":
+    {
+        "ArgonCase":
+        {
+            "0.e+Ar>e+Ar":1,
+            "1.e+Ar>e+Ar*":1,
+            "2.e+Ar>e+Ar*":1,
+            "3.e+Ar>2e+Ar^":1,
+            "4.e+Ar*>2e+Ar^":1,
+            "5.Ar+Ar^>Ar^+Ar":1,
+            "6.Ar+Ar^>Ar+Ar^":1,
+            "7.e+Ar*>e+Ar":1,
+            "8.Ar*+Ar>e+Ar^+Ar":1,
+            "9.Ar+Ar*>Ar+Ar":1
+        },
+        "OxygenCase":
+        {
+            "0.e+O2>e+O2":1,
+            "1.e+O2>e+O2*":1,
+            "2.e+O2>e+O2*":1,
+            "3.e+O2>e+O2A":1,
+            "4.e+O2>e+O2B":1,
+            "5.e+O2>e+O2*":1,
+            "6.e+O2>OP+O-":1,
+            "7.e+O2>e+2OP":1,
+            "8.e+O2>e+OP+OD":1,
+            "9.e+O2>e+2OD":1,
+            "10.e+O2>2e+O2^":1,
+            "11.e+O2>e+OP+O*":1,
+            "12.e+O2>e+O^+O-":1,
+            "13.e+O2>2e+O^+OP":1,
+            "14.e+O2A>2e+O2+":1,
+            "15.e+O2A>OP+O-":1,
+            "16.e+O2A>e+O2":1,
+            "17.e+O2A>e+O2":1,
+            "18.e+O2A>e+2OP":1,
+            "19.e+O2A>e+OP+OD":1,
+            "20.e+O2A>e+2OD":1,
+            "21.e+O2A>2e+O^+OP":1,
+            "22.e+O2B>2e+O2^":1,
+            "23.e+O2B>OP+O-":1,
+            "24.e+O2B>e+O2":1,
+            "25.e+O2B>e+O2":1,
+            "26.e+O2B>e+2O":1,
+            "27.e+O2B>e+OP+OD":1,
+            "28.e+O2B>e+2OD":1,
+            "29.e+O2B>2e+O^+OP":1,
+            "30.e+O->2e+OP":1,
+            "31.e+O2^>OP+OD":1,
+            "32.e+OP>e+OP":1,
+            "33.e+OP>e+OD":1,
+            "34.e+OP>e+O*":1,
+            "35.e+OP>e+O*":1,
+            "36.e+OP>e+O*":1,
+            "37.e+OP>2e+O^":1,
+            "38.e+OP>e+O*":1,
+            "39.e+OD>2e+O^":1,
+            "40.e+OD>e+OP":1,
+            "41.O-+O2>O-+O2":1,
+            "42.O-+O2>e+OP+O2":1,
+            "43.O-+OP>e+O2":1,
+            "44.O-+O2^>OP+O2":1,
+            "45.O-+O^>2OP":1,
+            "46.O-+O2A>e+OP+O2":1,
+            "47.O2^+OP>O2+O^":1,
+            "48.O2^+O2>O2+O2^":1,
+            "49.O2^+O2>O2^+O2":1,
+            "50.O2^+O2>O^+OP+O2":1,
+            "51.O2^+O2A>O2+O2^":1,
+            "52.O2^+O2B>O2+O2^":1,
+            "53.O^+O2>OP+O2^":1,
+            "54.O^+O2>O^+O2":1,
+            "55.O^+OP>OP+O^":1,
+            "56.O^+O2A>O2^+OP":1,
+            "57.O^+O2B>O2^+OP":1,
+            "58.O-+O2B>e+OP+O2":1,
+            "59.OP+OD>2OP":1,
+            "60.OD+O2>OP+O2":1,
+            "61.OD+O2>OP+O2A":1,
+            "62.OD+O2>OP+O2B":1,
+            "63.O2A+OP>OP+O2":1,
+            "64.O2A+O2>2O2":1,
+            "65.O2A+O2A>2O2":1,
+            "66.O2B+O2>2O2":1
+        },
+        "Argon/Oxygen":
+        {
+            CollFlag[0] = 1; // 0. e + Ar > e + Ar 			Elastic Scattering
+            CollFlag[1] = 1; // 1. e + Ar > e + Ar* 			Excitation to Total Excited statee
+            CollFlag[2] = 1; // 2. e + Ar > e + Ar* 			Excitation to AR4SM
+            CollFlag[3] = 1; // 3. e + Ar > 2e + Ar+			Direct ionization
+            CollFlag[4] = 1; // 4. e + Ar* > e + e + Ar^		step ionization
+            CollFlag[5] = 1; // 5. e + O2 > e + O2				Elastic scattering
+            CollFlag[6] = 1; // 6. e + O2 > e + O2*			Rotational excitation
+            CollFlag[7] = 1; // 7. e + O2 > e + O2*			Vibrational excitation
+            CollFlag[8] = 1; // 8. e + O2 > e + O2A			Metastable excitation
+            CollFlag[9] = 1; // 9. e + O2 > e + O2B			Metastable excitation
+            CollFlag[10] = 1; // 10. e + O2 > e + O2*			Metastable excitation
+            CollFlag[11] = 1; // 11. e + O2 > OP + O-			Dissociative attachment
+            CollFlag[12] = 1; // 12. e + O2 > e + 2OP			Dissociation
+            CollFlag[13] = 1; // 13. e + O2 > e + OP + OD		Dissociation
+            CollFlag[14] = 1; // 14. e + O2 > e + 2OD			Dissociation
+            CollFlag[15] = 1; // 15. e + O2 > 2e + O2+			Electron-impact ionization
+            CollFlag[16] = 1; // 16. e + O2 > e + OP + O*		Dissociative excitation
+            CollFlag[17] = 1; // 17. e + O2 > e + O+ + O-		Polar dissociation
+            CollFlag[18] = 1; // 18. e + O2 > 2e + O+ + OP		Dissociative ionization
+            CollFlag[19] = 1; // 19. e + O2A > 2e + O2+			Electron-impact ionization
+            CollFlag[20] = 1; // 20. e + O2A > OP + O-			Dissociative attachment
+            CollFlag[21] = 1; // 21. e + O2A > e + O2			de-excitation
+            CollFlag[22] = 1; // 22. e + O2A > e + O2			de-excitation
+            CollFlag[23] = 1; // 23. e + O2A > e + 2O			Dissociation
+            CollFlag[24] = 1; // 24. e + O2A > e + OP + OD		Dissociation
+            CollFlag[25] = 1; // 25. e + O2A > e + 2OD			Dissociation
+            CollFlag[26] = 1; // 26. e + O2A > 2e + O+ + OP		Dissociative ionization
+            CollFlag[27] = 1; // 27. e + O2B > 2e + O2+			Electron-impact ionization
+            CollFlag[28] = 1; // 28. e + O2B > OP + O-			Dissociative attachment
+            CollFlag[29] = 1; // 29. e + O2B > e + O2			de-excitation
+            CollFlag[30] = 1; // 30. e + O2B > e + O2			De-excitation
+            CollFlag[31] = 1; // 31. e + O2B > e + 2O			Dissociation
+            CollFlag[32] = 1; // 32. e + O2B > e + OP + OD		Dissociation
+            CollFlag[33] = 1; // 33. e + O2B > e + 2OD			Dissociation
+            CollFlag[34] = 1; // 34. e + O2B > 2e + O+ + OP		Dissociative ionization
+            CollFlag[35] = 1; // 35. e + O- > 2e + OP			Electron-impact ionization
+            CollFlag[36] = 1; // 36. e + O2+ > OP + OD			Dissociative recombination
+            CollFlag[37] = 1; // 37. e + OP > e + OP			Elastic scattering
+            CollFlag[38] = 1; // 38. e + OP > e + OD			Excitation to 1D
+            CollFlag[39] = 1; // 39. e + OP > e + O*			Excitation to 1S
+            CollFlag[40] = 1; // 40. e + OP > e + O*			Excitation to 5S0
+            CollFlag[41] = 1; // 41. e + OP > e + O*			Excitation to 3S0
+            CollFlag[42] = 1; // 42. e + OP > 2e + O+			Ionization
+            CollFlag[43] = 1; // 43. e + OP > e + O*			Excitation to 3P0
+            CollFlag[44] = 1; // 44. e + OD > 2e + O+			Ionization
+            CollFlag[45] = 1; // 45. e + OD > e + O				de-excitation
+            CollFlag[46] = 1; // 46. O- + O2 > O- + O2			Scattering
+            CollFlag[47] = 1; // 47. O- + O2 > e + OP + O2		Detachment by molecule
+            CollFlag[48] = 1; // 48. O- + OP > e + O2			Detachment by atom
+            CollFlag[49] = 1; // 49. O- + O2+ > OP + O2			Mutual neutralization
+            CollFlag[50] = 1; // 50. O- + O+ > 2OP				Mutual neutralization
+            CollFlag[51] = 1; // 51. O- + O2A > e + OP + O2		Detachment
+            CollFlag[52] = 1; // 52. O2+ + OP > O2 + O+			Charge exchange
+            CollFlag[53] = 1; // 53. O2+ + O2 > O2 + O2+		Charge exchange
+            CollFlag[54] = 1; // 54. O2+ + O2 > O2+ + O2		Scattering
+            CollFlag[55] = 1; // 55. O2+ + O2 > O+ + OP + O2	Fragmentation by energetic
+            CollFlag[56] = 1; // 56. O2+ + O2A > O2 + O2+		Charge exchange
+            CollFlag[57] = 1; // 57. O2+ + O2B > O2 + O2+		Charge exchange
+            CollFlag[58] = 1; // 58. O2+ + Ar > O2 + Ar+		Charge exchange
+            CollFlag[59] = 1; // 59. O2+ + Ar > O2+ + Ar+		Momentum transfer
+            CollFlag[60] = 1; // 60. O+ + O2 > OP + O2+			Charge exchange
+            CollFlag[61] = 1; // 61. O+ + O2 > O+ + O2			Scattering
+            CollFlag[62] = 1; // 62. O+ + OP > OP + O+			Charge exchange
+            CollFlag[63] = 1; // 63. O+ + O2A > O2+ + OP		Charge exchange
+            CollFlag[64] = 1; // 64. O+ + O2B > O2+ + OP		Charge exchange
+            CollFlag[65] = 1; // 65. Ar+ + Ar > Ar + Ar+		Charge exchange
+            CollFlag[66] = 1; // 66. Ar+ + Ar > Ar+ + Ar		Elastic scattering
+            CollFlag[67] = 1; // 67. Ar+ + O2 > O2 + Ar+		Momentum transfer
+            //Rate Constant
+            CollFlag[68] = 1; // 68. e + Ar* > e + Ar 		Quenching the resonant
+            CollFlag[69] = 1; // 69. - + Ar+ > OP + AR			Recombination
+            CollFlag[70] = 1; // 70. O- + O2B > e + OP + O2		Detachment
+            CollFlag[71] = 1; // 71. OP + OD > 2OP				Quenching
+            CollFlag[72] = 1; // 72. OD + O2 > OP + O2			Quenching
+            CollFlag[73] = 1; // 73. OD + O2 > OP + O2A			Energy-Transfer
+            CollFlag[74] = 1; // 74. OD + O2 > OP + O2B			Energy-Transfer
+            CollFlag[75] = 1; // 75. O2A + OP > OP + O2			Quenching
+            CollFlag[76] = 1; // 76. O2A + O2 > 2O2				Quenching
+            CollFlag[77] = 1; // 77. O2A + O2A > 2O2			Quenching
+            CollFlag[78] = 1; // 78. O2B + O2 > 2O2				Quenching
+            CollFlag[79] = 1; // 80. Ar+ + OP > Ar + O+			Charge exchange
+            CollFlag[80] = 1; // 79. Ar+ + O2 > Ar+O2+			Charge exchange
+            CollFlag[81] = 1; // 81. Ar* + Ar* > e + Ar + Ar+ 	Ionization
+            CollFlag[82] = 1; // 82. Ar* + Ar > 2Ar				Quenching
+            CollFlag[83] = 1; // 86. Ar* + OP > OP +Ar			Quenching [1]
+            CollFlag[84] = 1; // 85. Ar* + OP > OD+Ar			Energy-transfer [1]
+            CollFlag[85] = 1; // 83. Ar* + O2 > 2OP+Ar			Dissociation [1]
+            CollFlag[86] = 1; // 87. Ar* + O2 > OP+OD+Ar		Dissociation [1]
+            CollFlag[87] = 1; // 84. Ar* + O2 > O2+Ar			Quenching [1]
+        }
     }
 }
