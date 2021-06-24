@@ -8,6 +8,7 @@ int main(int argc, char *argv[])
 	int Post_Processing_flag = 0;
 	t = 0.0;
 	tstep = 0;
+	cstep = 0;
 	if (argc == 6) {
 		Post_Processing_flag = 1;
 	} else if (argc == 5) {

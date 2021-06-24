@@ -24,23 +24,23 @@
         ],
         "ConductorSpec":
         [
-            {"ID":1,"X0":   0,"X1": 160,"Y0":  95,"Y1":100,"Temp":473,"DC(V)":  0,
+            {"M_ID":1,"X0":   0,"X1": 160,"Y0":  95,"Y1":100,"Temp":473,"DC(V)":  0,
                 "Power1(W)":  0,"AC1(V)":  0,"Freq1(1/s)":13.56e6,"Phase1(deg)":0.0,
                 "Power2(W)":  0,"AC2(V)":  0,"Freq2(1/s)":    0.0,"Phase2(deg)":0.0,
                 "R(Ohm)":  0.0,"L(H)":  0.0,"C(F)": 1.0},
-            {"ID":2,"X0":   0,"X1": 160,"Y0":   0,"Y1":  10,"Temp":473,"DC(V)":0.0,
+            {"M_ID":2,"X0":   0,"X1": 160,"Y0":   0,"Y1":  10,"Temp":473,"DC(V)":0.0,
                 "Power1(W)":  0,"AC1(V)":  0,"Freq1(1/s)":      0,"Phase1(deg)":0.0,
                 "Power2(W)":  0,"AC2(V)":  0,"Freq2(1/s)":      0,"Phase2(deg)":0.0,
                 "R(Ohm)":  0.0,"L(H)":  0.0,"C(F)": 1.0},
-            {"ID":2,"X0":   0,"X1": 140,"Y0":  10,"Y1":  20,"Temp":873,"DC(V)":0.0,
+            {"M_ID":2,"X0":   0,"X1": 140,"Y0":  10,"Y1":  20,"Temp":873,"DC(V)":0.0,
                 "Power1(W)":  0,"AC1(V)":  0,"Freq1(1/s)":      0,"Phase1(deg)":0.0,
                 "Power2(W)":  0,"AC2(V)":  0,"Freq2(1/s)":      0,"Phase2(deg)":0.0,
                 "R(Ohm)":  0.0,"L(H)":  0.0,"C(F)": 1.0}
         ],
         "DielectricSpec":
         [
-            {"X0": 140,"X1": 160,"Y0":  10,"Y1": 20,"Epsilon":9.0},
-            {"X0": 190,"X1": 200,"Y0":   0,"Y1":100,"Epsilon":9.0}
+            {"M_ID":3,"X0": 140,"X1": 160,"Y0":  10,"Y1": 20,"Epsilon":9.0},
+            {"M_ID":4,"X0": 190,"X1": 200,"Y0":   0,"Y1":100,"Epsilon":9.0}
         ]
     },
     "GasSpecies":
@@ -79,10 +79,82 @@
         },
         "PowerDrivenOption":{
             "VoltageUpRatio":0.05
+        },
+        "SimulationStop":{
+            "EndTime(s)":1e-3,
+            "AutoSaturation":{
+                "Flag":0,
+                "AveMargin(%)":0.5,
+                "SatGoal":30
+            }
+
         }
     },
     "Diagnostics":
     {
-
+        "BasicDiagnostic":0,
+        "ElectronRefection":{
+            "Flag":0,
+            "Material_ID":[1,2,3,4],
+            "coefficient":[0.01,0.01,0.01,0.01]
+        },
+        "SecondaryElectronEmission":{
+            "Flag":0,
+            "Material_ID":[1,2,3,4],
+            "Coefficient":[0.01,0.01,0.01,0.01]
+        },
+        "EnergyDistributionFunction":{
+            "Flag":0,
+            "RangeOfEnergyforElectron":[0.0,0.05,25.0],
+            "RegionforElectron":
+            [
+                {"X0":10,"X1":20,"Y0":55,"Y1":60},
+                {"X0":140,"X1":150,"Y0":55,"Y1":60}
+            ],
+            "RangeOfEnergyforIon":[0.0,0.01,2.0],
+            "RegionforIon":
+            [
+                {"S_ID":1,"X0":10,"X1":20,"Y0":55,"Y1":60},
+                {"S_ID":1,"X0":140,"X1":150,"Y0":55,"Y1":60}
+            ],
+            "Tecplot_Flag":0,
+            "1CycleMovie":{
+                "Flag":0,
+                "PhaseResolveNum":100,
+                "AccumulationNUM":10
+            }
+        },
+        "IonEnergyAngularDistribution":{
+            "RangeOfEnergy":[0.0,0.05,50.0],
+            "RangeOfAngle":[-45.0,0.1,45.0],
+            "Position":
+            [
+                {"M_ID":3,"X0":10,"X1":30,"Y0":19,"Y1":20},
+                {"M_ID":3,"X0":140,"X1":160,"Y0":19,"Y1":20}
+            ],
+            "Tecplot_Flag":0,
+            "1CycleMovie":{
+                "Flag":0,
+                "PhaseResolveNum":100,
+                "AccumulationNUM":10
+            }
+        },
+        "TecplotSave":{
+            "Tecplot2D":10,
+            "Tec_Movie":10,
+            "Tec_Movie_FrameNum":100,
+            "Tec_Ave_Movie":10,
+            "Tec_Ave_Movie_Interval":1,
+            "Tec_Ave_Movie_num":100
+        },
+        "DumpFileSave":{
+            "Cycle":
+            [
+                {"Start":0.25,"End":1.0,"Term":0.25},
+                {"Start":1.0,"End":135.0,"Term":10.0},
+                {"Start":135.0,"End":1356.0,"Term":100.0},
+                {"Start":1356.0,"End":13560.0,"Term":200.0}
+            ]
+        }   
     }
 }
