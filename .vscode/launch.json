@@ -8,7 +8,7 @@
             "name": "CUDA C++: Launch",
             "type": "cuda-gdb",
             "request": "launch",
-            "args": "-i ${workspaceFolder}/input/input.json",
+            "args": "-i ${workspaceFolder}/input/input.json -d ${workspaceFolder}/input/input.json -t",
             "program": "${workspaceFolder}/2D-Hybrid_PIC"
         }
     ]

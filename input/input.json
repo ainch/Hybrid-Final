@@ -1,32 +1,85 @@
 {
     "GPU_Device_Number":
     {
-        "Device#": 10
-    },
-    "SimulationMethod":
-    {
-
-    },
-    "TimeStepList":
-    {
-        "TimeStepForPIC": 5000,
-        "TimeStepForConti": 5,
-        "TimeStepForHybrid": 2500
+        "Device": 10
     },
     "Geometry":
     {
         "SystemSpec":
         {
-            "X_length(m)": 101,
-            "Y_length(m)": 100,
+            "X_length(m)": 0.04,
+            "Y_length(m)": 0.02,
             "Z_length(m)": 1,
-            "NumCellx": 100,
-            "NumCelly": 100
-        }
+            "NumGridx": 200,
+            "NumGridy": 100
+        },
+        "BoundaryCondition":
+        [
+            {"X0":   0,"X1": 160,"Y0":   0,"Y1":   0,"B.C":1,"Temp":473},
+            {"X0": 160,"X1": 200,"Y0":   0,"Y1":   0,"B.C":2,"Temp":473},
+            {"X0":   0,"X1": 160,"Y0": 100,"Y1": 100,"B.C":1,"Temp":473},
+            {"X0": 160,"X1": 200,"Y0": 100,"Y1": 100,"B.C":2,"Temp":473},
+            {"X0":   0,"X1":   0,"Y0": 100,"Y1": 100,"B.C":2,"Temp":473},
+            {"X0": 100,"X1": 200,"Y0":   0,"Y1": 100,"B.C":1,"Temp":873}
+        ],
+        "ConductorSpec":
+        [
+            {"ID":1,"X0":   0,"X1": 160,"Y0":  95,"Y1":100,"Temp":473,"DC(V)":  0,
+                "Power1(W)":  0,"AC1(V)":  0,"Freq1(1/s)":13.56e6,"Phase1(deg)":0.0,
+                "Power2(W)":  0,"AC2(V)":  0,"Freq2(1/s)":    0.0,"Phase2(deg)":0.0,
+                "R(Ohm)":  0.0,"L(H)":  0.0,"C(F)": 1.0},
+            {"ID":2,"X0":   0,"X1": 160,"Y0":   0,"Y1":  10,"Temp":473,"DC(V)":0.0,
+                "Power1(W)":  0,"AC1(V)":  0,"Freq1(1/s)":      0,"Phase1(deg)":0.0,
+                "Power2(W)":  0,"AC2(V)":  0,"Freq2(1/s)":      0,"Phase2(deg)":0.0,
+                "R(Ohm)":  0.0,"L(H)":  0.0,"C(F)": 1.0},
+            {"ID":2,"X0":   0,"X1": 140,"Y0":  10,"Y1":  20,"Temp":873,"DC(V)":0.0,
+                "Power1(W)":  0,"AC1(V)":  0,"Freq1(1/s)":      0,"Phase1(deg)":0.0,
+                "Power2(W)":  0,"AC2(V)":  0,"Freq2(1/s)":      0,"Phase2(deg)":0.0,
+                "R(Ohm)":  0.0,"L(H)":  0.0,"C(F)": 1.0}
+        ],
+        "DielectricSpec":
+        [
+            {"X0": 140,"X1": 160,"Y0":  10,"Y1": 20,"Epsilon":9.0},
+            {"X0": 190,"X1": 200,"Y0":   0,"Y1":100,"Epsilon":9.0}
+        ]
     },
     "GasSpecies":
     {
         
+    },
+    "SimulationMethod":
+    {
+        "TimeStepForPIC": 5000,
+        "TimeStepForConti": 5,
+        "PCGMarginOfError":1e-6,
+        "HistoryMax":1000000,
+        "HistoryDivide":2,
+        "AverageIter":50000,
+        "DensitySmoothing":5,
+        "ParticleLimit":1e7,
+        "B_flag":"Magnetic.txt",
+        "Initialing_Int":
+        {
+            "Init_flag":0,
+            "Time_order":0,
+            "Dump_order":0
+        },
+        "Addtion_IZ":
+        {
+            "AddIZ_flag":0,
+            "AdditionIonization":
+            [
+                {"LoadType":0,"X0":160,"X1":160,"Y0":0,"Y1":0,"IonizationRate":1e19},
+                {"LoadType":1,"X0":160,"X1":160,"Y0":0,"Y1":0,"IonizationRate":1e19},
+                {"LoadType":2,"X0":160,"X1":160,"Y0":0,"Y1":0,"IonizationRate":1e19}
+            ]
+        },
+        "ContinuityBreakPoint":{
+            "Margin(%)":1.0 
+        },
+        "PowerDrivenOption":{
+            "VoltageUpRatio":0.05
+        }
     },
     "Diagnostics":
     {

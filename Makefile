@@ -9,7 +9,7 @@ CFLAGS =
 CUFLAGS= -arch=sm_52 -use_fast_math --ptxas-options=-v
 # CUFLAGS= -gencode arch=compute_52,code=sm_52 -use_fast_math --ptxas-options=-v
 LFLAGS = -lm
-CUDA_DIR=/usr/local/cuda
+CUDA_DIR=/usr/local/cuda10-2
 IDIR = -I$(CUDA_DIR)/include -Iinc
 LIBS  = -L$(CUDA_DIR)/lib64 -lm -ldl -lcurand -lcublas -lcusparse -lcusolver -lcufft #-lefence
 SRC_DIR := ./src
@@ -17,8 +17,8 @@ OBJ_DIR := ./obj
 
 
 C_OBJS = $(OBJ_DIR)/main.o \
-          $(OBJ_DIR)/parson.o
-#          $(OBJ_DIR)/start.o \
+          $(OBJ_DIR)/parson.o \
+          $(OBJ_DIR)/start.o 
 #          $(OBJ_DIR)/load.o \
 #          $(OBJ_DIR)/savedata.o \
 #          $(OBJ_DIR)/mccTools.o \
