@@ -6,3 +6,4 @@ int cstep; // Number of Cycle step
 int DumpFlag;
 char InputFile[80]; // INPUT FILE NAME
 char DumpFile[80];  // DUMP FILE NAME
+int MainGas;
