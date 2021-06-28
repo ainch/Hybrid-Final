@@ -1,8 +1,5 @@
 #include "main.h"
 
-void display_title();
-void display_finish();
-
 int main(int argc, char *argv[])
 {
 	int Post_Processing_flag = 0;
@@ -27,7 +24,10 @@ int main(int argc, char *argv[])
 	start();   				/* Initialized */
 	DumpRead(argc,argv);	/* DumpFile Read */
 	if(Post_Processing_flag){
-
+		fprintf(stderr,"*.dmp -> *.dat for tecplot\n");
+		MAKE_Value();
+		fprintf(stderr,"Make a Tecplot 2D\n");
+		MAKE_TECPLOT();
 	} else{
 		//main_cuda();			/* GPU Start */
 	}

@@ -569,3 +569,9 @@ void start() {
 void DumpRead(int argc, char *argv[]) {
    fprintf(stderr,"Tstrp = %d\n",tstep);
 }
+void MAKE_Value(){
+
+}
+void MAKE_TECPLOT(){
+   
+}
