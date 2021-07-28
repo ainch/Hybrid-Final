@@ -1,14 +1,14 @@
 #include "xypic.h"
 #include "global.h"
 #include <libgen.h>
-#include <string.h>
-#include <stdio.h>
 #include "parson.h"
+#include "main.h"
 
 FILE *InputDeck;
 
 void InputRead(int argc, char *argv[]) {
-   int i;
+   int i,j;
+   int buf;
    JSON_Value *InputValue;
    JSON_Object *MainObject;
    JSON_Object *SubObject1,*SubObject2,*SubObject3;
@@ -22,59 +22,152 @@ void InputRead(int argc, char *argv[]) {
    //----GPU_Device_Number----//
    //-------------------------//
    SubObject1 = json_object_get_object(MainObject,"GPU_Device_Number");
-   printf("Device # = %d\n",(int)json_object_get_number(SubObject1,"Device"));
+   device_num = (int)json_object_get_number(SubObject1,"GPUDevice");
    //-------------------------//
    //--------Geometry---------//
    //-------------------------//
    SubObject2 = json_object_get_object(MainObject,"Geometry");
    BufObject = json_object_get_object(SubObject2,"SystemSpec");
-   printf("X_length(m) = %g\n",(float)json_object_get_number(BufObject,"X_length(m)"));
-   printf("Y_length(m) = %g\n",(float)json_object_get_number(BufObject,"Y_length(m)"));
-   printf("Z_length(m) = %g\n",(float)json_object_get_number(BufObject,"Z_length(m)"));
-   printf("NumCellx = %d\n",(int)json_object_get_number(BufObject,"NumGridx"));
-   printf("NumCelly = %d\n",(int)json_object_get_number(BufObject,"NumGridy"));
+   xlength = (float)json_object_get_number(BufObject,"X_length(m)");
+   ylength = (float)json_object_get_number(BufObject,"Y_length(m)");
+   zlength = (float)json_object_get_number(BufObject,"Z_length(m)");
+   ngx = (int)json_object_get_number(BufObject,"NumGridx");
+   ngy = (int)json_object_get_number(BufObject,"NumGridy");
+   if (ngx < 5 || ngy < 5){
+      printf("\"ngx\",\"ngy\" is too small!\n");
+      exit(1);
+   }
    BufArray = json_object_get_array(SubObject2,"BoundaryCondition");
-   for (i=0;i<json_array_get_count(BufArray);i++){
+   BoundaryNUN = (int)json_array_get_count(BufArray);
+   if (BoundaryNUN < 4){
+      printf("\"BoundaryCondition\" is too small!(BoundaryNum>=4)\n");
+      exit(1);
+   }
+   BoundaryX0 = VIMalloc(BoundaryNUN);
+   BoundaryY0 = VIMalloc(BoundaryNUN);
+   BoundaryX1 = VIMalloc(BoundaryNUN);
+   BoundaryY1 = VIMalloc(BoundaryNUN);
+   BoundaryBC = VIMalloc(BoundaryNUN);
+   BoundaryTEMP = VFMalloc(BoundaryNUN);
+   for (i=0;i<BoundaryNUN;i++){
       BufObject = json_array_get_object(BufArray,i);
-      printf("X0 = %d,",(int)json_object_get_number(BufObject,"X0"));
-      printf("X1 = %d,",(int)json_object_get_number(BufObject,"X1"));
-      printf("Y0 = %d,",(int)json_object_get_number(BufObject,"Y0"));
-      printf("Y1 = %d,",(int)json_object_get_number(BufObject,"Y1"));
-      printf("B.C = %d,",(int)json_object_get_number(BufObject,"B.C"));
-      printf("Temp = %g\n",(float)json_object_get_number(BufObject,"Temp"));
+      BoundaryX0[i]=(int)json_object_get_number(BufObject,"X0");
+      BoundaryX1[i]=(int)json_object_get_number(BufObject,"X1");
+      if(BoundaryX0[i] > BoundaryX1[i]){
+         printf("Line %d X position is error in \"BoundaryCondition\"(\"X0\" <= \"X1\")\n",i+1);
+         exit(1);
+      } 
+      BoundaryY0[i]=(int)json_object_get_number(BufObject,"Y0");
+      BoundaryY1[i]=(int)json_object_get_number(BufObject,"Y1");
+      if(BoundaryY0[i] > BoundaryY1[i]){
+         printf("Line %d Y position is error in \"BoundaryCondition\"(\"Y0\" <= \"Y1\")\n",i+1);
+         exit(1);
+      } 
+      BoundaryBC[i]=(int)json_object_get_number(BufObject,"B.C");
+      if(BoundaryBC[i] > 4){
+         printf("Line %d B.C is error in \"BoundaryCondition\"(\"B.C\" < 5)\n",i+1);
+         exit(1);
+      } 
+      BoundaryTEMP[i]=(float)json_object_get_number(BufObject,"Temp");
    }
    BufArray = json_object_get_array(SubObject2,"ConductorSpec");
-   for (i=0;i<json_array_get_count(BufArray);i++){
+   CondNUN = (int)json_array_get_count(BufArray);
+   if (CondNUN < 2){
+      printf("\"Conductor\" is too small!(CondNum>=2)\n");
+      exit(1);
+   }
+   CondM_ID = VIMalloc(CondNUN);
+   CondX0 = VIMalloc(CondNUN);
+   CondX1 = VIMalloc(CondNUN);
+   CondY0 = VIMalloc(CondNUN);
+   CondY1 = VIMalloc(CondNUN);
+   CondTEMP = VFMalloc(CondNUN);
+   for (i=0;i<CondNUN;i++){
       BufObject = json_array_get_object(BufArray,i);
-      printf("M_ID = %d,\n",(int)json_object_get_number(BufObject,"M_ID"));
-      printf("X0 = %d,",(int)json_object_get_number(BufObject,"X0"));
-      printf("X1 = %d,",(int)json_object_get_number(BufObject,"X1"));
-      printf("Y0 = %d,",(int)json_object_get_number(BufObject,"Y0"));
-      printf("Y1 = %d,",(int)json_object_get_number(BufObject,"Y1"));
-      printf("Temp = %g",(float)json_object_get_number(BufObject,"Temp"));
-      printf("DC = %g,\n",(float)json_object_get_number(BufObject,"DC(V)"));
-      printf("Power1 = %g,",(float)json_object_get_number(BufObject,"Power1(W)"));
-      printf("AC1 = %g,",(float)json_object_get_number(BufObject,"AC1(V)"));
-      printf("Freq1 = %g,",(float)json_object_get_number(BufObject,"Freq1(1/s)"));
-      printf("Phase1 = %g,\n",(float)json_object_get_number(BufObject,"Phase1(deg)"));
-      printf("Power2 = %g,",(float)json_object_get_number(BufObject,"Power2(W)"));
-      printf("AC2 = %g,",(float)json_object_get_number(BufObject,"AC2(V)"));
-      printf("Freq2 = %g,",(float)json_object_get_number(BufObject,"Freq2(1/s)"));
-      printf("Phase2 = %g,\n",(float)json_object_get_number(BufObject,"Phase2(deg)"));
-      printf("R = %g,",(float)json_object_get_number(BufObject,"R(Ohm)"));
-      printf("L = %g,",(float)json_object_get_number(BufObject,"L(H)"));
-      printf("C = %g\n",(float)json_object_get_number(BufObject,"C(F)"));
+      CondM_ID[i] = (int)json_object_get_number(BufObject,"M_ID");
+      CondX0[i] = (int)json_object_get_number(BufObject,"X0");
+      CondX1[i] = (int)json_object_get_number(BufObject,"X1");
+      if(CondX0[i] > CondX1[i]){
+         printf("Line %d X position is error in \"ConductorSpec\"(\"X0\" <= \"X1\")\n",i+1);
+         exit(1);
+      } 
+      CondY0[i] = (int)json_object_get_number(BufObject,"Y0");
+      CondY1[i] = (int)json_object_get_number(BufObject,"Y1");
+      if(CondY0[i] > CondY1[i]){
+         printf("Line %d Y position is error in \"ConductorSpec\"(\"Y0\" <= \"Y1\")\n",i+1);
+         exit(1);
+      } 
+      CondTEMP[i] = (float)json_object_get_number(BufObject,"Temp");
+   }
+   BufArray = json_object_get_array(SubObject2,"Source");
+   SrcNUN = (int)json_array_get_count(BufArray);
+   SrcM_ID = VIMalloc(SrcNUN);
+   SrcDC = VFMalloc(SrcNUN);
+   SrcPOWER = VFMalloc(SrcNUN);
+   SrcAC = VFMalloc(SrcNUN);
+   SrcFREQ = VFMalloc(SrcNUN);
+   SrcPHASE = VFMalloc(SrcNUN);
+   SrcR = VFMalloc(SrcNUN);
+   SrcL = VFMalloc(SrcNUN);
+   SrcC = VFMalloc(SrcNUN);
+   Min_FREQ  = 1e200;
+   for (i=0;i<SrcNUN;i++){
+      buf = 0;
+      BufObject = json_array_get_object(BufArray,i);
+      SrcM_ID[i] = (int)json_object_get_number(BufObject,"M_ID");
+      for (j=0;j<CondNUN;j++){
+         if(CondM_ID[j]==SrcM_ID[i])
+            buf = 1;
+      }
+      if(buf == 0){
+         printf("Line %d Source is no matching Conductor\n",i+1);
+         exit(1);
+      }
+      SrcDC[i] = (float)json_object_get_number(BufObject,"DC(V)");
+      SrcPOWER[i] = (float)json_object_get_number(BufObject,"Power(W)");
+      SrcAC[i] = (float)json_object_get_number(BufObject,"AC(V)");
+      SrcFREQ[i] = (float)json_object_get_number(BufObject,"Freq(1/s)");
+      SrcPHASE[i] = (float)json_object_get_number(BufObject,"Phase(deg)");
+      SrcR[i] = (float)json_object_get_number(BufObject,"R(Ohm)");
+      SrcL[i] = (float)json_object_get_number(BufObject,"L(H)");
+      SrcC[i] = (float)json_object_get_number(BufObject,"C(F)");
+      if(SrcFREQ[i] != 0){
+         if(SrcFREQ[i]<Min_FREQ)
+            Min_FREQ  = SrcFREQ[i];
+      }
    }
    BufArray = json_object_get_array(SubObject2,"DielectricSpec");
-   for (i=0;i<json_array_get_count(BufArray);i++){
+   DielNUN = (int)json_array_get_count(BufArray);
+   DielM_ID = VIMalloc(DielNUN);
+   DielX0 = VIMalloc(DielNUN);
+   DielX1 = VIMalloc(DielNUN);
+   DielY0 = VIMalloc(DielNUN);
+   DielY1 = VIMalloc(DielNUN);
+   DielEPS = VFMalloc(DielNUN);
+   for (i=0;i<DielNUN;i++){
       BufObject = json_array_get_object(BufArray,i);
-      printf("M_ID = %d,\n",(int)json_object_get_number(BufObject,"M_ID"));
-      printf("X0 = %d,",(int)json_object_get_number(BufObject,"X0"));
-      printf("X1 = %d,",(int)json_object_get_number(BufObject,"X1"));
-      printf("Y0 = %d,",(int)json_object_get_number(BufObject,"Y0"));
-      printf("Y1 = %d,",(int)json_object_get_number(BufObject,"Y1"));
-      printf("Epsilon = %g\n",(float)json_object_get_number(BufObject,"Epsilon"));
+      DielM_ID[i] = (int)json_object_get_number(BufObject,"M_ID");
+      for (j=0;j<CondNUN;j++){
+         if(DielM_ID[i]==CondM_ID[j]){
+            printf("Line %d M_ID is duplicated with conductor %d in \"DielectricSpec\"\n",i+1,CondM_ID[j]);
+            exit(1);
+         }
+      }
+      DielX0[i] = (int)json_object_get_number(BufObject,"X0");
+      DielX1[i] = (int)json_object_get_number(BufObject,"X1");
+      if(DielX0[i] > DielX1[i]){
+         printf("Line %d X position is error in \"DielectricSpec\"(\"X0\" <= \"X1\")\n",i+1);
+         exit(1);
+      } 
+      DielY0[i] = (int)json_object_get_number(BufObject,"Y0");
+      DielY1[i] = (int)json_object_get_number(BufObject,"Y1");
+      if(DielY0[i] > DielY1[i]){
+         printf("Line %d Y position is error in \"DielelctricSpec\"(\"Y0\" <= \"Y1\")\n",i+1);
+         exit(1);
+      } 
+      DielEPS[i] = (float)json_object_get_number(BufObject,"Epsilon");
    }
+   exit(1);
    //-------------------------//
    //-------GasSpecies--------//
    //-------------------------//
@@ -564,14 +657,198 @@ printf("\n");
    }   
 }
 void start() {
-   fprintf(stderr,"Tstrp = %d\n",tstep);
+   int i;
+   //-------------------------//
+   //--------Geometry---------//
+   //-------------------------//
+   Gsize = ngx * ngy;
+   ncx = ngx - 1;
+   ncy = ngy - 1;
+   Csize = ncx * ncy;
+   dx=xlength/ncx;
+   dy=ylength/ncy;
+   idx=1/dx;
+   idy=1/dy;
+   dx2=dx*dx;
+   dy2=dy*dy;
+   dxdy2=dx2/dy2;
+   hdx=0.5/dx;
+   hdy=0.5/dy;
+   r_eps0=1/EPS0;
+   fncx=(float)ncx;
+   fncy=(float)ncy;
+   fngx=(float)ngx;
+   fngy=(float)ngy;
+   x_Garray=VFMalloc(ngx);
+   for(i=0;i<ngx;i++) x_Garray[i]=i*dx;
+   y_Garray=VFMalloc(ngy);
+   for(i=0;i<ngy;i++) y_Garray[i]=i*dy;
 }
 void DumpRead(int argc, char *argv[]) {
    fprintf(stderr,"Tstrp = %d\n",tstep);
 }
-void MAKE_Value(){
-
+float **MFMalloc(int sizeX,int sizeY)
+{
+    int i;
+    float **M;
+    M=(float **)malloc(sizeX*sizeof(float *));
+    for(i=0;i<sizeX;i++) M[i]=(float *)malloc(sizeY*sizeof(float));
+    return M;
 }
-void MAKE_TECPLOT(){
-   
+int ***TIMalloc(int sizeX,int sizeY,int sizeZ)
+{
+    int i,j;
+    int ***T;
+    T=(int ***)malloc(sizeX*sizeof(int **));
+    for(i=0;i<sizeX;i++){
+        T[i]=(int **)malloc(sizeY*sizeof(int *));
+        for(j=0;j<sizeY;j++)	T[i][j]=(int *)malloc(sizeZ*sizeof(int));
+    }
+    return T;
+}
+float ***TFMalloc(int sizeX,int sizeY,int sizeZ)
+{
+    int i,j;
+    float ***T;
+    T=(float ***)malloc(sizeX*sizeof(float **));
+    for(i=0;i<sizeX;i++){
+        T[i]=(float **)malloc(sizeY*sizeof(float *));
+        for(j=0;j<sizeY;j++)	T[i][j]=(float *)malloc(sizeZ*sizeof(float));
+    }
+    return T;
+}
+int **MIMalloc(int sizeX,int sizeY)
+{
+    int i;
+    int **M;
+    M=(int **)malloc(sizeX*sizeof(int *));
+    for(i=0;i<sizeX;i++) M[i]=(int *)malloc(sizeY*sizeof(int));
+    return M;
+}
+float *VFMalloc(int size)
+{
+    float *V;
+  V=(float *)malloc(size*sizeof(float));
+    return V;
+}
+int *VIMalloc(int size)
+{
+    int *V;
+    V=(int *)malloc(size*sizeof(int));
+    return V;
+}
+void TFFree(float ***T,int sizeX,int sizeY)
+{
+    int i,j;
+    for(i=0;i<sizeX;i++){
+        for(j=0;j<sizeY;j++) free(T[i][j]);
+        free(T[i]);
+    }
+    free(T);
+    return ;
+}
+void TIFree(int ***T,int sizeX,int sizeY)
+{
+    int i,j;
+    for(i=0;i<sizeX;i++){
+        for(j=0;j<sizeY;j++) free(T[i][j]);
+        free(T[i]);
+    }
+    free(T);
+    return ;
+}
+void MFFree(float **M,int sizeX)
+{
+    int i;
+    for(i=0;i<sizeX;i++) free(M[i]);
+    free(M);
+    return ;
+}
+void MIFree(int **M,int sizeX)
+{
+    int i;
+    for(i=0;i<sizeX;i++) free(M[i]);
+    free(M);
+    return ;
+}
+void TFInit(float ***T,float C,int sizeX,int sizeY,int sizeZ)
+{
+    int i,j,k;
+    for(i=0;i<sizeX;i++)
+        for(j=0;j<sizeY;j++)
+            for(k=0;k<sizeZ;k++) T[i][j][k]=C;
+
+    return;
+}
+void TIInit(int ***T,int C,int sizeX,int sizeY,int sizeZ)
+{
+    int i,j,k;
+    for(i=0;i<sizeX;i++)
+        for(j=0;j<sizeY;j++)
+            for(k=0;k<sizeZ;k++) T[i][j][k]=C;
+
+    return;
+}
+void MFInit(float **M,float C,int sizeX,int sizeY)
+{
+    int i,j;
+    for(i=0;i<sizeX;i++)
+        for(j=0;j<sizeY;j++) M[i][j]=C;
+
+    return;
+}
+void MIInit(int **M,int C,int sizeX,int sizeY)
+{
+    int i,j;
+    for(i=0;i<sizeX;i++)
+        for(j=0;j<sizeY;j++) M[i][j]=C;
+
+    return;
+}
+void VFInit(float *V,float C,int size)
+{
+    int i;
+    for(i=0;i<size;i++) V[i]=C;
+
+    return;
+}
+void VIInit(int *V,int C,int size)
+{
+    int i;
+    for(i=0;i<size;i++) V[i]=C;
+
+    return;
+}
+void MFCopy(float **M,float **C,int sizeX,int sizeY)
+{
+    int i,j;
+    for(i=0;i<sizeX;i++){
+        for(j=0;j<sizeY;j++){
+         M[i][j]=C[i][j];
+    }
+}
+
+    return;
+}
+void MICopy(int **M,int **C,int sizeX,int sizeY)
+{
+    int i,j;
+    for(i=0;i<sizeX;i++)
+        for(j=0;j<sizeY;j++) M[i][j]=C[i][j];
+
+    return;
+}
+void VFCopy(float *V,float *C,int size)
+{
+    int i;
+    for(i=0;i<size;i++) V[i]=C[i];
+
+    return;
+}
+void VICopy(int *V,int *C,int size)
+{
+    int i;
+    for(i=0;i<size;i++) V[i]=C[i];
+
+    return;
 }

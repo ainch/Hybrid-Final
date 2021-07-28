@@ -1,4 +1,4 @@
-EXEC = 2D-Hybrid_PIC
+EXEC = 2D_Hybrid_PIC
 
 CC = gcc
 NVCC = nvcc
@@ -9,7 +9,7 @@ CFLAGS =
 CUFLAGS= -arch=sm_52 -use_fast_math --ptxas-options=-v
 # CUFLAGS= -gencode arch=compute_52,code=sm_52 -use_fast_math --ptxas-options=-v
 LFLAGS = -lm
-CUDA_DIR=/usr/local/cuda10-2
+CUDA_DIR=/usr/local/cuda-10.2
 IDIR = -I$(CUDA_DIR)/include -Iinc
 LIBS  = -L$(CUDA_DIR)/lib64 -lm -ldl -lcurand -lcublas -lcusparse -lcusolver -lcufft #-lefence
 SRC_DIR := ./src
@@ -18,16 +18,16 @@ OBJ_DIR := ./obj
 
 C_OBJS = $(OBJ_DIR)/main.o \
           $(OBJ_DIR)/parson.o \
-          $(OBJ_DIR)/start.o 
+          $(OBJ_DIR)/start.o
 #          $(OBJ_DIR)/load.o \
 #          $(OBJ_DIR)/savedata.o \
 #          $(OBJ_DIR)/mccTools.o \
 #          $(OBJ_DIR)/fluid.o \
 #          $(OBJ_DIR)/fdtd.o
 
-#CU_OBJS = $(OBJ_DIR)/cuda_run.o \
-#          $(OBJ_DIR)/cuda_start.o \
-#          $(OBJ_DIR)/cuda_main.o \
+CU_OBJS = $(OBJ_DIR)/cuda_main.o \
+          $(OBJ_DIR)/cuda_start.o 
+#          $(OBJ_DIR)/cuda_run.o \
 #          $(OBJ_DIR)/cuda_field.o \
 #          $(OBJ_DIR)/cuda_move.o \
 #          $(OBJ_DIR)/cuda_rand.o \
@@ -40,6 +40,7 @@ C_OBJS = $(OBJ_DIR)/main.o \
 C_H_FILES = inc/xypic.h \
             inc/global.h \
             inc/main.h \
+            inc/helper_cuda.h \
             inc/def.h
 
 CU_H_FILES = inc/xypic.cuh \

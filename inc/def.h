@@ -1,62 +1,61 @@
 /******************************************/
 /* def.h */
-#define SNG_MIN 1e-200
-
-#define DECIMAL float
-#define DECIMAL_TYPE  "%g"
-#define HIST  1000000
-
+#ifndef __PhysicalConstant__
+#define __PhysicalConstant__
 #define M_PI 3.14159265358979323846
-#define EPS0            8.8542e-12      /* (F/m)  */
+#define EPS0 8.8542e-12      /* (F/m)  */
 #define KB 1.38064852e-23
 #define C0 3.0e8
-
-#define SINGLEGPU
-
-#define XYPIC	0
-#define RZPIC	1
-
-#define RZ_X_LIM 200
-
-#define DIRICHLET 1
-#define NEUMANN 2
-#define CONDUCTOR 3
-#define DIELECTRIC 4
-#define DIRICHLET_LIN 5
-
-#define LEFT    0
-#define RIGHT   1 
-#define UP      2
-#define DOWN    3
-#define UL_CORN 4
-#define UR_CORN 5
-#define LL_CORN 6
-#define LR_CORN 7
-#define NO_FACE 8
-
-#define QUIET_START	0
-#define RANDOM_XY	1
-#define RANDOM_RZ	2
-
-#define  NVTS    3.3
-
-#define False 0
-#define True 1
-
+#define SNG_MIN 1e-200
 #define DBL_MIN    1E-200
 #define NperTORR   8.3221e20
+#endif
 
+#ifndef __Simulation__
+#define __Simulation__
+enum BoundaryCondition {
+    DIRICHLET = 1,
+    NEUMANN,
+    CONDUCTOR,
+    DIELECTRIC,
+};
+enum BoundaryType {
+    LEFT,
+    RIGHT,
+    UP,
+    DOWN,
+    UL_CORN,
+    UR_CORN,
+    LL_CORN,
+    LR_CORN,
+    NO_FACE,
+};
+enum ParticleLoadInitial {
+    SMARTLOAD,
+    UNIFORM,
+    EXPONETIAL,
+    COSINE,
+};
+enum GasType {
+    ARGON,
+    OXYGEN,
+    ARO2,
+};
+#endif
+#ifndef __MATH__
+#define __MATH__
+#define TRUE 1
+#define FALSE 0
 #ifndef max
 #define max(x,y) (((x)>(y)) ? (x) : (y))
 #endif
-
 #ifndef min
 #define min(x,y) (((x)<(y)) ? (x) : (y))
 #endif
+#endif
 
-#define ecolsp  0
-#define ionsp   1
+#define  NVTS    3.3
 
-#define ARGON 0
-#define OXYGEN 1
-#define ARO2 2
+
+
+

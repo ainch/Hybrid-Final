@@ -2,13 +2,10 @@
 
 int main(int argc, char *argv[])
 {
-	int Post_Processing_flag = 0;
 	t = 0.0;
 	tstep = 0;
 	cstep = 0;
-	if (argc == 6) {
-		Post_Processing_flag = 1;
-	} else if (argc == 5) {
+	if (argc == 5) {
 		DumpFlag = 1;
 		strcpy(InputFile, argv[2]);
 		strcpy(DumpFile, argv[4]);
@@ -16,27 +13,22 @@ int main(int argc, char *argv[])
 		strcpy(InputFile, argv[2]);
 		DumpFlag = 0;
 	} else {
-		puts("\t2D XY PIC -i <inputdeck>");
+		puts(" 2D_Hybrid_PIC -i <InputFile>");
+		puts(" \tor");
+		puts(" 2D_Hybrid_PIC -i <InputFile> -d <DumpFile>");
 		exit(1);
 	}
-	display_title();       	/* Display 2D Field Solver title */
+	//display_title();       	/* Display 2D Field Solver title */
 	InputRead(argc,argv);	/* InputFile Parsing */
 	start();   				/* Initialized */
+
 	DumpRead(argc,argv);	/* DumpFile Read */
-	if(Post_Processing_flag){
-		fprintf(stderr,"*.dmp -> *.dat for tecplot\n");
-		MAKE_Value();
-		fprintf(stderr,"Make a Tecplot 2D\n");
-		MAKE_TECPLOT();
-	} else{
-		//main_cuda();			/* GPU Start */
-	}
+	main_cuda();			/* GPU Start */
  	display_finish();
  	return 0;
 }
 
 /***************************************************************/
-
 void display_title()
 {
 	puts("------------------------------------");

@@ -1,0 +1,8 @@
+{
+    "files.associations": {
+        "xypic.cuh": "c",
+        "xypic.h": "c",
+        "omp.h": "c"
+    },
+    "C_Cpp.errorSquiggles": "Disabled"
+}
