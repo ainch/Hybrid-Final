@@ -24,18 +24,14 @@
         ],
         "ConductorSpec":
         [
-            {"M_ID":1,"X0":   0,"X1": 160,"Y0":  95,"Y1":100,"Temp":473,"DC(V)":  0,
-                "Power1(W)":  0,"AC1(V)":  0,"Freq1(1/s)":13.56e6,"Phase1(deg)":0.0,
-                "Power2(W)":  0,"AC2(V)":  0,"Freq2(1/s)":    0.0,"Phase2(deg)":0.0,
-                "R(Ohm)":  0.0,"L(H)":  0.0,"C(F)": 1.0},
-            {"M_ID":2,"X0":   0,"X1": 160,"Y0":   0,"Y1":  10,"Temp":473,"DC(V)":0.0,
-                "Power1(W)":  0,"AC1(V)":  0,"Freq1(1/s)":      0,"Phase1(deg)":0.0,
-                "Power2(W)":  0,"AC2(V)":  0,"Freq2(1/s)":      0,"Phase2(deg)":0.0,
-                "R(Ohm)":  0.0,"L(H)":  0.0,"C(F)": 1.0},
-            {"M_ID":2,"X0":   0,"X1": 140,"Y0":  10,"Y1":  20,"Temp":873,"DC(V)":0.0,
-                "Power1(W)":  0,"AC1(V)":  0,"Freq1(1/s)":      0,"Phase1(deg)":0.0,
-                "Power2(W)":  0,"AC2(V)":  0,"Freq2(1/s)":      0,"Phase2(deg)":0.0,
-                "R(Ohm)":  0.0,"L(H)":  0.0,"C(F)": 1.0}
+            {"M_ID":1,"X0":  0,"X1": 160,"Y0":  95,"Y1":100,"Temp":473},
+            {"M_ID":2,"X0":  0,"X1": 160,"Y0":   0,"Y1": 10,"Temp":473},
+            {"M_ID":2,"X0":  0,"X1": 140,"Y0":  10,"Y1": 20,"Temp":873}
+        ],
+        "Source":
+        [
+            {"M_ID":1,"DC(V)": 0,"Power(W)":100,"AC(V)":100,"Freq(1/s)":13.56e6,"Phase(deg)":0.0,"R(Ohm)":  0.0,"L(H)":  0.0,"C(F)": 1.0},
+            {"M_ID":1,"DC(V)": 0,"Power(W)":  0,"AC(V)":100,"Freq(1/s)":1.356e6,"Phase(deg)":0.0,"R(Ohm)":  0.0,"L(H)":  0.0,"C(F)": 1.0}
         ],
         "DielectricSpec":
         [
@@ -114,7 +110,8 @@
                 "SatGoal":30
             }
 
-        }
+        },
+        "DumpVersion":0.0
     },
     "Diagnostics":
     {
