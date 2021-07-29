@@ -1,5 +1,4 @@
-#include "xypic.cuh"
-#include "global.h"
+#include "cuda_start.cuh"
 
 void info_Device()
 {

@@ -1,10 +1,4 @@
-#include "xypic.h"
-#include "global.h"
-#include <libgen.h>
-#include "parson.h"
-#include "main.h"
-
-FILE *InputDeck;
+#include "start.h"
 
 void InputRead(int argc, char *argv[]) {
    int i,j;
@@ -26,6 +20,7 @@ void InputRead(int argc, char *argv[]) {
    //-------------------------//
    //--------Geometry---------//
    //-------------------------//
+   printf("Read Geommetry\n"); 
    SubObject2 = json_object_get_object(MainObject,"Geometry");
    BufObject = json_object_get_object(SubObject2,"SystemSpec");
    xlength = (float)json_object_get_number(BufObject,"X_length(m)");
@@ -167,13 +162,39 @@ void InputRead(int argc, char *argv[]) {
       } 
       DielEPS[i] = (float)json_object_get_number(BufObject,"Epsilon");
    }
-   exit(1);
    //-------------------------//
    //-------GasSpecies--------//
    //-------------------------//
+   printf("Read GasSpecies\n");
    SubObject3 = json_object_get_object(MainObject,"GasSpecies");
    MainGas = (int)json_object_get_number(SubObject3,"Type(0:Ar,1:O2,2:Ar/O2)");
-   //printf("MainGas = %d,\n",(int)json_object_get_number(SubObject3,"Type(0:Ar,1:O2,2:Ar/O2)"));   
+   switch (MainGas) {
+	case ARGON: {	// ONLY ARGON
+      printf("\tArgon gas\n"); 
+		nsp = 2;		nfsp = 1;		nBG = 1;
+		break;
+	}
+	case OXYGEN: { // Oxygen
+      printf("\tOxygen gas\n"); 
+		nsp = 4;		nfsp = 4;		nBG = 1;
+		break;
+	}
+	case ARO2: { // Argon.Oxygen
+      printf("\tArgon + Oxygen gas\n"); 
+		nsp = 5;		nfsp = 5;		nBG = 2;
+		break;
+	}
+   default: {
+      printf("\t\"Type\" is error in GasSpecies.\n"); 
+      exit(1);
+   }
+	}
+   sp = (Species *) malloc(nsp * sizeof(Species));
+	FG = (Fluid *) malloc(nfsp * sizeof(Fluid));
+	BG = (BackG *) malloc(nBG * sizeof(BackG));
+
+   exit(1);
+
    printf("TotalPres = %g,\n",(float)json_object_get_number(SubObject3,"TotalPres(Torr)"));
    if(MainGas==ARGON){
       BufObject = json_object_get_object(SubObject3,"Background");

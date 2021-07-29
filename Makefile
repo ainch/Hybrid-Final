@@ -38,13 +38,14 @@ CU_OBJS = $(OBJ_DIR)/cuda_main.o \
 #          $(OBJ_DIR)/cuda_beam.o
 
 C_H_FILES = inc/xypic.h \
-            inc/global.h \
             inc/main.h \
-            inc/helper_cuda.h \
+            inc/start.h \
             inc/def.h
 
 CU_H_FILES = inc/xypic.cuh \
-             inc/global.h \
+             inc/cuda_main.cuh \
+             inc/cuda_start.cuh \
+             inc/helper_cuda.h \
              inc/main.h \
              inc/interop.cuh \
              inc/def.h

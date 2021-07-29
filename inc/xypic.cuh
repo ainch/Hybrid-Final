@@ -44,6 +44,5 @@ extern "C" void MICopy(int **M,int **C,int sizeX,int sizeY);
 extern "C" void VFCopy(float *V,float *C,int size);
 extern "C" void VICopy(int *V,int *C,int size);
 // CU Function declaration
-void info_Device(); 					// Select GPU
-void start_cuda();					// Select Module
+
 #endif
