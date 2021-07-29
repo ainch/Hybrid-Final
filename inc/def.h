@@ -31,7 +31,7 @@ enum BoundaryType {
     LR_CORN,
     NO_FACE,
 };
-enum ParticleLoadInitial {
+enum LoadType {
     SMARTLOAD,
     UNIFORM,
     EXPONETIAL,
@@ -62,28 +62,43 @@ typedef struct TEST
     float *c;
     float *d;
 } point;
+typedef struct _ChargedParticle
+{
+	//SIZE = MAXNP
+	int CellID;
+    float x;  
+    float y;
+    float vx;
+	float vy;
+	float vz;
+} CP;
 #endif
+
 #ifndef TotalDomain
 typedef struct tag_species{
 	//Constant
-	//int  Cname;			// number name
+	int  Loadtype;		// density load type
+	float x_center,x_fall;		// density load position
+	float y_center,y_fall;		// density load position
+	int  S_ID;			// number name
+	float InitDens;		//initial density
+	float Temp;			//Load temperature
+	float np2c;			// np2c
+	int MAXNP;			// maximum np
 	//char name[10];		// string name
 	//int load_type;		// particle load type
 	//float init_xleft, init_xright, init_ybottom, init_ytop;
-	//float np2c;			// np2c
-	//float Ninit;		//initial density
-	//float init_T;		//initial temperature
+	//
+	//
+	//
 	//int   PTN;			// if loadtype = 0 or 1, it is not working
 	// if loadtype = 2 or 3, minimum number of particle in cell
-	// if loadtype = 4, Number of particle for load type = 4 case
-	//int   maxNP; 		// maximum np
+	// if loadtype = 4, Number of particle for load type = 4 case	
 	//float q,m;			// mass and Charge q, charge q is q*np2c
 	//float vti;			// Thermal velocity
 	//int np;				// number of particle
-	//int *CellID;		// Cell number each of particle
 	//int *MaxPtNumInCell;// Maximum Particle number in cell
 	//int *PtNumInCell;	// Particle number in cell
-	//float *x, *y, *vx, *vy, *vz; // position and velocity
 	//float *vec_den,**den; // density
 	//float qm;			// charge q times mass m
 	//float ascale;		// charge q times mass m times time step dt
@@ -114,11 +129,11 @@ typedef struct tag_species{
 typedef struct fluid{
 	//int  Cname;					// species name
 	//char name[10];				// string name
-	//int   loadtype;				// density load type
-	//float x_center,x_fall;		// density load position
-	//float y_center,y_fall;		// density load position
-	//float initdens;				// initial density
-	//float Tem;					// Temperature
+	int   Loadtype;				// density load type
+	float x_center,x_fall;		// density load position
+	float y_center,y_fall;		// density load position
+	float InitDens;				// initial density
+	float Temp;					// Temperature
 	//float m;					// Mass
 	//float *HistDen;				//
 	//float **den;				// density of each of cell using update_source();
@@ -147,8 +162,8 @@ typedef struct fluid{
 typedef struct BackGround{
 	//int  Cname;					// species Number
 	//char name[10];				// string name
-	float prs;				    // Pressure
-	//float Tem;				// Temperature
+	float Pres;				    // Pressure
+	float Temp;				// Temperature
 	//float GasDensity;			// density [m^-3]
 	//float GasThermalVelocity;	// thermal velocity
 	//float m;					// Mass

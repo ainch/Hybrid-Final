@@ -44,32 +44,32 @@
         "Type(0:Ar,1:O2,2:Ar/O2)":0,
         "TotalPres(Torr)":1.0,
         "Background":{
-            "Argon":{"Ratio":100,"Temp(eV)":0.026},
-            "Oxygen":{"Ratio":100,"Temp(eV)":0.026}
+            "Argon":{"Ratio":50,"Temp(eV)":0.026},
+            "Oxygen":{"Ratio":420,"Temp(eV)":0.026}
         },
         "NeutralSpecies":{
+            "Loadtype":0,
+            "LoadPosition(m)":
+            [
+                {"X0":0.00,"X1":0.04,"Y0":0.00,"Y1":0.02}
+            ],
             "Ar*":{"Density":3.00e+16,"Temp(eV)":0.026},
             "OP":{"Density":3.00e+16,"Temp(eV)":0.026},
             "OD":{"Density":3.00e+16,"Temp(eV)":0.026},
             "O2A":{"Density":3.00e+16,"Temp(eV)":0.026},
-            "O2B":{"Density":3.00e+16,"Temp(eV)":0.026},
+            "O2B":{"Density":3.00e+16,"Temp(eV)":0.026}
+        },
+        "ChargeSpecies":{
             "Loadtype":0,
             "LoadPosition(m)":
             [
                 {"X0":0.00,"X1":0.04,"Y0":0.00,"Y1":0.02}
-            ]
-        },
-        "ChargeSpecies":{
+            ],
             "Electron":{"S_ID":0,"Density":2.0e16,"Temp(eV)":1.0,"np2c":5e7,"Max_np":13e7},
             "Ar+":{"S_ID":1,"Density":2.0e16,"Temp(eV)":0.026,"np2c":5e7,"Max_np":13e7},
             "O2+":{"S_ID":2,"Density":2.0e16,"Temp(eV)":0.026,"np2c":5e7,"Max_np":13e7},
             "O+":{"S_ID":3,"Density":2.0e16,"Temp(eV)":0.026,"np2c":5e7,"Max_np":13e7},
-            "O-":{"S_ID":4,"Density":2.0e16,"Temp(eV)":0.026,"np2c":5e7,"Max_np":13e7},
-            "Loadtype":0,
-            "LoadPosition(m)":
-            [
-                {"X0":0.00,"X1":0.04,"Y0":0.00,"Y1":0.02}
-            ]
+            "O-":{"S_ID":4,"Density":2.0e16,"Temp(eV)":0.026,"np2c":5e7,"Max_np":13e7}
         }
     },
     "SimulationMethod":

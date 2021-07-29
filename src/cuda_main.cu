@@ -24,8 +24,7 @@ __global__ void MakeVectorForMoveKernel(int ngx,int ngy,point *p)
 }
 int test(void)
 {
-    int i;
-        // set number of points 
+    // set number of points 
     int numPoints    = 1;
     int gpuBlockSize = 1;
     int pointSize    = sizeof(point);

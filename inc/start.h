@@ -34,9 +34,10 @@ int *DielM_ID, *DielX0, *DielX1, *DielY0, *DielY1;
 float *DielEPS;
 int MainGas; // Gas type 0:argon, 1:oxygen, 2:argon/oxygen
 int nsp, nfsp, nBG;
-Species *sp;// particle species
+Species *SP;// particle species
 Fluid *FG;	// fluid species
 BackG *BG;	// background species
+float Total_Pressure;
 
 void InputRead(int argc, char *argv[]);
 void start();

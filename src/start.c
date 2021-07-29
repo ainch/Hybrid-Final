@@ -3,6 +3,7 @@
 void InputRead(int argc, char *argv[]) {
    int i,j;
    int buf;
+   float fbuf;
    JSON_Value *InputValue;
    JSON_Object *MainObject;
    JSON_Object *SubObject1,*SubObject2,*SubObject3;
@@ -34,6 +35,7 @@ void InputRead(int argc, char *argv[]) {
    }
    BufArray = json_object_get_array(SubObject2,"BoundaryCondition");
    BoundaryNUN = (int)json_array_get_count(BufArray);
+   printf("\tBoundary # = %d\n",BoundaryNUN); 
    if (BoundaryNUN < 4){
       printf("\"BoundaryCondition\" is too small!(BoundaryNum>=4)\n");
       exit(1);
@@ -67,6 +69,7 @@ void InputRead(int argc, char *argv[]) {
    }
    BufArray = json_object_get_array(SubObject2,"ConductorSpec");
    CondNUN = (int)json_array_get_count(BufArray);
+   printf("\tConductor # = %d\n",CondNUN); 
    if (CondNUN < 2){
       printf("\"Conductor\" is too small!(CondNum>=2)\n");
       exit(1);
@@ -96,6 +99,7 @@ void InputRead(int argc, char *argv[]) {
    }
    BufArray = json_object_get_array(SubObject2,"Source");
    SrcNUN = (int)json_array_get_count(BufArray);
+   printf("\tSource # = %d\n",SrcNUN); 
    SrcM_ID = VIMalloc(SrcNUN);
    SrcDC = VFMalloc(SrcNUN);
    SrcPOWER = VFMalloc(SrcNUN);
@@ -133,6 +137,7 @@ void InputRead(int argc, char *argv[]) {
    }
    BufArray = json_object_get_array(SubObject2,"DielectricSpec");
    DielNUN = (int)json_array_get_count(BufArray);
+   printf("\tDielectric # = %d\n",DielNUN); 
    DielM_ID = VIMalloc(DielNUN);
    DielX0 = VIMalloc(DielNUN);
    DielX1 = VIMalloc(DielNUN);
@@ -189,172 +194,262 @@ void InputRead(int argc, char *argv[]) {
       exit(1);
    }
 	}
-   sp = (Species *) malloc(nsp * sizeof(Species));
+   SP = (Species *) malloc(nsp * sizeof(Species));
 	FG = (Fluid *) malloc(nfsp * sizeof(Fluid));
 	BG = (BackG *) malloc(nBG * sizeof(BackG));
-
-   exit(1);
-
-   printf("TotalPres = %g,\n",(float)json_object_get_number(SubObject3,"TotalPres(Torr)"));
+   Total_Pressure = (float)json_object_get_number(SubObject3,"TotalPres(Torr)");
+   fbuf = 0.0;
    if(MainGas==ARGON){
       BufObject = json_object_get_object(SubObject3,"Background");
       BufObject2 = json_object_get_object(BufObject,"Argon");
-      printf("Ratio = %g,\n",(float)json_object_get_number(BufObject2,"Ratio"));
-      printf("Temp = %g,\n",(float)json_object_get_number(BufObject2,"Temp(eV)"));
+      BG[0].Pres = Total_Pressure;
+      BG[0].Temp = (float)json_object_get_number(BufObject2,"Temp(eV)");
+      printf("\tAr Ratio= 100 %\n");
       BufObject = json_object_get_object(SubObject3,"NeutralSpecies");
+      FG[0].Loadtype = (int)json_object_get_number(BufObject,"Loadtype");
+      BufObject2 = json_object_get_object(BufObject,"LoadPosition(m)");
+      FG[0].x_center = (float)json_object_get_number(BufObject2,"X0");
+      FG[0].x_fall = (float)json_object_get_number(BufObject2,"X1");
+      FG[0].y_center = (float)json_object_get_number(BufObject2,"Y0");
+      FG[0].y_fall = (float)json_object_get_number(BufObject2,"Y1");
+      if(FG[0].Loadtype == SMARTLOAD){
+      }else if(FG[0].Loadtype == UNIFORM){
+         if(FG[0].x_center>=FG[0].x_fall || FG[0].y_center>=FG[0].y_fall)
+            exit(1);
+      }else if(FG[0].Loadtype == EXPONETIAL){
+         if(FG[0].x_center*FG[0].x_fall*FG[0].y_center*FG[0].y_fall < 0)
+            exit(1);
+      }else if(FG[0].Loadtype == COSINE){
+         if(FG[0].x_center*FG[0].x_fall*FG[0].y_center*FG[0].y_fall < 0)
+            exit(1);
+      }else{
+         printf("\t\"Loadtype\" is error in NeutralSpecies.\n"); 
+         exit(1);
+      }
       BufObject2 = json_object_get_object(BufObject,"Ar*");
-      printf("Density = %g,\n",(float)json_object_get_number(BufObject2,"Density"));
-      printf("Temp = %g,\n",(float)json_object_get_number(BufObject2,"Temp(eV)"));
-      printf("Neutral Loadtype = %d,\n",(int)json_object_get_number(BufObject,"Loadtype"));
-      BufObject2 = json_object_get_object(BufObject,"LoadPosition(m)");
-      printf("X0 = %g,",(float)json_object_get_number(BufObject2,"X0"));
-      printf("X1 = %g,",(float)json_object_get_number(BufObject2,"X1"));
-      printf("Y0 = %g,",(float)json_object_get_number(BufObject2,"Y0"));
-      printf("Y1 = %g,\n",(float)json_object_get_number(BufObject2,"Y1"));
+      FG[0].InitDens =(float)json_object_get_number(BufObject2,"Density");
+      FG[0].Temp = (float)json_object_get_number(BufObject2,"Temp(eV)");
       BufObject = json_object_get_object(SubObject3,"ChargeSpecies");
-      BufObject2 = json_object_get_object(BufObject,"Electron");
-      printf("S_ID = %d,\n",(int)json_object_get_number(BufObject2,"S_ID"));
-      printf("Density = %g,\n",(float)json_object_get_number(BufObject2,"Density"));
-      printf("Temp = %g,\n",(float)json_object_get_number(BufObject2,"Temp(eV)"));
-      printf("np2c = %g,\n",(float)json_object_get_number(BufObject2,"np2c"));
-      printf("Max_np = %d,\n",(int)json_object_get_number(BufObject2,"Max_np"));
-      BufObject2 = json_object_get_object(BufObject,"Ar+");
-      printf("S_ID = %d,\n",(int)json_object_get_number(BufObject2,"S_ID"));
-      printf("Density = %g,\n",(float)json_object_get_number(BufObject2,"Density"));
-      printf("Temp = %g,\n",(float)json_object_get_number(BufObject2,"Temp(eV)"));
-      printf("np2c = %g,\n",(float)json_object_get_number(BufObject2,"np2c"));
-      printf("Max_np = %d,\n",(int)json_object_get_number(BufObject2,"Max_np"));
-      printf("Charged Loadtype = %d,\n",(int)json_object_get_number(BufObject,"Loadtype"));
+      SP[0].Loadtype = (int)json_object_get_number(BufObject,"Loadtype");
       BufObject2 = json_object_get_object(BufObject,"LoadPosition(m)");
-      printf("X0 = %g,",(float)json_object_get_number(BufObject2,"X0"));
-      printf("X1 = %g,",(float)json_object_get_number(BufObject2,"X1"));
-      printf("Y0 = %g,",(float)json_object_get_number(BufObject2,"Y0"));
-      printf("Y1 = %g,\n",(float)json_object_get_number(BufObject2,"Y1"));
+      SP[0].x_center = (float)json_object_get_number(BufObject2,"X0");
+      SP[0].x_fall = (float)json_object_get_number(BufObject2,"X1");
+      SP[0].y_center = (float)json_object_get_number(BufObject2,"Y0");
+      SP[0].y_fall = (float)json_object_get_number(BufObject2,"Y1");
+      if(SP[0].Loadtype == SMARTLOAD){
+      }else if(SP[0].Loadtype == UNIFORM){
+         if(SP[0].x_center>=SP[0].x_fall || SP[0].y_center>=SP[0].y_fall)
+            exit(1);
+      }else if(SP[0].Loadtype == EXPONETIAL){
+         if(SP[0].x_center*SP[0].x_fall*SP[0].y_center*SP[0].y_fall < 0)
+            exit(1);
+      }else if(FG[0].Loadtype == COSINE){
+         if(SP[0].x_center*SP[0].x_fall*SP[0].y_center*SP[0].y_fall < 0)
+            exit(1);
+      }else{
+         printf("\t\"Loadtype\" is error in ChargeSpecies.\n"); 
+         exit(1);
+      }
+      BufObject2 = json_object_get_object(BufObject,"Electron");
+      SP[0].S_ID = (int)json_object_get_number(BufObject2,"S_ID");
+      SP[0].InitDens = (float)json_object_get_number(BufObject2,"Density");
+      SP[0].Temp = (float)json_object_get_number(BufObject2,"Temp(eV)");
+      SP[0].np2c = (float)json_object_get_number(BufObject2,"np2c");
+      SP[0].MAXNP = (int)json_object_get_number(BufObject2,"Max_np");
+      BufObject2 = json_object_get_object(BufObject,"Ar+");
+      SP[1].S_ID = (int)json_object_get_number(BufObject2,"S_ID");
+      SP[1].InitDens = (float)json_object_get_number(BufObject2,"Density");
+      SP[1].Temp = (float)json_object_get_number(BufObject2,"Temp(eV)");
+      SP[1].np2c = (float)json_object_get_number(BufObject2,"np2c");
+      SP[1].MAXNP = (int)json_object_get_number(BufObject2,"Max_np");
    }else if(MainGas==OXYGEN){
       BufObject = json_object_get_object(SubObject3,"Background");
       BufObject2 = json_object_get_object(BufObject,"Oxygen");
-      printf("Ratio = %g,\n",(float)json_object_get_number(BufObject2,"Ratio"));
-      printf("Temp = %g,\n",(float)json_object_get_number(BufObject2,"Temp(eV)"));
+      BG[0].Pres = Total_Pressure;
+      BG[0].Temp = (float)json_object_get_number(BufObject2,"Temp(eV)");
+      printf("\tO2 Ratio= 100 %\n");
       BufObject = json_object_get_object(SubObject3,"NeutralSpecies");
+      FG[0].Loadtype = (int)json_object_get_number(BufObject,"Loadtype");
+      BufObject2 = json_object_get_object(BufObject,"LoadPosition(m)");
+      FG[0].x_center = (float)json_object_get_number(BufObject2,"X0");
+      FG[0].x_fall = (float)json_object_get_number(BufObject2,"X1");
+      FG[0].y_center = (float)json_object_get_number(BufObject2,"Y0");
+      FG[0].y_fall = (float)json_object_get_number(BufObject2,"Y1");
+      if(FG[0].Loadtype == SMARTLOAD){
+      }else if(FG[0].Loadtype == UNIFORM){
+         if(FG[0].x_center>=FG[0].x_fall || FG[0].y_center>=FG[0].y_fall)
+            exit(1);
+      }else if(FG[0].Loadtype == EXPONETIAL){
+         if(FG[0].x_center*FG[0].x_fall*FG[0].y_center*FG[0].y_fall < 0)
+            exit(1);
+      }else if(FG[0].Loadtype == COSINE){
+         if(FG[0].x_center*FG[0].x_fall*FG[0].y_center*FG[0].y_fall < 0)
+            exit(1);
+      }else{
+         printf("\t\"Loadtype\" is error in NeutralSpecies.\n"); 
+         exit(1);
+      }
       BufObject2 = json_object_get_object(BufObject,"OP");
-      printf("Density = %g,\n",(float)json_object_get_number(BufObject2,"Density"));
-      printf("Temp = %g,\n",(float)json_object_get_number(BufObject2,"Temp(eV)"));
+      FG[0].InitDens =(float)json_object_get_number(BufObject2,"Density");
+      FG[0].Temp = (float)json_object_get_number(BufObject2,"Temp(eV)");
       BufObject2 = json_object_get_object(BufObject,"OD");
-      printf("Density = %g,\n",(float)json_object_get_number(BufObject2,"Density"));
-      printf("Temp = %g,\n",(float)json_object_get_number(BufObject2,"Temp(eV)"));
+      FG[1].InitDens =(float)json_object_get_number(BufObject2,"Density");
+      FG[1].Temp = (float)json_object_get_number(BufObject2,"Temp(eV)");
       BufObject2 = json_object_get_object(BufObject,"O2A");
-      printf("Density = %g,\n",(float)json_object_get_number(BufObject2,"Density"));
-      printf("Temp = %g,\n",(float)json_object_get_number(BufObject2,"Temp(eV)"));
+      FG[2].InitDens =(float)json_object_get_number(BufObject2,"Density");
+      FG[2].Temp = (float)json_object_get_number(BufObject2,"Temp(eV)");
       BufObject2 = json_object_get_object(BufObject,"O2B");
-      printf("Density = %g,\n",(float)json_object_get_number(BufObject2,"Density"));
-      printf("Temp = %g,\n",(float)json_object_get_number(BufObject2,"Temp(eV)"));
-      printf("Neutral Loadtype = %d,\n",(int)json_object_get_number(BufObject,"Loadtype"));
-      BufObject2 = json_object_get_object(BufObject,"LoadPosition(m)");
-      printf("X0 = %g,",(float)json_object_get_number(BufObject2,"X0"));
-      printf("X1 = %g,",(float)json_object_get_number(BufObject2,"X1"));
-      printf("Y0 = %g,",(float)json_object_get_number(BufObject2,"Y0"));
-      printf("Y1 = %g,\n",(float)json_object_get_number(BufObject2,"Y1"));
+      FG[3].InitDens =(float)json_object_get_number(BufObject2,"Density");
+      FG[3].Temp = (float)json_object_get_number(BufObject2,"Temp(eV)");
       BufObject = json_object_get_object(SubObject3,"ChargeSpecies");
-      BufObject2 = json_object_get_object(BufObject,"Electron");
-      printf("S_ID = %d,\n",(int)json_object_get_number(BufObject2,"S_ID"));
-      printf("Density = %g,\n",(float)json_object_get_number(BufObject2,"Density"));
-      printf("Temp = %g,\n",(float)json_object_get_number(BufObject2,"Temp(eV)"));
-      printf("np2c = %g,\n",(float)json_object_get_number(BufObject2,"np2c"));
-      printf("Max_np = %d,\n",(int)json_object_get_number(BufObject2,"Max_np"));
-      BufObject2 = json_object_get_object(BufObject,"O2+");
-      printf("S_ID = %d,\n",(int)json_object_get_number(BufObject2,"S_ID"));
-      printf("Density = %g,\n",(float)json_object_get_number(BufObject2,"Density"));
-      printf("Temp = %g,\n",(float)json_object_get_number(BufObject2,"Temp(eV)"));
-      printf("np2c = %g,\n",(float)json_object_get_number(BufObject2,"np2c"));
-      printf("Max_np = %d,\n",(int)json_object_get_number(BufObject2,"Max_np"));
-      BufObject2 = json_object_get_object(BufObject,"O+");
-      printf("S_ID = %d,\n",(int)json_object_get_number(BufObject2,"S_ID"));
-      printf("Density = %g,\n",(float)json_object_get_number(BufObject2,"Density"));
-      printf("Temp = %g,\n",(float)json_object_get_number(BufObject2,"Temp(eV)"));
-      printf("np2c = %g,\n",(float)json_object_get_number(BufObject2,"np2c"));
-      printf("Max_np = %d,\n",(int)json_object_get_number(BufObject2,"Max_np"));
-      BufObject2 = json_object_get_object(BufObject,"O-");
-      printf("S_ID = %d,\n",(int)json_object_get_number(BufObject2,"S_ID"));
-      printf("Density = %g,\n",(float)json_object_get_number(BufObject2,"Density"));
-      printf("Temp = %g,\n",(float)json_object_get_number(BufObject2,"Temp(eV)"));
-      printf("np2c = %g,\n",(float)json_object_get_number(BufObject2,"np2c"));
-      printf("Max_np = %d,\n",(int)json_object_get_number(BufObject2,"Max_np"));
-      printf("Charged Loadtype = %d,\n",(int)json_object_get_number(BufObject,"Loadtype"));
+      SP[0].Loadtype = (int)json_object_get_number(BufObject,"Loadtype");
       BufObject2 = json_object_get_object(BufObject,"LoadPosition(m)");
-      printf("X0 = %g,",(float)json_object_get_number(BufObject2,"X0"));
-      printf("X1 = %g,",(float)json_object_get_number(BufObject2,"X1"));
-      printf("Y0 = %g,",(float)json_object_get_number(BufObject2,"Y0"));
-      printf("Y1 = %g,\n",(float)json_object_get_number(BufObject2,"Y1"));
+      SP[0].x_center = (float)json_object_get_number(BufObject2,"X0");
+      SP[0].x_fall = (float)json_object_get_number(BufObject2,"X1");
+      SP[0].y_center = (float)json_object_get_number(BufObject2,"Y0");
+      SP[0].y_fall = (float)json_object_get_number(BufObject2,"Y1");
+      if(SP[0].Loadtype == SMARTLOAD){
+      }else if(SP[0].Loadtype == UNIFORM){
+         if(SP[0].x_center>=SP[0].x_fall || SP[0].y_center>=SP[0].y_fall)
+            exit(1);
+      }else if(SP[0].Loadtype == EXPONETIAL){
+         if(SP[0].x_center*SP[0].x_fall*SP[0].y_center*SP[0].y_fall < 0)
+            exit(1);
+      }else if(FG[0].Loadtype == COSINE){
+         if(SP[0].x_center*SP[0].x_fall*SP[0].y_center*SP[0].y_fall < 0)
+            exit(1);
+      }else{
+         printf("\t\"Loadtype\" is error in ChargeSpecies.\n"); 
+         exit(1);
+      }
+      BufObject2 = json_object_get_object(BufObject,"Electron");
+      SP[0].S_ID = (int)json_object_get_number(BufObject2,"S_ID");
+      SP[0].InitDens = (float)json_object_get_number(BufObject2,"Density");
+      SP[0].Temp = (float)json_object_get_number(BufObject2,"Temp(eV)");
+      SP[0].np2c = (float)json_object_get_number(BufObject2,"np2c");
+      SP[0].MAXNP = (int)json_object_get_number(BufObject2,"Max_np");
+      BufObject2 = json_object_get_object(BufObject,"O2+");
+      SP[1].S_ID = (int)json_object_get_number(BufObject2,"S_ID");
+      SP[1].InitDens = (float)json_object_get_number(BufObject2,"Density");
+      SP[1].Temp = (float)json_object_get_number(BufObject2,"Temp(eV)");
+      SP[1].np2c = (float)json_object_get_number(BufObject2,"np2c");
+      SP[1].MAXNP = (int)json_object_get_number(BufObject2,"Max_np");
+      BufObject2 = json_object_get_object(BufObject,"O+");
+      SP[2].S_ID = (int)json_object_get_number(BufObject2,"S_ID");
+      SP[2].InitDens = (float)json_object_get_number(BufObject2,"Density");
+      SP[2].Temp = (float)json_object_get_number(BufObject2,"Temp(eV)");
+      SP[2].np2c = (float)json_object_get_number(BufObject2,"np2c");
+      SP[2].MAXNP = (int)json_object_get_number(BufObject2,"Max_np");
+      BufObject2 = json_object_get_object(BufObject,"O-");
+      SP[3].S_ID = (int)json_object_get_number(BufObject2,"S_ID");
+      SP[3].InitDens = (float)json_object_get_number(BufObject2,"Density");
+      SP[3].Temp = (float)json_object_get_number(BufObject2,"Temp(eV)");
+      SP[3].np2c = (float)json_object_get_number(BufObject2,"np2c");
+      SP[3].MAXNP = (int)json_object_get_number(BufObject2,"Max_np");
    }else if(MainGas==ARO2){
       BufObject = json_object_get_object(SubObject3,"Background");
-      BufObject2 = json_object_get_object(BufObject,"Oxygen");
-      printf("Ratio = %g,\n",(float)json_object_get_number(BufObject2,"Ratio"));
-      printf("Temp = %g,\n",(float)json_object_get_number(BufObject2,"Temp(eV)"));
       BufObject2 = json_object_get_object(BufObject,"Argon");
-      printf("Ratio = %g,\n",(float)json_object_get_number(BufObject2,"Ratio"));
-      printf("Temp = %g,\n",(float)json_object_get_number(BufObject2,"Temp(eV)"));
+      fbuf = (float)json_object_get_number(BufObject2,"Ratio");
+      BG[0].Temp = (float)json_object_get_number(BufObject2,"Temp(eV)");
+      BufObject2 = json_object_get_object(BufObject,"Oxygen");
+      fbuf = (float)json_object_get_number(BufObject2,"Ratio")/(fbuf+(float)json_object_get_number(BufObject2,"Ratio"));
+      BG[1].Temp = (float)json_object_get_number(BufObject2,"Temp(eV)");
+      BG[0].Pres = Total_Pressure*(1-fbuf);
+      BG[1].Pres = Total_Pressure*fbuf;
+      printf("\tAr Ratio= %3.3g, (%0.3g %)\n",(1-fbuf)/(1-fbuf),(1-fbuf)*100);
+      printf("\tO2 Ratio= %0.3g, (%0.3g %)\n",fbuf/(1-fbuf),(fbuf)*100);
+      fbuf = 0.0;
       BufObject = json_object_get_object(SubObject3,"NeutralSpecies");
+      FG[0].Loadtype = (int)json_object_get_number(BufObject,"Loadtype");
+      BufObject2 = json_object_get_object(BufObject,"LoadPosition(m)");
+      FG[0].x_center = (float)json_object_get_number(BufObject2,"X0");
+      FG[0].x_fall = (float)json_object_get_number(BufObject2,"X1");
+      FG[0].y_center = (float)json_object_get_number(BufObject2,"Y0");
+      FG[0].y_fall = (float)json_object_get_number(BufObject2,"Y1");
+      if(FG[0].Loadtype == SMARTLOAD){
+      }else if(FG[0].Loadtype == UNIFORM){
+         if(FG[0].x_center>=FG[0].x_fall || FG[0].y_center>=FG[0].y_fall)
+            exit(1);
+      }else if(FG[0].Loadtype == EXPONETIAL){
+         if(FG[0].x_center*FG[0].x_fall*FG[0].y_center*FG[0].y_fall < 0)
+            exit(1);
+      }else if(FG[0].Loadtype == COSINE){
+         if(FG[0].x_center*FG[0].x_fall*FG[0].y_center*FG[0].y_fall < 0)
+            exit(1);
+      }else{
+         printf("\t\"Loadtype\" is error in NeutralSpecies.\n"); 
+         exit(1);
+      }
       BufObject2 = json_object_get_object(BufObject,"Ar*");
-      printf("Density = %g,\n",(float)json_object_get_number(BufObject2,"Density"));
-      printf("Temp = %g,\n",(float)json_object_get_number(BufObject2,"Temp(eV)"));
+      FG[0].InitDens =(float)json_object_get_number(BufObject2,"Density");
+      FG[0].Temp = (float)json_object_get_number(BufObject2,"Temp(eV)");
       BufObject2 = json_object_get_object(BufObject,"OP");
-      printf("Density = %g,\n",(float)json_object_get_number(BufObject2,"Density"));
-      printf("Temp = %g,\n",(float)json_object_get_number(BufObject2,"Temp(eV)"));
+      FG[1].InitDens =(float)json_object_get_number(BufObject2,"Density");
+      FG[1].Temp = (float)json_object_get_number(BufObject2,"Temp(eV)");
       BufObject2 = json_object_get_object(BufObject,"OD");
-      printf("Density = %g,\n",(float)json_object_get_number(BufObject2,"Density"));
-      printf("Temp = %g,\n",(float)json_object_get_number(BufObject2,"Temp(eV)"));
+      FG[2].InitDens =(float)json_object_get_number(BufObject2,"Density");
+      FG[2].Temp = (float)json_object_get_number(BufObject2,"Temp(eV)");
       BufObject2 = json_object_get_object(BufObject,"O2A");
-      printf("Density = %g,\n",(float)json_object_get_number(BufObject2,"Density"));
-      printf("Temp = %g,\n",(float)json_object_get_number(BufObject2,"Temp(eV)"));
+      FG[3].InitDens =(float)json_object_get_number(BufObject2,"Density");
+      FG[3].Temp = (float)json_object_get_number(BufObject2,"Temp(eV)");
       BufObject2 = json_object_get_object(BufObject,"O2B");
-      printf("Density = %g,\n",(float)json_object_get_number(BufObject2,"Density"));
-      printf("Temp = %g,\n",(float)json_object_get_number(BufObject2,"Temp(eV)"));
-      printf("Neutral Loadtype = %d,\n",(int)json_object_get_number(BufObject,"Loadtype"));
-      BufObject2 = json_object_get_object(BufObject,"LoadPosition(m)");
-      printf("X0 = %g,",(float)json_object_get_number(BufObject2,"X0"));
-      printf("X1 = %g,",(float)json_object_get_number(BufObject2,"X1"));
-      printf("Y0 = %g,",(float)json_object_get_number(BufObject2,"Y0"));
-      printf("Y1 = %g,\n",(float)json_object_get_number(BufObject2,"Y1"));
+      FG[4].InitDens =(float)json_object_get_number(BufObject2,"Density");
+      FG[4].Temp = (float)json_object_get_number(BufObject2,"Temp(eV)");
       BufObject = json_object_get_object(SubObject3,"ChargeSpecies");
-      BufObject2 = json_object_get_object(BufObject,"Electron");
-      printf("S_ID = %d,\n",(int)json_object_get_number(BufObject2,"S_ID"));
-      printf("Density = %g,\n",(float)json_object_get_number(BufObject2,"Density"));
-      printf("Temp = %g,\n",(float)json_object_get_number(BufObject2,"Temp(eV)"));
-      printf("np2c = %g,\n",(float)json_object_get_number(BufObject2,"np2c"));
-      printf("Max_np = %d,\n",(int)json_object_get_number(BufObject2,"Max_np"));
-      BufObject2 = json_object_get_object(BufObject,"Ar+");
-      printf("S_ID = %d,\n",(int)json_object_get_number(BufObject2,"S_ID"));
-      printf("Density = %g,\n",(float)json_object_get_number(BufObject2,"Density"));
-      printf("Temp = %g,\n",(float)json_object_get_number(BufObject2,"Temp(eV)"));
-      printf("np2c = %g,\n",(float)json_object_get_number(BufObject2,"np2c"));
-      printf("Max_np = %d,\n",(int)json_object_get_number(BufObject2,"Max_np"));
-      BufObject2 = json_object_get_object(BufObject,"O2+");
-      printf("S_ID = %d,\n",(int)json_object_get_number(BufObject2,"S_ID"));
-      printf("Density = %g,\n",(float)json_object_get_number(BufObject2,"Density"));
-      printf("Temp = %g,\n",(float)json_object_get_number(BufObject2,"Temp(eV)"));
-      printf("np2c = %g,\n",(float)json_object_get_number(BufObject2,"np2c"));
-      printf("Max_np = %d,\n",(int)json_object_get_number(BufObject2,"Max_np"));
-      BufObject2 = json_object_get_object(BufObject,"O+");
-      printf("S_ID = %d,\n",(int)json_object_get_number(BufObject2,"S_ID"));
-      printf("Density = %g,\n",(float)json_object_get_number(BufObject2,"Density"));
-      printf("Temp = %g,\n",(float)json_object_get_number(BufObject2,"Temp(eV)"));
-      printf("np2c = %g,\n",(float)json_object_get_number(BufObject2,"np2c"));
-      printf("Max_np = %d,\n",(int)json_object_get_number(BufObject2,"Max_np"));
-      BufObject2 = json_object_get_object(BufObject,"O-");
-      printf("S_ID = %d,\n",(int)json_object_get_number(BufObject2,"S_ID"));
-      printf("Density = %g,\n",(float)json_object_get_number(BufObject2,"Density"));
-      printf("Temp = %g,\n",(float)json_object_get_number(BufObject2,"Temp(eV)"));
-      printf("np2c = %g,\n",(float)json_object_get_number(BufObject2,"np2c"));
-      printf("Max_np = %d,\n",(int)json_object_get_number(BufObject2,"Max_np"));
-      printf("Charged Loadtype = %d,\n",(int)json_object_get_number(BufObject,"Loadtype"));
+      SP[0].Loadtype = (int)json_object_get_number(BufObject,"Loadtype");
       BufObject2 = json_object_get_object(BufObject,"LoadPosition(m)");
-      printf("X0 = %g,",(float)json_object_get_number(BufObject2,"X0"));
-      printf("X1 = %g,",(float)json_object_get_number(BufObject2,"X1"));
-      printf("Y0 = %g,",(float)json_object_get_number(BufObject2,"Y0"));
-      printf("Y1 = %g,\n",(float)json_object_get_number(BufObject2,"Y1"));
+      SP[0].x_center = (float)json_object_get_number(BufObject2,"X0");
+      SP[0].x_fall = (float)json_object_get_number(BufObject2,"X1");
+      SP[0].y_center = (float)json_object_get_number(BufObject2,"Y0");
+      SP[0].y_fall = (float)json_object_get_number(BufObject2,"Y1");
+      if(SP[0].Loadtype == SMARTLOAD){
+      }else if(SP[0].Loadtype == UNIFORM){
+         if(SP[0].x_center>=SP[0].x_fall || SP[0].y_center>=SP[0].y_fall)
+            exit(1);
+      }else if(SP[0].Loadtype == EXPONETIAL){
+         if(SP[0].x_center*SP[0].x_fall*SP[0].y_center*SP[0].y_fall < 0)
+            exit(1);
+      }else if(FG[0].Loadtype == COSINE){
+         if(SP[0].x_center*SP[0].x_fall*SP[0].y_center*SP[0].y_fall < 0)
+            exit(1);
+      }else{
+         printf("\t\"Loadtype\" is error in ChargeSpecies.\n"); 
+         exit(1);
+      }
+      BufObject2 = json_object_get_object(BufObject,"Electron");
+      SP[0].S_ID = (int)json_object_get_number(BufObject2,"S_ID");
+      SP[0].InitDens = (float)json_object_get_number(BufObject2,"Density");
+      SP[0].Temp = (float)json_object_get_number(BufObject2,"Temp(eV)");
+      SP[0].np2c = (float)json_object_get_number(BufObject2,"np2c");
+      SP[0].MAXNP = (int)json_object_get_number(BufObject2,"Max_np");
+      BufObject2 = json_object_get_object(BufObject,"Ar+");
+      SP[1].S_ID = (int)json_object_get_number(BufObject2,"S_ID");
+      SP[1].InitDens = (float)json_object_get_number(BufObject2,"Density");
+      SP[1].Temp = (float)json_object_get_number(BufObject2,"Temp(eV)");
+      SP[1].np2c = (float)json_object_get_number(BufObject2,"np2c");
+      SP[1].MAXNP = (int)json_object_get_number(BufObject2,"Max_np");
+      BufObject2 = json_object_get_object(BufObject,"O2+");
+      SP[2].S_ID = (int)json_object_get_number(BufObject2,"S_ID");
+      SP[2].InitDens = (float)json_object_get_number(BufObject2,"Density");
+      SP[2].Temp = (float)json_object_get_number(BufObject2,"Temp(eV)");
+      SP[2].np2c = (float)json_object_get_number(BufObject2,"np2c");
+      SP[2].MAXNP = (int)json_object_get_number(BufObject2,"Max_np");
+      BufObject2 = json_object_get_object(BufObject,"O+");
+      SP[3].S_ID = (int)json_object_get_number(BufObject2,"S_ID");
+      SP[3].InitDens = (float)json_object_get_number(BufObject2,"Density");
+      SP[3].Temp = (float)json_object_get_number(BufObject2,"Temp(eV)");
+      SP[3].np2c = (float)json_object_get_number(BufObject2,"np2c");
+      SP[3].MAXNP = (int)json_object_get_number(BufObject2,"Max_np");
+      BufObject2 = json_object_get_object(BufObject,"O-");
+      SP[4].S_ID = (int)json_object_get_number(BufObject2,"S_ID");
+      SP[4].InitDens = (float)json_object_get_number(BufObject2,"Density");
+      SP[4].Temp = (float)json_object_get_number(BufObject2,"Temp(eV)");
+      SP[4].np2c = (float)json_object_get_number(BufObject2,"np2c");
+      SP[4].MAXNP = (int)json_object_get_number(BufObject2,"Max_np");
    }else{
       exit(1);
    }
+   exit(1);
    //-------------------------//
    //----SimulationMethod-----//
    //-------------------------//
