@@ -6,6 +6,11 @@ extern int cstep; // Number of Cycle step
 extern int DumpFlag; // Dump File ON,OFF
 extern char InputFile[80]; // INPUT FILE NAME
 extern char DumpFile[80];  // DUMP FILE NAME
+extern char *ConstBFile;  // DUMP FILE NAME
+
+extern void Argon_CrossSection(CollF *CF);
+extern void Oygen_CrossSection(CollF *CF);
+extern void ArO2_CrossSection(CollF *CF);
 
 #ifndef __START_H__
 #define __START_H__
@@ -28,17 +33,38 @@ float *CondTEMP;
 int SrcNUN;
 int *SrcM_ID;
 float *SrcDC, *SrcPOWER, *SrcAC, *SrcFREQ, *SrcPHASE, *SrcR, *SrcL, *SrcC;
-float Min_FREQ;
+float Min_FREQ, Max_FREQ;
 int DielNUN;
 int *DielM_ID, *DielX0, *DielX1, *DielY0, *DielY1;
 float *DielEPS;
+//
 int MainGas; // Gas type 0:argon, 1:oxygen, 2:argon/oxygen
 int nsp, nfsp, nBG;
 Species *SP;// particle species
 Fluid *FG;	// fluid species
 BackG *BG;	// background species
 float Total_Pressure;
+//
+int DT_PIC;
+int DT_CONTI;
+float dt;   // timestsep for PIC
+float dtc; // time step for continuity equation
+float PCGtol;
+int HISTMAX;
+int dHIST;
+int np_lim; // total particle limit
+int N_smt;  // Number of smoothing every timestep
+int ConstB_Flag; // Magnetic field 
+//
+int Basic_Flag; // 0 : Basic, 1: OTHERS
+//
+int nRct_cx,nRct_rc; // Number of reaction _ cross section or Reaction rate
+int TnRct; // Total Number of reaction 
+int mMnum;
+CollF *Coll_Flag;
 
+//
+//
 void InputRead(int argc, char *argv[]);
 void start();
 void DumpRead(int argc, char *argv[]);
@@ -62,4 +88,7 @@ void MFCopy(float **M,float **C,int sizeX,int sizeY);
 void MICopy(int **M,int **C,int sizeX,int sizeY);
 void VFCopy(float *V,float *C,int size);
 void VICopy(int *V,int *C,int size);
+int IVnZC(char A[50],int Value); // Int Value non Zero CHECK
+float FIVnZC(char A[50],float Value);// float Value non Zero CHECK
+int N_ave;
 #endif

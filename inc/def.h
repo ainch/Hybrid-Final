@@ -72,6 +72,44 @@ typedef struct _ChargedParticle
 	float vy;
 	float vz;
 } CP;
+typedef struct _Collision_Flag
+{
+    int Flag;
+	float mofM;
+} CollF;
+typedef struct _Argon_Collision_Data
+{
+    float xe;
+	float cx_0; //"0.e+Ar>e+Ar"
+	float cx_1; //"1.e+Ar>e+Ar*"
+	float cx_2; //"2.e+Ar>e+Ar*m"
+	float cx_3; //"3.e+Ar>2e+Ar^"
+	float cx_4; //"4.e+Ar*m>2e+Ar^"
+	float cx_5; //"5.Ar+Ar^>Ar^+Ar"
+	float cx_6; //"6.Ar+Ar^>Ar+Ar^"
+} ArCollD;
+typedef struct _Oxygen_Collision_Data
+{
+    float xe;
+	float cx_0; //"0.e+Ar>e+Ar"
+	float cx_1; //"1.e+Ar>e+Ar*"
+	float cx_2; //"2.e+Ar>e+Ar*m"
+	float cx_3; //"3.e+Ar>2e+Ar^"
+	float cx_4; //"4.e+Ar*m>2e+Ar^"
+	float cx_5; //"5.Ar+Ar^>Ar^+Ar"
+	float cx_6; //"6.Ar+Ar^>Ar+Ar^"
+} O2CollD;
+typedef struct _ArO2_Collision_Data
+{
+    float xe;
+	float cx_0; //"0.e+Ar>e+Ar"
+	float cx_1; //"1.e+Ar>e+Ar*"
+	float cx_2; //"2.e+Ar>e+Ar*m"
+	float cx_3; //"3.e+Ar>2e+Ar^"
+	float cx_4; //"4.e+Ar*m>2e+Ar^"
+	float cx_5; //"5.Ar+Ar^>Ar^+Ar"
+	float cx_6; //"6.Ar+Ar^>Ar+Ar^"
+} ArO2CollD;
 #endif
 
 #ifndef TotalDomain

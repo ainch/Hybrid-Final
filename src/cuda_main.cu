@@ -15,6 +15,7 @@ __global__ void testKernel(point *p)
     p[i].a = 1.1;
     p[i].b = 2.2;
     printf("A data[%d] %g, %g\n",i,p[i].a,p[i].b);
+    
 }
 __global__ void MakeVectorForMoveKernel(int ngx,int ngy,point *p)
 {
@@ -25,8 +26,8 @@ __global__ void MakeVectorForMoveKernel(int ngx,int ngy,point *p)
 int test(void)
 {
     // set number of points 
-    int numPoints    = 1;
-    int gpuBlockSize = 1;
+    int numPoints    = 4;
+    int gpuBlockSize = 4;
     int pointSize    = sizeof(point);
     int numBytes     = numPoints * pointSize;
     int gpuGridSize  = numPoints / gpuBlockSize;
@@ -34,11 +35,10 @@ int test(void)
     point *gpuPointArray;
         // allocate memory
     cpuPointArray = (point*)malloc(numBytes);
-    gpuPointArray = (point*)malloc(numBytes);
     cudaMalloc((void**)&gpuPointArray, numBytes);
 
     // launch kernel
-    MakeVectorForMoveKernel<<<gpuGridSize,gpuBlockSize>>>(ngx,ngy,gpuPointArray);
+    //MakeVectorForMoveKernel<<<gpuGridSize,gpuBlockSize>>>(ngx,ngy,gpuPointArray);
     testKernel<<<gpuGridSize,gpuBlockSize>>>(gpuPointArray);
 
     // retrieve the results

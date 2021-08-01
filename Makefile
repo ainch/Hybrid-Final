@@ -18,7 +18,8 @@ OBJ_DIR := ./obj
 
 C_OBJS = $(OBJ_DIR)/main.o \
           $(OBJ_DIR)/parson.o \
-          $(OBJ_DIR)/start.o
+          $(OBJ_DIR)/start.o \
+          $(OBJ_DIR)/PhysicsData.o
 #          $(OBJ_DIR)/load.o \
 #          $(OBJ_DIR)/savedata.o \
 #          $(OBJ_DIR)/mccTools.o \
@@ -40,7 +41,8 @@ CU_OBJS = $(OBJ_DIR)/cuda_main.o \
 C_H_FILES = inc/xypic.h \
             inc/main.h \
             inc/start.h \
-            inc/def.h
+            inc/def.h \
+            inc/PhysicsData.h 
 
 CU_H_FILES = inc/xypic.cuh \
              inc/cuda_main.cuh \

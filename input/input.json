@@ -74,15 +74,16 @@
     },
     "SimulationMethod":
     {
-        "TimeStepForPIC": 5000,
-        "TimeStepForConti": 5,
-        "PCGMarginOfError":1e-6,
+        "TimeStep_PIC": 5000,
+        "TimeStep_Conti": 20,
+        "PCGMarginOfError":1e-3,
         "HistoryMax":1000000,
         "HistoryDivide":2,
         "AverageIter":50000,
         "DensitySmoothing":5,
         "ParticleLimit":1e7,
-        "B_flag":"Magnetic.txt",
+        "ConstB_Flag":0,
+        "ConstB_File":"Magnetic.txt",
         "Initialing_Int":
         {
             "Flag":0,
@@ -115,13 +116,31 @@
                 "AveMargin(%)":0.5,
                 "SatGoal":30
             }
-
         },
         "DumpFileType":0
     },
     "Diagnostics":
     {
         "BasicDiagnostic":1,
+        "TecplotSave":
+        {
+            "Tecplot2D":10,
+            "Tec_Movie":10,
+            "Tec_Movie_FrameNum":100,
+            "Tec_Ave_Movie":10,
+            "Tec_Ave_Movie_Interval":1,
+            "Tec_Ave_Movie_num":100
+        },
+        "DumpFileSave":
+        {
+            "Cycle":
+            [
+                {"Start":0.25,"End":1.0,"Term":0.25},
+                {"Start":1.0,"End":135.0,"Term":10.0},
+                {"Start":135.0,"End":1356.0,"Term":100.0},
+                {"Start":1356.0,"End":13560.0,"Term":200.0}
+            ]
+        },
         "ElectronRefection":
         {
             "Flag":0,
@@ -182,26 +201,7 @@
             "Init_Position":0,
             "Init_Velocity":0,
             "Tecplot_Save":0
-        },
-        "TecplotSave":
-        {
-            "Tecplot2D":10,
-            "Tec_Movie":10,
-            "Tec_Movie_FrameNum":100,
-            "Tec_Ave_Movie":10,
-            "Tec_Ave_Movie_Interval":1,
-            "Tec_Ave_Movie_num":100
-        },
-        "DumpFileSave":
-        {
-            "Cycle":
-            [
-                {"Start":0.25,"End":1.0,"Term":0.25},
-                {"Start":1.0,"End":135.0,"Term":10.0},
-                {"Start":135.0,"End":1356.0,"Term":100.0},
-                {"Start":1356.0,"End":13560.0,"Term":200.0}
-            ]
-        }   
+        }
     },
     "CollisionSelect":
     {
