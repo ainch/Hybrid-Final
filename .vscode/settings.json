@@ -6,7 +6,8 @@
         "time.h": "c",
         "random": "cpp",
         "queue": "cpp",
-        "stack": "cpp"
+        "stack": "cpp",
+        "complex": "c"
     },
     "C_Cpp.errorSquiggles": "Disabled"
 }

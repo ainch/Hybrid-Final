@@ -8,9 +8,9 @@ extern char InputFile[80]; // INPUT FILE NAME
 extern char DumpFile[80];  // DUMP FILE NAME
 extern char *ConstBFile;  // DUMP FILE NAME
 
-extern void Argon_CrossSection(CollF *CF);
-extern void Oygen_CrossSection(CollF *CF);
-extern void ArO2_CrossSection(CollF *CF);
+extern void Argon_CrossSectionSET(CollF *CF);
+extern void Oygen_CrossSectionSET(CollF *CF);
+extern void ArO2_CrossSectionSET(CollF *CF);
 
 #ifndef __START_H__
 #define __START_H__
@@ -61,6 +61,7 @@ int Basic_Flag; // 0 : Basic, 1: OTHERS
 int nRct_cx,nRct_rc; // Number of reaction _ cross section or Reaction rate
 int TnRct; // Total Number of reaction 
 int mMnum;
+int CX_TEC_Flag;
 CollF *Coll_Flag;
 
 //

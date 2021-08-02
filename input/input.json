@@ -41,7 +41,7 @@
     },
     "GasSpecies":
     {
-        "Type(0:Ar,1:O2,2:Ar/O2)":0,
+        "Type(0:Ar,1:O2,2:Ar/O2)":2,
         "TotalPres(Torr)":1.0,
         "Background":{
             "Argon":{"Ratio":50,"Temp(eV)":0.026},
@@ -207,6 +207,7 @@
     {
         "ArgonCase":
         {
+            "TecplotSave":0,
             "0.e+Ar>e+Ar":1,
             "1.e+Ar>e+Ar*":1,
             "2.e+Ar>e+Ar*m":1,
@@ -220,6 +221,7 @@
         },
         "OxygenCase":
         {
+            "TecplotSave":0,
             "0.e+O2>e+O2":1,
             "1.e+O2>e+O2*":1,
             "2.e+O2>e+O2*":1,
@@ -290,6 +292,7 @@
         },
         "Argon/OxygenCase":
         {
+            "TecplotSave":0,
             "0.e+Ar>e+Ar":1,
             "1.e+Ar>e+Ar*":1,
             "2.e+Ar>e+Ar*m":1,

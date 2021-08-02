@@ -6,6 +6,7 @@
 #define EPS0 8.8542e-12      /* (F/m)  */
 #define KB 1.38064852e-23
 #define C0 3.0e8
+#define CQ 1.602e-19
 #define SNG_MIN 1e-200
 #define DBL_MIN 1E-200
 #define NperTORR   8.3221e20
@@ -75,11 +76,14 @@ typedef struct _ChargedParticle
 typedef struct _Collision_Flag
 {
     int Flag;
-	float mofM;
+	float mofM; // target/projectile
+	float Th_e; //Threshold energy
+	float RR; // Reaction RATE
 } CollF;
 typedef struct _Argon_Collision_Data
 {
-    float xe;
+    float xe;  // log10(xee)
+	float xee; // pow(10,xe)
 	float cx_0; //"0.e+Ar>e+Ar"
 	float cx_1; //"1.e+Ar>e+Ar*"
 	float cx_2; //"2.e+Ar>e+Ar*m"
@@ -90,31 +94,146 @@ typedef struct _Argon_Collision_Data
 } ArCollD;
 typedef struct _Oxygen_Collision_Data
 {
-    float xe;
-	float cx_0; //"0.e+Ar>e+Ar"
-	float cx_1; //"1.e+Ar>e+Ar*"
-	float cx_2; //"2.e+Ar>e+Ar*m"
-	float cx_3; //"3.e+Ar>2e+Ar^"
-	float cx_4; //"4.e+Ar*m>2e+Ar^"
-	float cx_5; //"5.Ar+Ar^>Ar^+Ar"
-	float cx_6; //"6.Ar+Ar^>Ar+Ar^"
+    float xe;  // log10(xee)
+	float xee; // pow(10,xe)
+	float cx_0; //"0.e+O2>e+O2");
+    float cx_1; //"1.e+O2>e+O2*");
+    float cx_2; //"2.e+O2>e+O2*");
+    float cx_3; //"3.e+O2>e+O2A");
+    float cx_4; //"4.e+O2>e+O2B");
+    float cx_5; //"5.e+O2>e+O2*");
+    float cx_6; //"6.e+O2>OP+O-");
+    float cx_7; //"7.e+O2>e+2OP");
+    float cx_8; //"8.e+O2>e+OP+OD");
+    float cx_9; //"9.e+O2>e+2OD");
+    float cx_10; //"10.e+O2>2e+O2^");
+    float cx_11; //"11.e+O2>e+OP+O*");
+    float cx_12; //"12.e+O2>e+O^+O-");
+    float cx_13; //"13.e+O2>2e+O^+OP");
+    float cx_14; //"14.e+O2A>2e+O2+");
+    float cx_15; //"15.e+O2A>OP+O-");
+    float cx_16; //"16.e+O2A>e+O2");
+    float cx_17; //"17.e+O2A>e+O2");
+    float cx_18; //"18.e+O2A>e+2OP");
+    float cx_19; //"19.e+O2A>e+OP+OD");
+    float cx_20; //"20.e+O2A>e+2OD");
+    float cx_21; //"21.e+O2A>2e+O^+OP");
+    float cx_22; //"22.e+O2B>2e+O2^");
+    float cx_23; //"23.e+O2B>OP+O-");
+    float cx_24; //"24.e+O2B>e+O2");
+    float cx_25; //"25.e+O2B>e+O2");
+    float cx_26; //"26.e+O2B>e+2O");
+    float cx_27; //"27.e+O2B>e+OP+OD");
+    float cx_28; //"28.e+O2B>e+2OD");
+    float cx_29; //"29.e+O2B>2e+O^+OP");
+    float cx_30; //"30.e+O->2e+OP");
+    float cx_31; //"31.e+O2^>OP+OD");
+    float cx_32; //"32.e+OP>e+OP");
+    float cx_33; //"33.e+OP>e+OD");
+    float cx_34; //"34.e+OP>e+O*");
+    float cx_35; //"35.e+OP>e+O*");
+    float cx_36; //"36.e+OP>e+O*");
+    float cx_37; //"37.e+OP>2e+O^");
+    float cx_38; //"38.e+OP>e+O*");
+    float cx_39; //"39.e+OD>2e+O^");
+    float cx_40; //"40.e+OD>e+OP");
+    float cx_41; //"41.O-+O2>O-+O2");
+    float cx_42; //"42.O-+O2>e+OP+O2");
+    float cx_43; //"43.O-+OP>e+O2");
+    float cx_44; //"44.O-+O2^>OP+O2");
+    float cx_45; //"45.O-+O^>2OP");
+    float cx_46; //"46.O-+O2A>e+OP+O2");
+    float cx_47; //"47.O2^+OP>O2+O^");
+    float cx_48; //"48.O2^+O2>O2+O2^");
+    float cx_49; //"49.O2^+O2>O2^+O2");
+    float cx_50; //"50.O2^+O2>O^+OP+O2");
+    float cx_51; //"51.O2^+O2A>O2+O2^");
+    float cx_52; //"52.O2^+O2B>O2+O2^");
+    float cx_53; //"53.O^+O2>OP+O2^");
+    float cx_54; //"54.O^+O2>O^+O2");
+    float cx_55; //"55.O^+OP>OP+O^");
+    float cx_56; //"56.O^+O2A>O2^+OP");
+    float cx_57; //"57.O^+O2B>O2^+OP");
 } O2CollD;
 typedef struct _ArO2_Collision_Data
 {
-    float xe;
-	float cx_0; //"0.e+Ar>e+Ar"
-	float cx_1; //"1.e+Ar>e+Ar*"
-	float cx_2; //"2.e+Ar>e+Ar*m"
-	float cx_3; //"3.e+Ar>2e+Ar^"
-	float cx_4; //"4.e+Ar*m>2e+Ar^"
-	float cx_5; //"5.Ar+Ar^>Ar^+Ar"
-	float cx_6; //"6.Ar+Ar^>Ar+Ar^"
+    float xe;  // log10(xee)
+	float xee; // pow(10,xe)
+    float cx_0; //0.e+Ar>e+Ar");
+    float cx_1; //1.e+Ar>e+Ar*");
+    float cx_2; //2.e+Ar>e+Ar*m");
+    float cx_3; //3.e+Ar>2e+Ar+");
+    float cx_4; //4.e+Ar*m>2e+Ar^");
+    float cx_5; //5.e+O2>e+O2");
+    float cx_6; //6.e+O2>e+O2*");
+    float cx_7; //7.e+O2>e+O2*");
+    float cx_8; //8.e+O2>e+O2A");
+    float cx_9; //9.e+O2>e+O2B");
+    float cx_10; //"10.e+O2>e+O2*");
+    float cx_11; //"11.e+O2>OP+O-");
+    float cx_12; //"12.e+O2>e+2OP");
+    float cx_13; //"13.e+O2>e+OP+OD");
+    float cx_14; //"14.e+O2>e+2OD");
+    float cx_15; //"15.e+O2>2e+O2+");
+    float cx_16; //"16.e+O2>e+OP+O*");
+    float cx_17; //"17.e+O2>e+O++O-");
+    float cx_18; //"18.e+O2>2e+O^+OP");
+    float cx_19; //"19.e+O2A>2e+O2^");
+    float cx_20; //"20.e+O2A>OP+O-");
+    float cx_21; //"21.e+O2A>e+O2");
+    float cx_22; //"22.e+O2A>e+O2");
+    float cx_23; //"23.e+O2A>e+2O"); 
+    float cx_24; //"24.e+O2A>e+OP+OD");
+    float cx_25; //"25.e+O2A>e+2OD");
+    float cx_26; //"26.e+O2A>2e+O^+OP");
+    float cx_27; //"27.e+O2B>2e+O2^");
+    float cx_28; //"28.e+O2B>OP+O-");
+    float cx_29; //"29.e+O2B>e+O2");
+    float cx_30; //"30.e+O2B>e+O2");
+    float cx_31; //"31.e+O2B>e+2O");
+    float cx_32; //"32.e+O2B>e+OP+OD");
+    float cx_33; //"33.e+O2B>e+2OD");
+    float cx_34; //"34.e+O2B>2e+O++OP");
+    float cx_35; //"35.e+O->2e+OP");
+    float cx_36; //"36.e+O2+>OP+OD ");
+    float cx_37; //"37.e+OP>e+OP");
+    float cx_38; //"38.e+OP>e+OD");
+    float cx_39; //"39.e+OP>e+O*");
+    float cx_40; //"40.e+OP>e+O*");
+    float cx_41; //"41.e+OP>e+O*");
+    float cx_42; //"42.e+OP>2e+O^");
+    float cx_43; //"43.e+OP>e+O*");
+    float cx_44; //"44.e+OD>2e+O+");
+    float cx_45; //"45.e+OD>e+O");
+    float cx_46; //"46.O-+O2>O-+O2");
+    float cx_47; //"47.O-+O2>e+OP+O2");
+    float cx_48; //"48.O-+OP>e+O2");
+    float cx_49; //"49.O-+O2^>OP+O2");
+    float cx_50; //"50.O-+O^>2OP");
+    float cx_51; //"51.O-+O2A>e+OP+O2");  
+    float cx_52; //"52.O2^+OP>O2+O^");
+    float cx_53; //"53.O2^+O2>O2+O2^");
+    float cx_54; //"54.O2^+O2>O2^+O2");   
+    float cx_55; //"55.O2^+O2>O^+OP+O2");
+    float cx_56; //"56.O2^+O2A>O2+O2^");
+    float cx_57; //"57.O2^+O2B>O2+O2^");
+    float cx_58; //"58.O2^+Ar>O2+Ar^");
+    float cx_59; //"59.O2^+Ar>O2^+Ar^");
+    float cx_60; //"60.O^+O2>OP+O2^");
+    float cx_61; //"61.O^+O2>O^+O2");
+    float cx_62; //"62.O^+OP>OP+O^");
+    float cx_63; //"63.O^+O2A>O2^+OP");
+    float cx_64; //"64.O^+O2B>O2^+OP");
+    float cx_65; //"65.Ar^+Ar>Ar+Ar^");
+    float cx_66; //"66.Ar^+Ar>Ar++Ar");
+    float cx_67; //"67.Ar^+O2>O2+Ar^");
 } ArO2CollD;
 #endif
 
 #ifndef TotalDomain
 typedef struct tag_species{
 	//Constant
+	char name[10];
 	int  Loadtype;		// density load type
 	float x_center,x_fall;		// density load position
 	float y_center,y_fall;		// density load position
@@ -123,12 +242,9 @@ typedef struct tag_species{
 	float Temp;			//Load temperature
 	float np2c;			// np2c
 	int MAXNP;			// maximum np
-	//char name[10];		// string name
-	//int load_type;		// particle load type
-	//float init_xleft, init_xright, init_ybottom, init_ytop;
-	//
-	//
-	//
+	float mass;
+	float q;
+
 	//int   PTN;			// if loadtype = 0 or 1, it is not working
 	// if loadtype = 2 or 3, minimum number of particle in cell
 	// if loadtype = 4, Number of particle for load type = 4 case	
@@ -165,14 +281,13 @@ typedef struct tag_species{
 #endif
 #ifndef TotalDomain
 typedef struct fluid{
-	//int  Cname;					// species name
-	//char name[10];				// string name
+	char name[10];				// string name
 	int   Loadtype;				// density load type
 	float x_center,x_fall;		// density load position
 	float y_center,y_fall;		// density load position
 	float InitDens;				// initial density
 	float Temp;					// Temperature
-	//float m;					// Mass
+	float mass;
 	//float *HistDen;				//
 	//float **den;				// density of each of cell using update_source();
 	//float **sum_den;			// for Average density
@@ -198,10 +313,10 @@ typedef struct fluid{
 #endif
 #ifndef TotalDomain
 typedef struct BackGround{
-	//int  Cname;					// species Number
-	//char name[10];				// string name
+	char name[10];				// string name
 	float Pres;				    // Pressure
 	float Temp;				// Temperature
+	float mass;
 	//float GasDensity;			// density [m^-3]
 	//float GasThermalVelocity;	// thermal velocity
 	//float m;					// Mass

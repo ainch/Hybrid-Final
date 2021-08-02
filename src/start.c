@@ -226,8 +226,10 @@ void InputRead(int argc, char *argv[]) {
 	case ARGON: {	// ONLY ARGON
       BufObject = json_object_get_object(SubObject3,"Background");
       BufObject2 = json_object_get_object(BufObject,"Argon");
+      strcpy(BG[0].name,"Argon");
       BG[0].Pres = Total_Pressure;
       BG[0].Temp = (float)json_object_get_number(BufObject2,"Temp(eV)");
+      BG[0].mass = 39.950 * AMU;
       printf("\tAr Ratio = 100 %\n");
       BufObject = json_object_get_object(SubObject3,"NeutralSpecies");
       FG[0].Loadtype = (int)json_object_get_number(BufObject,"Loadtype");
@@ -251,8 +253,10 @@ void InputRead(int argc, char *argv[]) {
          exit(1);
       }
       BufObject2 = json_object_get_object(BufObject,"Ar*");
+      strcpy(FG[0].name,"Ar*");
       FG[0].InitDens =(float)json_object_get_number(BufObject2,"Density");
       FG[0].Temp = (float)json_object_get_number(BufObject2,"Temp(eV)");
+      FG[0].mass = 39.950 * AMU;
       BufObject = json_object_get_object(SubObject3,"ChargeSpecies");
       SP[0].Loadtype = (int)json_object_get_number(BufObject,"Loadtype");
       BufObject2 = json_object_get_object(BufObject,"LoadPosition(m)");
@@ -275,24 +279,32 @@ void InputRead(int argc, char *argv[]) {
          exit(1);
       }
       BufObject2 = json_object_get_object(BufObject,"Electron");
+      strcpy(SP[0].name,"Electron");
       SP[0].S_ID = (int)json_object_get_number(BufObject2,"S_ID");
       SP[0].InitDens = (float)json_object_get_number(BufObject2,"Density");
       SP[0].Temp = (float)json_object_get_number(BufObject2,"Temp(eV)");
       SP[0].np2c = (float)json_object_get_number(BufObject2,"np2c");
       SP[0].MAXNP = (int)json_object_get_number(BufObject2,"Max_np");
+      SP[0].mass = 5.485799486e-4 * AMU;
+      SP[0].q = -1.0 * CQ;
       BufObject2 = json_object_get_object(BufObject,"Ar+");
+      strcpy(SP[1].name,"Ar+");
       SP[1].S_ID = (int)json_object_get_number(BufObject2,"S_ID");
       SP[1].InitDens = (float)json_object_get_number(BufObject2,"Density");
       SP[1].Temp = (float)json_object_get_number(BufObject2,"Temp(eV)");
       SP[1].np2c = (float)json_object_get_number(BufObject2,"np2c");
       SP[1].MAXNP = (int)json_object_get_number(BufObject2,"Max_np");
+      SP[1].mass = 39.9500 * AMU;
+      SP[1].q = 1.0 * CQ;
       break;
    }
 	case OXYGEN: { // Oxygen
       BufObject = json_object_get_object(SubObject3,"Background");
       BufObject2 = json_object_get_object(BufObject,"Oxygen");
+      strcpy(BG[0].name,"Oxygen");
       BG[0].Pres = Total_Pressure;
       BG[0].Temp = (float)json_object_get_number(BufObject2,"Temp(eV)");
+      BG[0].mass = 32.0000 * AMU;
       printf("\tO2 Ratio = 100 %\n");
       BufObject = json_object_get_object(SubObject3,"NeutralSpecies");
       FG[0].Loadtype = (int)json_object_get_number(BufObject,"Loadtype");
@@ -316,17 +328,25 @@ void InputRead(int argc, char *argv[]) {
          exit(1);
       }
       BufObject2 = json_object_get_object(BufObject,"OP");
+      strcpy(FG[0].name,"OP");
       FG[0].InitDens =(float)json_object_get_number(BufObject2,"Density");
       FG[0].Temp = (float)json_object_get_number(BufObject2,"Temp(eV)");
+      FG[0].mass = 16.0000 * AMU;
       BufObject2 = json_object_get_object(BufObject,"OD");
+      strcpy(FG[1].name,"OD");
       FG[1].InitDens =(float)json_object_get_number(BufObject2,"Density");
       FG[1].Temp = (float)json_object_get_number(BufObject2,"Temp(eV)");
+      FG[1].mass = 16.0000 * AMU;
       BufObject2 = json_object_get_object(BufObject,"O2A");
+      strcpy(FG[2].name,"O2A");
       FG[2].InitDens =(float)json_object_get_number(BufObject2,"Density");
       FG[2].Temp = (float)json_object_get_number(BufObject2,"Temp(eV)");
+      FG[2].mass = 32.0000 * AMU;
       BufObject2 = json_object_get_object(BufObject,"O2B");
+      strcpy(FG[3].name,"O2B");
       FG[3].InitDens =(float)json_object_get_number(BufObject2,"Density");
       FG[3].Temp = (float)json_object_get_number(BufObject2,"Temp(eV)");
+      FG[3].mass = 32.0000 * AMU;
       BufObject = json_object_get_object(SubObject3,"ChargeSpecies");
       SP[0].Loadtype = (int)json_object_get_number(BufObject,"Loadtype");
       BufObject2 = json_object_get_object(BufObject,"LoadPosition(m)");
@@ -349,40 +369,56 @@ void InputRead(int argc, char *argv[]) {
          exit(1);
       }
       BufObject2 = json_object_get_object(BufObject,"Electron");
+      strcpy(SP[0].name,"Electron");
       SP[0].S_ID = (int)json_object_get_number(BufObject2,"S_ID");
       SP[0].InitDens = (float)json_object_get_number(BufObject2,"Density");
       SP[0].Temp = (float)json_object_get_number(BufObject2,"Temp(eV)");
       SP[0].np2c = (float)json_object_get_number(BufObject2,"np2c");
       SP[0].MAXNP = (int)json_object_get_number(BufObject2,"Max_np");
+      SP[0].mass = 5.485799486e-4 * AMU;
+      SP[0].q = -1.0 * CQ;
       BufObject2 = json_object_get_object(BufObject,"O2+");
+      strcpy(SP[1].name,"O2+");
       SP[1].S_ID = (int)json_object_get_number(BufObject2,"S_ID");
       SP[1].InitDens = (float)json_object_get_number(BufObject2,"Density");
       SP[1].Temp = (float)json_object_get_number(BufObject2,"Temp(eV)");
       SP[1].np2c = (float)json_object_get_number(BufObject2,"np2c");
       SP[1].MAXNP = (int)json_object_get_number(BufObject2,"Max_np");
+      SP[1].mass = 32.0000 * AMU;
+      SP[1].q = 1.0 * CQ;
       BufObject2 = json_object_get_object(BufObject,"O+");
+      strcpy(SP[2].name,"O+");
       SP[2].S_ID = (int)json_object_get_number(BufObject2,"S_ID");
       SP[2].InitDens = (float)json_object_get_number(BufObject2,"Density");
       SP[2].Temp = (float)json_object_get_number(BufObject2,"Temp(eV)");
       SP[2].np2c = (float)json_object_get_number(BufObject2,"np2c");
       SP[2].MAXNP = (int)json_object_get_number(BufObject2,"Max_np");
+      SP[2].mass = 16.000 * AMU;
+      SP[2].q = 1.0 * CQ;
       BufObject2 = json_object_get_object(BufObject,"O-");
+      strcpy(SP[3].name,"O-");
       SP[3].S_ID = (int)json_object_get_number(BufObject2,"S_ID");
       SP[3].InitDens = (float)json_object_get_number(BufObject2,"Density");
       SP[3].Temp = (float)json_object_get_number(BufObject2,"Temp(eV)");
       SP[3].np2c = (float)json_object_get_number(BufObject2,"np2c");
       SP[3].MAXNP = (int)json_object_get_number(BufObject2,"Max_np");
+      SP[3].mass = 16.000 * AMU;
+      SP[3].q = -1.0 * CQ;
       break;
    }
-	case ARO2: { // Oxygen
+	case ARO2: { // Argon + Oxygen
       BufObject = json_object_get_object(SubObject3,"Background");
       BufObject2 = json_object_get_object(BufObject,"Argon");
+      strcpy(BG[0].name,"Argon");
       fbuf1 = (float)json_object_get_number(BufObject2,"Ratio");
       BG[0].Temp = (float)json_object_get_number(BufObject2,"Temp(eV)");
+      BG[0].mass = 39.950 * AMU;
       BufObject2 = json_object_get_object(BufObject,"Oxygen");
+      strcpy(BG[1].name,"Oxygen");
       fbuf2 = (float)json_object_get_number(BufObject2,"Ratio");
       fbuf2 = fbuf2 / (fbuf1 + fbuf2);
       BG[1].Temp = (float)json_object_get_number(BufObject2,"Temp(eV)");
+      BG[1].mass = 32.0000 * AMU;
       BG[0].Pres = Total_Pressure*(1-fbuf2);
       BG[1].Pres = Total_Pressure*fbuf2;
       printf("\tAr Ratio = %3.3g, (%0.3g %)\n",(1-fbuf2)/(1-fbuf2),(1-fbuf2)*100);
@@ -411,20 +447,30 @@ void InputRead(int argc, char *argv[]) {
          exit(1);
       }
       BufObject2 = json_object_get_object(BufObject,"Ar*");
+      strcpy(FG[0].name,"Ar*");
       FG[0].InitDens =(float)json_object_get_number(BufObject2,"Density");
       FG[0].Temp = (float)json_object_get_number(BufObject2,"Temp(eV)");
+      FG[0].mass = 39.950 * AMU;
       BufObject2 = json_object_get_object(BufObject,"OP");
+      strcpy(FG[1].name,"OP");
       FG[1].InitDens =(float)json_object_get_number(BufObject2,"Density");
       FG[1].Temp = (float)json_object_get_number(BufObject2,"Temp(eV)");
+      FG[1].mass = 16.0000 * AMU;
       BufObject2 = json_object_get_object(BufObject,"OD");
+      strcpy(FG[2].name,"OD");
       FG[2].InitDens =(float)json_object_get_number(BufObject2,"Density");
       FG[2].Temp = (float)json_object_get_number(BufObject2,"Temp(eV)");
+      FG[2].mass = 16.0000 * AMU;
       BufObject2 = json_object_get_object(BufObject,"O2A");
+      strcpy(FG[3].name,"O2A");
       FG[3].InitDens =(float)json_object_get_number(BufObject2,"Density");
       FG[3].Temp = (float)json_object_get_number(BufObject2,"Temp(eV)");
+      FG[3].mass = 32.0000 * AMU;
       BufObject2 = json_object_get_object(BufObject,"O2B");
+      strcpy(FG[4].name,"O2B");
       FG[4].InitDens =(float)json_object_get_number(BufObject2,"Density");
       FG[4].Temp = (float)json_object_get_number(BufObject2,"Temp(eV)");
+      FG[4].mass = 32.0000 * AMU;
       BufObject = json_object_get_object(SubObject3,"ChargeSpecies");
       SP[0].Loadtype = (int)json_object_get_number(BufObject,"Loadtype");
       BufObject2 = json_object_get_object(BufObject,"LoadPosition(m)");
@@ -447,35 +493,50 @@ void InputRead(int argc, char *argv[]) {
          exit(1);
       }
       BufObject2 = json_object_get_object(BufObject,"Electron");
+      strcpy(SP[0].name,"Electron");
       SP[0].S_ID = (int)json_object_get_number(BufObject2,"S_ID");
       SP[0].InitDens = (float)json_object_get_number(BufObject2,"Density");
       SP[0].Temp = (float)json_object_get_number(BufObject2,"Temp(eV)");
       SP[0].np2c = (float)json_object_get_number(BufObject2,"np2c");
       SP[0].MAXNP = (int)json_object_get_number(BufObject2,"Max_np");
+      SP[0].mass = 5.485799486e-4 * AMU;
+      SP[0].q = -1.0 * CQ;
       BufObject2 = json_object_get_object(BufObject,"Ar+");
+      strcpy(SP[1].name,"Ar+");
       SP[1].S_ID = (int)json_object_get_number(BufObject2,"S_ID");
       SP[1].InitDens = (float)json_object_get_number(BufObject2,"Density");
       SP[1].Temp = (float)json_object_get_number(BufObject2,"Temp(eV)");
       SP[1].np2c = (float)json_object_get_number(BufObject2,"np2c");
       SP[1].MAXNP = (int)json_object_get_number(BufObject2,"Max_np");
+      SP[1].mass = 39.9500 * AMU;
+      SP[1].q = 1.0 * CQ;
       BufObject2 = json_object_get_object(BufObject,"O2+");
+      strcpy(SP[2].name,"O2+");
       SP[2].S_ID = (int)json_object_get_number(BufObject2,"S_ID");
       SP[2].InitDens = (float)json_object_get_number(BufObject2,"Density");
       SP[2].Temp = (float)json_object_get_number(BufObject2,"Temp(eV)");
       SP[2].np2c = (float)json_object_get_number(BufObject2,"np2c");
       SP[2].MAXNP = (int)json_object_get_number(BufObject2,"Max_np");
+      SP[2].mass = 32.0000 * AMU;
+      SP[2].q = 1.0 * CQ;
       BufObject2 = json_object_get_object(BufObject,"O+");
+      strcpy(SP[3].name,"O+");
       SP[3].S_ID = (int)json_object_get_number(BufObject2,"S_ID");
       SP[3].InitDens = (float)json_object_get_number(BufObject2,"Density");
       SP[3].Temp = (float)json_object_get_number(BufObject2,"Temp(eV)");
       SP[3].np2c = (float)json_object_get_number(BufObject2,"np2c");
       SP[3].MAXNP = (int)json_object_get_number(BufObject2,"Max_np");
+      SP[3].mass = 16.0000 * AMU;
+      SP[3].q = 1.0 * CQ;
       BufObject2 = json_object_get_object(BufObject,"O-");
+      strcpy(SP[4].name,"O-");
       SP[4].S_ID = (int)json_object_get_number(BufObject2,"S_ID");
       SP[4].InitDens = (float)json_object_get_number(BufObject2,"Density");
       SP[4].Temp = (float)json_object_get_number(BufObject2,"Temp(eV)");
       SP[4].np2c = (float)json_object_get_number(BufObject2,"np2c");
       SP[4].MAXNP = (int)json_object_get_number(BufObject2,"Max_np");
+      SP[4].mass = 16.0000 * AMU;
+      SP[4].q = -1.0 * CQ;
    }
    }
    //-------------------------//
@@ -671,7 +732,14 @@ void InputRead(int argc, char *argv[]) {
       TnRct = nRct_cx + nRct_rc;
 		mMnum = 1;
       Coll_Flag = (CollF *) malloc(TnRct * sizeof(CollF));
+      for(i=0;i<TnRct;i++){
+         Coll_Flag[i].Flag = 0;
+	      Coll_Flag[i].mofM = 0.0; // target/projectile
+	      Coll_Flag[i].Th_e = 0.0; //Threshold energy
+	      Coll_Flag[i].RR = 0.0; // Reaction RATE
+      }
       BufObject = json_object_get_object(SubObject6,"ArgonCase");
+      CX_TEC_Flag = (int)json_object_get_number(BufObject,"TecplotSave");
       Coll_Flag[0].Flag = (int)json_object_get_number(BufObject,"0.e+Ar>e+Ar");
       Coll_Flag[1].Flag = (int)json_object_get_number(BufObject,"1.e+Ar>e+Ar*");
       Coll_Flag[2].Flag = (int)json_object_get_number(BufObject,"2.e+Ar>e+Ar*m");
@@ -690,14 +758,21 @@ void InputRead(int argc, char *argv[]) {
          if(Coll_Flag[i].Flag == 0)
             printf("\tReaction %d is off\n",i);
       }
-      Argon_CrossSection(Coll_Flag);    
+      Argon_CrossSectionSET(Coll_Flag);     
    }else if(MainGas==1){
       nRct_cx = 58;	// Number of reaction using Cross section data
 		nRct_rc = 9;	// Number of reaction using Rate coefficient(constant)
       TnRct = nRct_cx + nRct_rc;
 		mMnum = 6;
       Coll_Flag = (CollF *) malloc(TnRct * sizeof(CollF));
+      for(i=0;i<TnRct;i++){
+         Coll_Flag[i].Flag = 0;
+	      Coll_Flag[i].mofM = 0.0; // target/projectile
+	      Coll_Flag[i].Th_e = 0.0; //Threshold energy
+	      Coll_Flag[i].RR = 0.0; // Reaction RATE
+      }
       BufObject = json_object_get_object(SubObject6,"OxygenCase");
+      CX_TEC_Flag = (int)json_object_get_number(BufObject,"TecplotSave");
       Coll_Flag[0].Flag = (int)json_object_get_number(BufObject,"0.e+O2>e+O2");
       Coll_Flag[1].Flag = (int)json_object_get_number(BufObject,"1.e+O2>e+O2*");
       Coll_Flag[2].Flag = (int)json_object_get_number(BufObject,"2.e+O2>e+O2*");
@@ -773,13 +848,21 @@ void InputRead(int argc, char *argv[]) {
          if(Coll_Flag[i].Flag == 0)
             printf("\tReaction %d is off\n",i);
       }
+      Oxygen_CrossSectionSET(Coll_Flag);     
    }else if(MainGas==2){
       nRct_cx = 68;	// Number of reaction using Cross section data
 		nRct_rc = 20;	// Number of reaction using Rate coefficient(constant)
       TnRct = nRct_cx + nRct_rc;
 		mMnum = 10;
       Coll_Flag = (CollF *) malloc(TnRct * sizeof(CollF));
+      for(i=0;i<TnRct;i++){
+         Coll_Flag[i].Flag = 0;
+	      Coll_Flag[i].mofM = 0.0; // target/projectile
+	      Coll_Flag[i].Th_e = 0.0; //Threshold energy
+	      Coll_Flag[i].RR = 0.0; // Reaction RATE
+      }
       BufObject = json_object_get_object(SubObject6,"Argon/OxygenCase");
+      CX_TEC_Flag = (int)json_object_get_number(BufObject,"TecplotSave");
       Coll_Flag[0].Flag = (int)json_object_get_number(BufObject,"0.e+Ar>e+Ar");
       Coll_Flag[1].Flag = (int)json_object_get_number(BufObject,"1.e+Ar>e+Ar*");
       Coll_Flag[2].Flag = (int)json_object_get_number(BufObject,"2.e+Ar>e+Ar*m");
@@ -861,7 +944,7 @@ void InputRead(int argc, char *argv[]) {
       Coll_Flag[78].Flag = (int)json_object_get_number(BufObject,"78.O2B+O2>2O2");
       Coll_Flag[79].Flag = (int)json_object_get_number(BufObject,"79.Ar^+OP>Ar+O^");
       Coll_Flag[80].Flag = (int)json_object_get_number(BufObject,"80.Ar^+O2>Ar+O2^");
-      Coll_Flag[81].Flag = (int)json_object_get_number(BufObject,"81.Ar*+Ar*>e+Ar+Ar^");                
+      Coll_Flag[81].Flag = (int)json_object_get_number(BufObject,"81.Ar*+Ar*>e+Ar+Ar^");
       Coll_Flag[82].Flag = (int)json_object_get_number(BufObject,"82.Ar*+Ar>2Ar");
       Coll_Flag[83].Flag = (int)json_object_get_number(BufObject,"83.Ar*+OP>OD+Ar");
       Coll_Flag[84].Flag = (int)json_object_get_number(BufObject,"84.Ar*+OP>OP+Ar");
@@ -876,6 +959,7 @@ void InputRead(int argc, char *argv[]) {
          if(Coll_Flag[i].Flag == 0)
             printf("\tReaction %d is off\n",i);
       }
+      ArO2_CrossSectionSET(Coll_Flag);
    }else{
       exit(1);
    }   
