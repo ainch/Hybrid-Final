@@ -722,10 +722,10 @@ void InputRead(int argc, char *argv[]) {
    */   
   
    //-------------------------//
-   //-----CollisionSelect-----//
+   //-----Collision_On_Off-----//
    //-------------------------//
-   printf("Read CollisionSelect\n");
-   SubObject6 = json_object_get_object(MainObject,"CollisionSelect");
+   printf("Read Collision_On_Off\n");
+   SubObject6 = json_object_get_object(MainObject,"Collision_On_Off");
    if(MainGas==0){
       nRct_cx = 7;	// Number of reaction using Cross section data
 		nRct_rc = 3;	// Number of reaction using Rate coefficient(constant)
@@ -753,12 +753,13 @@ void InputRead(int argc, char *argv[]) {
       printf("\tReaction = %d\n",TnRct);
       printf("\tCross section = %d\n",nRct_cx);
       printf("\tReaction rate = %d\n",nRct_rc);
-      printf("\tCheck reaction off...\n");
+      printf("\tCheck reaction on or off...\n");
       for(i=0;i<TnRct;i++){
          if(Coll_Flag[i].Flag == 0)
-            printf("\tReaction %d is off\n",i);
+            printf("\t\tReaction %d is off\n",i);
       }
-      Argon_CrossSectionSET(Coll_Flag);     
+      Argon_CrossSectionSET(Coll_Flag);
+      printf("\tReaction setting Complete.\n");
    }else if(MainGas==1){
       nRct_cx = 58;	// Number of reaction using Cross section data
 		nRct_rc = 9;	// Number of reaction using Rate coefficient(constant)
@@ -849,6 +850,7 @@ void InputRead(int argc, char *argv[]) {
             printf("\tReaction %d is off\n",i);
       }
       Oxygen_CrossSectionSET(Coll_Flag);     
+      printf("\tReaction setting Complete.\n");
    }else if(MainGas==2){
       nRct_cx = 68;	// Number of reaction using Cross section data
 		nRct_rc = 20;	// Number of reaction using Rate coefficient(constant)
@@ -960,12 +962,15 @@ void InputRead(int argc, char *argv[]) {
             printf("\tReaction %d is off\n",i);
       }
       ArO2_CrossSectionSET(Coll_Flag);
+      printf("\tReaction setting Complete.\n");
    }else{
       exit(1);
-   }   
+   }
+   printf("Finish parsing \"%s\"\n",InputFile); 
 }
 void start() {
    int i;
+   printf("Initial-setting start\n"); 
    //-------------------------//
    //--------Geometry---------//
    //-------------------------//
@@ -991,6 +996,7 @@ void start() {
    for(i=0;i<ngx;i++) x_Garray[i]=i*dx;
    y_Garray=VFMalloc(ngy);
    for(i=0;i<ngy;i++) y_Garray[i]=i*dy;
+   exit(1); // devolep point
 }
 void DumpRead(int argc, char *argv[]) {
    fprintf(stderr,"Tstrp = %d\n",tstep);

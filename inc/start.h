@@ -53,6 +53,7 @@ float PCGtol;
 int HISTMAX;
 int dHIST;
 int np_lim; // total particle limit
+int N_ave;
 int N_smt;  // Number of smoothing every timestep
 int ConstB_Flag; // Magnetic field 
 //
@@ -63,8 +64,6 @@ int TnRct; // Total Number of reaction
 int mMnum;
 int CX_TEC_Flag;
 CollF *Coll_Flag;
-
-//
 //
 void InputRead(int argc, char *argv[]);
 void start();
@@ -91,5 +90,4 @@ void VFCopy(float *V,float *C,int size);
 void VICopy(int *V,int *C,int size);
 int IVnZC(char A[50],int Value); // Int Value non Zero CHECK
 float FIVnZC(char A[50],float Value);// float Value non Zero CHECK
-int N_ave;
 #endif

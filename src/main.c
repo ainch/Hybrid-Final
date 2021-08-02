@@ -21,7 +21,6 @@ int main(int argc, char *argv[])
 	//display_title();       	/* Display 2D Field Solver title */
 	InputRead(argc,argv);	/* InputFile Parsing */
 	start();   				/* Initialized */
-
 	DumpRead(argc,argv);	/* DumpFile Read */
 	main_cuda();			/* GPU Start */
  	display_finish();

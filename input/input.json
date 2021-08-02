@@ -41,7 +41,7 @@
     },
     "GasSpecies":
     {
-        "Type(0:Ar,1:O2,2:Ar/O2)":2,
+        "Type(0:Ar,1:O2,2:Ar/O2)":0,
         "TotalPres(Torr)":1.0,
         "Background":{
             "Argon":{"Ratio":50,"Temp(eV)":0.026},
@@ -203,7 +203,7 @@
             "Tecplot_Save":0
         }
     },
-    "CollisionSelect":
+    "Collision_On_Off":
     {
         "ArgonCase":
         {
