@@ -63,6 +63,42 @@ typedef struct TEST
     float *c;
     float *d;
 } point;
+typedef struct __Host_Gsize_Array{
+	int Boundary;  // = BoundaryCondition
+	int CondID;
+	float Temp;
+	float BackDens;
+    int face;
+    float area;
+}HGA;
+typedef struct __Host_Csize_Array{
+    int PlasmaRegion;
+    float eps_r;
+}HCA;
+typedef struct __Device_Gsize_Array{
+	float Boundary;
+	float CondID;  // Conductor Material ID
+	float Temp;
+	float BackDens;
+}dev_GA;
+typedef struct __Device_Csize_Array{
+
+}dev_CA;
+typedef struct tag_species
+{
+	//Constant
+	char name[10];
+	int  Loadtype;		// density load type
+	float x_center,x_fall;		// density load position
+	float y_center,y_fall;		// density load position
+	int  S_ID;			// species ID
+	float InitDens;		//initial density
+	float Temp;			//Load temperature
+	float np2c;			// np2c
+	int MAXNP;			// maximum np
+	float mass;
+	float q;
+}Species;
 typedef struct _ChargedParticle
 {
 	//SIZE = MAXNP
@@ -73,6 +109,22 @@ typedef struct _ChargedParticle
 	float vy;
 	float vz;
 } CP;
+typedef struct fluid{
+	char name[10];				// string name
+	int   Loadtype;				// density load type
+	float x_center,x_fall;		// density load position
+	float y_center,y_fall;		// density load position
+	float InitDens;				// initial density
+	float Temp;					// Temperature
+	float mass;
+} Fluid;
+typedef struct BackGround{
+	char name[10];				// string name
+	float Ratio;
+	float Pres;				    // Pressure
+	float Temp;				// Temperature
+	float mass;
+} BackG;
 typedef struct _Collision_Flag
 {
     int Flag;
@@ -229,7 +281,7 @@ typedef struct _ArO2_Collision_Data
     float cx_67; //"67.Ar^+O2>O2+Ar^");
 } ArO2CollD;
 #endif
-
+/*
 #ifndef TotalDomain
 typedef struct tag_species{
 	//Constant
@@ -279,6 +331,8 @@ typedef struct tag_species{
 	//float *KE_hist;
 }Species;
 #endif
+*/
+/*
 #ifndef TotalDomain
 typedef struct fluid{
 	char name[10];				// string name
@@ -325,7 +379,7 @@ typedef struct BackGround{
 //	float sig;
 } BackG;
 #endif
-
+*/
 
 
 

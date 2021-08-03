@@ -37,6 +37,8 @@ float Min_FREQ, Max_FREQ;
 int DielNUN;
 int *DielM_ID, *DielX0, *DielX1, *DielY0, *DielY1;
 float *DielEPS;
+HGA *vec_G;
+HCA *vec_C;
 //
 int MainGas; // Gas type 0:argon, 1:oxygen, 2:argon/oxygen
 int nsp, nfsp, nBG;
