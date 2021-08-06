@@ -127,7 +127,7 @@ typedef struct BackGround{
 } BackG;
 typedef struct _Collision_Flag
 {
-    int Flag;
+    float Flag; // CX = Flag * CX
 	float mofM; // target/projectile
 	float Th_e; //Threshold energy
 	float RR; // Reaction RATE

@@ -24,21 +24,23 @@ float dx,dy;
 float idx,idy,dx2,dy2,dxdy2,hdx,hdy,r_eps0;
 float fncx,fncy,fngx,fngy;
 float *x_Garray,*y_Garray;
-int BoundaryNUN;
+int BoundaryNUM;
 int *BoundaryX0,*BoundaryY0,*BoundaryX1,*BoundaryY1,*BoundaryBC;
 float *BoundaryTEMP;
-int CondNUN;
+int CondNUM;
 int*CondM_ID,*CondX0,*CondX1,*CondY0,*CondY1;
 float *CondTEMP;
-int SrcNUN;
+int SrcNUM;
 int *SrcM_ID;
 float *SrcDC, *SrcPOWER, *SrcAC, *SrcFREQ, *SrcPHASE, *SrcR, *SrcL, *SrcC;
 float Min_FREQ, Max_FREQ;
-int DielNUN;
+int DielNUM;
 int *DielM_ID, *DielX0, *DielX1, *DielY0, *DielY1;
 float *DielEPS;
 HGA *vec_G;
 HCA *vec_C;
+int **StructureIndex;
+int *vec_StructureIndex;
 //
 int MainGas; // Gas type 0:argon, 1:oxygen, 2:argon/oxygen
 int nsp, nfsp, nBG;

@@ -50,19 +50,19 @@ void InputRead(int argc, char *argv[]) {
       exit(1);
    }
    BufArray = json_object_get_array(SubObject2,"BoundaryCondition");
-   BoundaryNUN = (int)json_array_get_count(BufArray);
-   printf("\tBoundary # = %d\n",BoundaryNUN); 
-   if (BoundaryNUN < 4){
+   BoundaryNUM = (int)json_array_get_count(BufArray);
+   printf("\tBoundary # = %d\n",BoundaryNUM); 
+   if (BoundaryNUM < 4){
       printf("\"BoundaryCondition\" is too small!(BoundaryNum>=4)\n");
       exit(1);
    }
-   BoundaryX0 = VIMalloc(BoundaryNUN);
-   BoundaryY0 = VIMalloc(BoundaryNUN);
-   BoundaryX1 = VIMalloc(BoundaryNUN);
-   BoundaryY1 = VIMalloc(BoundaryNUN);
-   BoundaryBC = VIMalloc(BoundaryNUN);
-   BoundaryTEMP = VFMalloc(BoundaryNUN);
-   for (i=0;i<BoundaryNUN;i++){
+   BoundaryX0 = VIMalloc(BoundaryNUM);
+   BoundaryY0 = VIMalloc(BoundaryNUM);
+   BoundaryX1 = VIMalloc(BoundaryNUM);
+   BoundaryY1 = VIMalloc(BoundaryNUM);
+   BoundaryBC = VIMalloc(BoundaryNUM);
+   BoundaryTEMP = VFMalloc(BoundaryNUM);
+   for (i=0;i<BoundaryNUM;i++){
       BufObject = json_array_get_object(BufArray,i);
       BoundaryX0[i]=(int)json_object_get_number(BufObject,"X0");
       BoundaryX1[i]=(int)json_object_get_number(BufObject,"X1");
@@ -92,19 +92,19 @@ void InputRead(int argc, char *argv[]) {
       BoundaryTEMP[i]=(float)json_object_get_number(BufObject,"Temp");
    }
    BufArray = json_object_get_array(SubObject2,"ConductorSpec");
-   CondNUN = (int)json_array_get_count(BufArray);
-   printf("\tConductor # = %d\n",CondNUN); 
-   if (CondNUN < 2){
+   CondNUM = (int)json_array_get_count(BufArray);
+   printf("\tConductor # = %d\n",CondNUM); 
+   if (CondNUM < 2){
       printf("\"Conductor\" is too small!(CondNum>=2)\n");
       exit(1);
    }
-   CondM_ID = VIMalloc(CondNUN);
-   CondX0 = VIMalloc(CondNUN);
-   CondX1 = VIMalloc(CondNUN);
-   CondY0 = VIMalloc(CondNUN);
-   CondY1 = VIMalloc(CondNUN);
-   CondTEMP = VFMalloc(CondNUN);
-   for (i=0;i<CondNUN;i++){
+   CondM_ID = VIMalloc(CondNUM);
+   CondX0 = VIMalloc(CondNUM);
+   CondX1 = VIMalloc(CondNUM);
+   CondY0 = VIMalloc(CondNUM);
+   CondY1 = VIMalloc(CondNUM);
+   CondTEMP = VFMalloc(CondNUM);
+   for (i=0;i<CondNUM;i++){
       BufObject = json_array_get_object(BufArray,i);
       CondM_ID[i] = (int)json_object_get_number(BufObject,"M_ID");
       CondX0[i] = (int)json_object_get_number(BufObject,"X0");
@@ -130,24 +130,24 @@ void InputRead(int argc, char *argv[]) {
       CondTEMP[i] = (float)json_object_get_number(BufObject,"Temp");
    }
    BufArray = json_object_get_array(SubObject2,"Source");
-   SrcNUN = (int)json_array_get_count(BufArray);
-   printf("\tSource # = %d\n",SrcNUN); 
-   SrcM_ID = VIMalloc(SrcNUN);
-   SrcDC = VFMalloc(SrcNUN);
-   SrcPOWER = VFMalloc(SrcNUN);
-   SrcAC = VFMalloc(SrcNUN);
-   SrcFREQ = VFMalloc(SrcNUN);
-   SrcPHASE = VFMalloc(SrcNUN);
-   SrcR = VFMalloc(SrcNUN);
-   SrcL = VFMalloc(SrcNUN);
-   SrcC = VFMalloc(SrcNUN);
+   SrcNUM = (int)json_array_get_count(BufArray);
+   printf("\tSource # = %d\n",SrcNUM); 
+   SrcM_ID = VIMalloc(SrcNUM);
+   SrcDC = VFMalloc(SrcNUM);
+   SrcPOWER = VFMalloc(SrcNUM);
+   SrcAC = VFMalloc(SrcNUM);
+   SrcFREQ = VFMalloc(SrcNUM);
+   SrcPHASE = VFMalloc(SrcNUM);
+   SrcR = VFMalloc(SrcNUM);
+   SrcL = VFMalloc(SrcNUM);
+   SrcC = VFMalloc(SrcNUM);
    Min_FREQ = 1e200;
    Max_FREQ = 0.0;
-   for (i=0;i<SrcNUN;i++){
+   for (i=0;i<SrcNUM;i++){
       buf = 0;
       BufObject = json_array_get_object(BufArray,i);
       SrcM_ID[i] = (int)json_object_get_number(BufObject,"M_ID");
-      for (j=0;j<CondNUN;j++){
+      for (j=0;j<CondNUM;j++){
          if(CondM_ID[j]==SrcM_ID[i])
             buf = 1;
       }
@@ -174,18 +174,18 @@ void InputRead(int argc, char *argv[]) {
       }
    }
    BufArray = json_object_get_array(SubObject2,"DielectricSpec");
-   DielNUN = (int)json_array_get_count(BufArray);
-   printf("\tDielectric # = %d\n",DielNUN); 
-   DielM_ID = VIMalloc(DielNUN);
-   DielX0 = VIMalloc(DielNUN);
-   DielX1 = VIMalloc(DielNUN);
-   DielY0 = VIMalloc(DielNUN);
-   DielY1 = VIMalloc(DielNUN);
-   DielEPS = VFMalloc(DielNUN);
-   for (i=0;i<DielNUN;i++){
+   DielNUM = (int)json_array_get_count(BufArray);
+   printf("\tDielectric # = %d\n",DielNUM); 
+   DielM_ID = VIMalloc(DielNUM);
+   DielX0 = VIMalloc(DielNUM);
+   DielX1 = VIMalloc(DielNUM);
+   DielY0 = VIMalloc(DielNUM);
+   DielY1 = VIMalloc(DielNUM);
+   DielEPS = VFMalloc(DielNUM);
+   for (i=0;i<DielNUM;i++){
       BufObject = json_array_get_object(BufArray,i);
       DielM_ID[i] = (int)json_object_get_number(BufObject,"M_ID");
-      for (j=0;j<CondNUN;j++){
+      for (j=0;j<CondNUM;j++){
          if(DielM_ID[i]==CondM_ID[j]){
             printf("Line %d M_ID is duplicated with conductor %d in \"DielectricSpec\"\n",i+1,CondM_ID[j]);
             exit(1);
@@ -768,16 +768,16 @@ void InputRead(int argc, char *argv[]) {
       }
       BufObject = json_object_get_object(SubObject6,"ArgonCase");
       CX_TEC_Flag = (int)json_object_get_number(BufObject,"TecplotSave");
-      Coll_Flag[0].Flag = (int)json_object_get_number(BufObject,"0.e+Ar>e+Ar");
-      Coll_Flag[1].Flag = (int)json_object_get_number(BufObject,"1.e+Ar>e+Ar*");
-      Coll_Flag[2].Flag = (int)json_object_get_number(BufObject,"2.e+Ar>e+Ar*m");
-      Coll_Flag[3].Flag = (int)json_object_get_number(BufObject,"3.e+Ar>2e+Ar^");
-      Coll_Flag[4].Flag = (int)json_object_get_number(BufObject,"4.e+Ar*m>2e+Ar^");
-      Coll_Flag[5].Flag = (int)json_object_get_number(BufObject,"5.Ar+Ar^>Ar^+Ar");
-      Coll_Flag[6].Flag = (int)json_object_get_number(BufObject,"6.Ar+Ar^>Ar+Ar^");
-      Coll_Flag[7].Flag = (int)json_object_get_number(BufObject,"7.e+Ar*m>e+Ar");
-      Coll_Flag[8].Flag = (int)json_object_get_number(BufObject,"8.Ar*m+Ar>e+Ar^+Ar");
-      Coll_Flag[9].Flag = (int)json_object_get_number(BufObject,"9.Ar+Ar*m>Ar+Ar");
+      Coll_Flag[0].Flag = (float)json_object_get_number(BufObject,"0.e+Ar>e+Ar");
+      Coll_Flag[1].Flag = (float)json_object_get_number(BufObject,"1.e+Ar>e+Ar*");
+      Coll_Flag[2].Flag = (float)json_object_get_number(BufObject,"2.e+Ar>e+Ar*m");
+      Coll_Flag[3].Flag = (float)json_object_get_number(BufObject,"3.e+Ar>2e+Ar^");
+      Coll_Flag[4].Flag = (float)json_object_get_number(BufObject,"4.e+Ar*m>2e+Ar^");
+      Coll_Flag[5].Flag = (float)json_object_get_number(BufObject,"5.Ar+Ar^>Ar^+Ar");
+      Coll_Flag[6].Flag = (float)json_object_get_number(BufObject,"6.Ar+Ar^>Ar+Ar^");
+      Coll_Flag[7].Flag = (float)json_object_get_number(BufObject,"7.e+Ar*m>e+Ar");
+      Coll_Flag[8].Flag = (float)json_object_get_number(BufObject,"8.Ar*m+Ar>e+Ar^+Ar");
+      Coll_Flag[9].Flag = (float)json_object_get_number(BufObject,"9.Ar+Ar*m>Ar+Ar");
       printf("\tReaction = %d\n",TnRct);
       printf("\tCross section = %d\n",nRct_cx);
       printf("\tReaction rate = %d\n",nRct_rc);
@@ -802,73 +802,73 @@ void InputRead(int argc, char *argv[]) {
       }
       BufObject = json_object_get_object(SubObject6,"OxygenCase");
       CX_TEC_Flag = (int)json_object_get_number(BufObject,"TecplotSave");
-      Coll_Flag[0].Flag = (int)json_object_get_number(BufObject,"0.e+O2>e+O2");
-      Coll_Flag[1].Flag = (int)json_object_get_number(BufObject,"1.e+O2>e+O2*");
-      Coll_Flag[2].Flag = (int)json_object_get_number(BufObject,"2.e+O2>e+O2*");
-      Coll_Flag[3].Flag = (int)json_object_get_number(BufObject,"3.e+O2>e+O2A");
-      Coll_Flag[4].Flag = (int)json_object_get_number(BufObject,"4.e+O2>e+O2B");
-      Coll_Flag[5].Flag = (int)json_object_get_number(BufObject,"5.e+O2>e+O2*");
-      Coll_Flag[6].Flag = (int)json_object_get_number(BufObject,"6.e+O2>OP+O-");
-      Coll_Flag[7].Flag = (int)json_object_get_number(BufObject,"7.e+O2>e+2OP");
-      Coll_Flag[8].Flag = (int)json_object_get_number(BufObject,"8.e+O2>e+OP+OD");
-      Coll_Flag[9].Flag = (int)json_object_get_number(BufObject,"9.e+O2>e+2OD");
-      Coll_Flag[10].Flag = (int)json_object_get_number(BufObject,"10.e+O2>2e+O2^");
-      Coll_Flag[11].Flag = (int)json_object_get_number(BufObject,"11.e+O2>e+OP+O*");
-      Coll_Flag[12].Flag = (int)json_object_get_number(BufObject,"12.e+O2>e+O^+O-");
-      Coll_Flag[13].Flag = (int)json_object_get_number(BufObject,"13.e+O2>2e+O^+OP");
-      Coll_Flag[14].Flag = (int)json_object_get_number(BufObject,"14.e+O2A>2e+O2+");
-      Coll_Flag[15].Flag = (int)json_object_get_number(BufObject,"15.e+O2A>OP+O-");
-      Coll_Flag[16].Flag = (int)json_object_get_number(BufObject,"16.e+O2A>e+O2");
-      Coll_Flag[17].Flag = (int)json_object_get_number(BufObject,"17.e+O2A>e+O2");
-      Coll_Flag[18].Flag = (int)json_object_get_number(BufObject,"18.e+O2A>e+2OP");
-      Coll_Flag[19].Flag = (int)json_object_get_number(BufObject,"19.e+O2A>e+OP+OD");
-      Coll_Flag[20].Flag = (int)json_object_get_number(BufObject,"20.e+O2A>e+2OD");
-      Coll_Flag[21].Flag = (int)json_object_get_number(BufObject,"21.e+O2A>2e+O^+OP");
-      Coll_Flag[22].Flag = (int)json_object_get_number(BufObject,"22.e+O2B>2e+O2^");
-      Coll_Flag[23].Flag = (int)json_object_get_number(BufObject,"23.e+O2B>OP+O-");
-      Coll_Flag[24].Flag = (int)json_object_get_number(BufObject,"24.e+O2B>e+O2");
-      Coll_Flag[25].Flag = (int)json_object_get_number(BufObject,"25.e+O2B>e+O2");
-      Coll_Flag[26].Flag = (int)json_object_get_number(BufObject,"26.e+O2B>e+2O");
-      Coll_Flag[27].Flag = (int)json_object_get_number(BufObject,"27.e+O2B>e+OP+OD");
-      Coll_Flag[28].Flag = (int)json_object_get_number(BufObject,"28.e+O2B>e+2OD");
-      Coll_Flag[29].Flag = (int)json_object_get_number(BufObject,"29.e+O2B>2e+O^+OP");
-      Coll_Flag[30].Flag = (int)json_object_get_number(BufObject,"30.e+O->2e+OP");
-      Coll_Flag[31].Flag = (int)json_object_get_number(BufObject,"31.e+O2^>OP+OD");
-      Coll_Flag[32].Flag = (int)json_object_get_number(BufObject,"32.e+OP>e+OP");
-      Coll_Flag[33].Flag = (int)json_object_get_number(BufObject,"33.e+OP>e+OD");
-      Coll_Flag[34].Flag = (int)json_object_get_number(BufObject,"34.e+OP>e+O*");
-      Coll_Flag[35].Flag = (int)json_object_get_number(BufObject,"35.e+OP>e+O*");
-      Coll_Flag[36].Flag = (int)json_object_get_number(BufObject,"36.e+OP>e+O*");
-      Coll_Flag[37].Flag = (int)json_object_get_number(BufObject,"37.e+OP>2e+O^");
-      Coll_Flag[38].Flag = (int)json_object_get_number(BufObject,"38.e+OP>e+O*");
-      Coll_Flag[39].Flag = (int)json_object_get_number(BufObject,"39.e+OD>2e+O^");
-      Coll_Flag[40].Flag = (int)json_object_get_number(BufObject,"40.e+OD>e+OP");
-      Coll_Flag[41].Flag = (int)json_object_get_number(BufObject,"41.O-+O2>O-+O2");
-      Coll_Flag[42].Flag = (int)json_object_get_number(BufObject,"42.O-+O2>e+OP+O2");
-      Coll_Flag[43].Flag = (int)json_object_get_number(BufObject,"43.O-+OP>e+O2");
-      Coll_Flag[44].Flag = (int)json_object_get_number(BufObject,"44.O-+O2^>OP+O2");
-      Coll_Flag[45].Flag = (int)json_object_get_number(BufObject,"45.O-+O^>2OP");
-      Coll_Flag[46].Flag = (int)json_object_get_number(BufObject,"46.O-+O2A>e+OP+O2");
-      Coll_Flag[47].Flag = (int)json_object_get_number(BufObject,"47.O2^+OP>O2+O^");
-      Coll_Flag[48].Flag = (int)json_object_get_number(BufObject,"48.O2^+O2>O2+O2^");
-      Coll_Flag[49].Flag = (int)json_object_get_number(BufObject,"49.O2^+O2>O2^+O2");
-      Coll_Flag[50].Flag = (int)json_object_get_number(BufObject,"50.O2^+O2>O^+OP+O2");
-      Coll_Flag[51].Flag = (int)json_object_get_number(BufObject,"51.O2^+O2A>O2+O2^");
-      Coll_Flag[52].Flag = (int)json_object_get_number(BufObject,"52.O2^+O2B>O2+O2^");
-      Coll_Flag[53].Flag = (int)json_object_get_number(BufObject,"53.O^+O2>OP+O2^");
-      Coll_Flag[54].Flag = (int)json_object_get_number(BufObject,"54.O^+O2>O^+O2");
-      Coll_Flag[55].Flag = (int)json_object_get_number(BufObject,"55.O^+OP>OP+O^");
-      Coll_Flag[56].Flag = (int)json_object_get_number(BufObject,"56.O^+O2A>O2^+OP");
-      Coll_Flag[57].Flag = (int)json_object_get_number(BufObject,"57.O^+O2B>O2^+OP");
-      Coll_Flag[58].Flag = (int)json_object_get_number(BufObject,"58.O-+O2B>e+OP+O2");
-      Coll_Flag[59].Flag = (int)json_object_get_number(BufObject,"59.OP+OD>2OP");
-      Coll_Flag[60].Flag = (int)json_object_get_number(BufObject,"60.OD+O2>OP+O2");
-      Coll_Flag[61].Flag = (int)json_object_get_number(BufObject,"61.OD+O2>OP+O2A");
-      Coll_Flag[62].Flag = (int)json_object_get_number(BufObject,"62.OD+O2>OP+O2B");
-      Coll_Flag[63].Flag = (int)json_object_get_number(BufObject,"63.O2A+OP>OP+O2");
-      Coll_Flag[64].Flag = (int)json_object_get_number(BufObject,"64.O2A+O2>2O2");
-      Coll_Flag[65].Flag = (int)json_object_get_number(BufObject,"65.O2A+O2A>2O2");
-      Coll_Flag[66].Flag = (int)json_object_get_number(BufObject,"66.O2B+O2>2O2");
+      Coll_Flag[0].Flag = (float)json_object_get_number(BufObject,"0.e+O2>e+O2");
+      Coll_Flag[1].Flag = (float)json_object_get_number(BufObject,"1.e+O2>e+O2*");
+      Coll_Flag[2].Flag = (float)json_object_get_number(BufObject,"2.e+O2>e+O2*");
+      Coll_Flag[3].Flag = (float)json_object_get_number(BufObject,"3.e+O2>e+O2A");
+      Coll_Flag[4].Flag = (float)json_object_get_number(BufObject,"4.e+O2>e+O2B");
+      Coll_Flag[5].Flag = (float)json_object_get_number(BufObject,"5.e+O2>e+O2*");
+      Coll_Flag[6].Flag = (float)json_object_get_number(BufObject,"6.e+O2>OP+O-");
+      Coll_Flag[7].Flag = (float)json_object_get_number(BufObject,"7.e+O2>e+2OP");
+      Coll_Flag[8].Flag = (float)json_object_get_number(BufObject,"8.e+O2>e+OP+OD");
+      Coll_Flag[9].Flag = (float)json_object_get_number(BufObject,"9.e+O2>e+2OD");
+      Coll_Flag[10].Flag = (float)json_object_get_number(BufObject,"10.e+O2>2e+O2^");
+      Coll_Flag[11].Flag = (float)json_object_get_number(BufObject,"11.e+O2>e+OP+O*");
+      Coll_Flag[12].Flag = (float)json_object_get_number(BufObject,"12.e+O2>e+O^+O-");
+      Coll_Flag[13].Flag = (float)json_object_get_number(BufObject,"13.e+O2>2e+O^+OP");
+      Coll_Flag[14].Flag = (float)json_object_get_number(BufObject,"14.e+O2A>2e+O2+");
+      Coll_Flag[15].Flag = (float)json_object_get_number(BufObject,"15.e+O2A>OP+O-");
+      Coll_Flag[16].Flag = (float)json_object_get_number(BufObject,"16.e+O2A>e+O2");
+      Coll_Flag[17].Flag = (float)json_object_get_number(BufObject,"17.e+O2A>e+O2");
+      Coll_Flag[18].Flag = (float)json_object_get_number(BufObject,"18.e+O2A>e+2OP");
+      Coll_Flag[19].Flag = (float)json_object_get_number(BufObject,"19.e+O2A>e+OP+OD");
+      Coll_Flag[20].Flag = (float)json_object_get_number(BufObject,"20.e+O2A>e+2OD");
+      Coll_Flag[21].Flag = (float)json_object_get_number(BufObject,"21.e+O2A>2e+O^+OP");
+      Coll_Flag[22].Flag = (float)json_object_get_number(BufObject,"22.e+O2B>2e+O2^");
+      Coll_Flag[23].Flag = (float)json_object_get_number(BufObject,"23.e+O2B>OP+O-");
+      Coll_Flag[24].Flag = (float)json_object_get_number(BufObject,"24.e+O2B>e+O2");
+      Coll_Flag[25].Flag = (float)json_object_get_number(BufObject,"25.e+O2B>e+O2");
+      Coll_Flag[26].Flag = (float)json_object_get_number(BufObject,"26.e+O2B>e+2O");
+      Coll_Flag[27].Flag = (float)json_object_get_number(BufObject,"27.e+O2B>e+OP+OD");
+      Coll_Flag[28].Flag = (float)json_object_get_number(BufObject,"28.e+O2B>e+2OD");
+      Coll_Flag[29].Flag = (float)json_object_get_number(BufObject,"29.e+O2B>2e+O^+OP");
+      Coll_Flag[30].Flag = (float)json_object_get_number(BufObject,"30.e+O->2e+OP");
+      Coll_Flag[31].Flag = (float)json_object_get_number(BufObject,"31.e+O2^>OP+OD");
+      Coll_Flag[32].Flag = (float)json_object_get_number(BufObject,"32.e+OP>e+OP");
+      Coll_Flag[33].Flag = (float)json_object_get_number(BufObject,"33.e+OP>e+OD");
+      Coll_Flag[34].Flag = (float)json_object_get_number(BufObject,"34.e+OP>e+O*");
+      Coll_Flag[35].Flag = (float)json_object_get_number(BufObject,"35.e+OP>e+O*");
+      Coll_Flag[36].Flag = (float)json_object_get_number(BufObject,"36.e+OP>e+O*");
+      Coll_Flag[37].Flag = (float)json_object_get_number(BufObject,"37.e+OP>2e+O^");
+      Coll_Flag[38].Flag = (float)json_object_get_number(BufObject,"38.e+OP>e+O*");
+      Coll_Flag[39].Flag = (float)json_object_get_number(BufObject,"39.e+OD>2e+O^");
+      Coll_Flag[40].Flag = (float)json_object_get_number(BufObject,"40.e+OD>e+OP");
+      Coll_Flag[41].Flag = (float)json_object_get_number(BufObject,"41.O-+O2>O-+O2");
+      Coll_Flag[42].Flag = (float)json_object_get_number(BufObject,"42.O-+O2>e+OP+O2");
+      Coll_Flag[43].Flag = (float)json_object_get_number(BufObject,"43.O-+OP>e+O2");
+      Coll_Flag[44].Flag = (float)json_object_get_number(BufObject,"44.O-+O2^>OP+O2");
+      Coll_Flag[45].Flag = (float)json_object_get_number(BufObject,"45.O-+O^>2OP");
+      Coll_Flag[46].Flag = (float)json_object_get_number(BufObject,"46.O-+O2A>e+OP+O2");
+      Coll_Flag[47].Flag = (float)json_object_get_number(BufObject,"47.O2^+OP>O2+O^");
+      Coll_Flag[48].Flag = (float)json_object_get_number(BufObject,"48.O2^+O2>O2+O2^");
+      Coll_Flag[49].Flag = (float)json_object_get_number(BufObject,"49.O2^+O2>O2^+O2");
+      Coll_Flag[50].Flag = (float)json_object_get_number(BufObject,"50.O2^+O2>O^+OP+O2");
+      Coll_Flag[51].Flag = (float)json_object_get_number(BufObject,"51.O2^+O2A>O2+O2^");
+      Coll_Flag[52].Flag = (float)json_object_get_number(BufObject,"52.O2^+O2B>O2+O2^");
+      Coll_Flag[53].Flag = (float)json_object_get_number(BufObject,"53.O^+O2>OP+O2^");
+      Coll_Flag[54].Flag = (float)json_object_get_number(BufObject,"54.O^+O2>O^+O2");
+      Coll_Flag[55].Flag = (float)json_object_get_number(BufObject,"55.O^+OP>OP+O^");
+      Coll_Flag[56].Flag = (float)json_object_get_number(BufObject,"56.O^+O2A>O2^+OP");
+      Coll_Flag[57].Flag = (float)json_object_get_number(BufObject,"57.O^+O2B>O2^+OP");
+      Coll_Flag[58].Flag = (float)json_object_get_number(BufObject,"58.O-+O2B>e+OP+O2");
+      Coll_Flag[59].Flag = (float)json_object_get_number(BufObject,"59.OP+OD>2OP");
+      Coll_Flag[60].Flag = (float)json_object_get_number(BufObject,"60.OD+O2>OP+O2");
+      Coll_Flag[61].Flag = (float)json_object_get_number(BufObject,"61.OD+O2>OP+O2A");
+      Coll_Flag[62].Flag = (float)json_object_get_number(BufObject,"62.OD+O2>OP+O2B");
+      Coll_Flag[63].Flag = (float)json_object_get_number(BufObject,"63.O2A+OP>OP+O2");
+      Coll_Flag[64].Flag = (float)json_object_get_number(BufObject,"64.O2A+O2>2O2");
+      Coll_Flag[65].Flag = (float)json_object_get_number(BufObject,"65.O2A+O2A>2O2");
+      Coll_Flag[66].Flag = (float)json_object_get_number(BufObject,"66.O2B+O2>2O2");
       printf("\tReaction = %d\n",TnRct);
       printf("\tCross section = %d\n",nRct_cx);
       printf("\tReaction rate = %d\n",nRct_rc);
@@ -893,94 +893,94 @@ void InputRead(int argc, char *argv[]) {
       }
       BufObject = json_object_get_object(SubObject6,"Argon/OxygenCase");
       CX_TEC_Flag = (int)json_object_get_number(BufObject,"TecplotSave");
-      Coll_Flag[0].Flag = (int)json_object_get_number(BufObject,"0.e+Ar>e+Ar");
-      Coll_Flag[1].Flag = (int)json_object_get_number(BufObject,"1.e+Ar>e+Ar*");
-      Coll_Flag[2].Flag = (int)json_object_get_number(BufObject,"2.e+Ar>e+Ar*m");
-      Coll_Flag[3].Flag = (int)json_object_get_number(BufObject,"3.e+Ar>2e+Ar+");
-      Coll_Flag[4].Flag = (int)json_object_get_number(BufObject,"4.e+Ar*m>2e+Ar^");
-      Coll_Flag[5].Flag = (int)json_object_get_number(BufObject,"5.e+O2>e+O2");
-      Coll_Flag[6].Flag = (int)json_object_get_number(BufObject,"6.e+O2>e+O2*");
-      Coll_Flag[7].Flag = (int)json_object_get_number(BufObject,"7.e+O2>e+O2*");
-      Coll_Flag[8].Flag = (int)json_object_get_number(BufObject,"8.e+O2>e+O2A");
-      Coll_Flag[9].Flag = (int)json_object_get_number(BufObject,"9.e+O2>e+O2B");
-      Coll_Flag[10].Flag = (int)json_object_get_number(BufObject,"10.e+O2>e+O2*");
-      Coll_Flag[11].Flag = (int)json_object_get_number(BufObject,"11.e+O2>OP+O-");
-      Coll_Flag[12].Flag = (int)json_object_get_number(BufObject,"12.e+O2>e+2OP");
-      Coll_Flag[13].Flag = (int)json_object_get_number(BufObject,"13.e+O2>e+OP+OD");
-      Coll_Flag[14].Flag = (int)json_object_get_number(BufObject,"14.e+O2>e+2OD");
-      Coll_Flag[15].Flag = (int)json_object_get_number(BufObject,"15.e+O2>2e+O2+");
-      Coll_Flag[16].Flag = (int)json_object_get_number(BufObject,"16.e+O2>e+OP+O*");
-      Coll_Flag[17].Flag = (int)json_object_get_number(BufObject,"17.e+O2>e+O++O-");
-      Coll_Flag[18].Flag = (int)json_object_get_number(BufObject,"18.e+O2>2e+O^+OP");
-      Coll_Flag[19].Flag = (int)json_object_get_number(BufObject,"19.e+O2A>2e+O2^");
-      Coll_Flag[20].Flag = (int)json_object_get_number(BufObject,"20.e+O2A>OP+O-");
-      Coll_Flag[21].Flag = (int)json_object_get_number(BufObject,"21.e+O2A>e+O2");
-      Coll_Flag[22].Flag = (int)json_object_get_number(BufObject,"22.e+O2A>e+O2");
-      Coll_Flag[23].Flag = (int)json_object_get_number(BufObject,"23.e+O2A>e+2O"); 
-      Coll_Flag[24].Flag = (int)json_object_get_number(BufObject,"24.e+O2A>e+OP+OD");
-      Coll_Flag[25].Flag = (int)json_object_get_number(BufObject,"25.e+O2A>e+2OD");
-      Coll_Flag[26].Flag = (int)json_object_get_number(BufObject,"26.e+O2A>2e+O^+OP");
-      Coll_Flag[27].Flag = (int)json_object_get_number(BufObject,"27.e+O2B>2e+O2^");
-      Coll_Flag[28].Flag = (int)json_object_get_number(BufObject,"28.e+O2B>OP+O-");
-      Coll_Flag[29].Flag = (int)json_object_get_number(BufObject,"29.e+O2B>e+O2");
-      Coll_Flag[30].Flag = (int)json_object_get_number(BufObject,"30.e+O2B>e+O2");
-      Coll_Flag[31].Flag = (int)json_object_get_number(BufObject,"31.e+O2B>e+2O");
-      Coll_Flag[32].Flag = (int)json_object_get_number(BufObject,"32.e+O2B>e+OP+OD");
-      Coll_Flag[33].Flag = (int)json_object_get_number(BufObject,"33.e+O2B>e+2OD");
-      Coll_Flag[34].Flag = (int)json_object_get_number(BufObject,"34.e+O2B>2e+O++OP");
-      Coll_Flag[35].Flag = (int)json_object_get_number(BufObject,"35.e+O->2e+OP");
-      Coll_Flag[36].Flag = (int)json_object_get_number(BufObject,"36.e+O2+>OP+OD ");
-      Coll_Flag[37].Flag = (int)json_object_get_number(BufObject,"37.e+OP>e+OP");
-      Coll_Flag[38].Flag = (int)json_object_get_number(BufObject,"38.e+OP>e+OD");
-      Coll_Flag[39].Flag = (int)json_object_get_number(BufObject,"39.e+OP>e+O*");
-      Coll_Flag[40].Flag = (int)json_object_get_number(BufObject,"40.e+OP>e+O*");
-      Coll_Flag[41].Flag = (int)json_object_get_number(BufObject,"41.e+OP>e+O*");
-      Coll_Flag[42].Flag = (int)json_object_get_number(BufObject,"42.e+OP>2e+O^");
-      Coll_Flag[43].Flag = (int)json_object_get_number(BufObject,"43.e+OP>e+O*");
-      Coll_Flag[44].Flag = (int)json_object_get_number(BufObject,"44.e+OD>2e+O+");
-      Coll_Flag[45].Flag = (int)json_object_get_number(BufObject,"45.e+OD>e+O");
-      Coll_Flag[46].Flag = (int)json_object_get_number(BufObject,"46.O-+O2>O-+O2");
-      Coll_Flag[47].Flag = (int)json_object_get_number(BufObject,"47.O-+O2>e+OP+O2");
-      Coll_Flag[48].Flag = (int)json_object_get_number(BufObject,"48.O-+OP>e+O2");
-      Coll_Flag[49].Flag = (int)json_object_get_number(BufObject,"49.O-+O2^>OP+O2");
-      Coll_Flag[50].Flag = (int)json_object_get_number(BufObject,"50.O-+O^>2OP");
-      Coll_Flag[51].Flag = (int)json_object_get_number(BufObject,"51.O-+O2A>e+OP+O2");  
-      Coll_Flag[52].Flag = (int)json_object_get_number(BufObject,"52.O2^+OP>O2+O^");
-      Coll_Flag[53].Flag = (int)json_object_get_number(BufObject,"53.O2^+O2>O2+O2^");
-      Coll_Flag[54].Flag = (int)json_object_get_number(BufObject,"54.O2^+O2>O2^+O2");   
-      Coll_Flag[55].Flag = (int)json_object_get_number(BufObject,"55.O2^+O2>O^+OP+O2");
-      Coll_Flag[56].Flag = (int)json_object_get_number(BufObject,"56.O2^+O2A>O2+O2^");
-      Coll_Flag[57].Flag = (int)json_object_get_number(BufObject,"57.O2^+O2B>O2+O2^");
-      Coll_Flag[58].Flag = (int)json_object_get_number(BufObject,"58.O2^+Ar>O2+Ar^");
-      Coll_Flag[59].Flag = (int)json_object_get_number(BufObject,"59.O2^+Ar>O2^+Ar^");
-      Coll_Flag[60].Flag = (int)json_object_get_number(BufObject,"60.O^+O2>OP+O2^");
-      Coll_Flag[61].Flag = (int)json_object_get_number(BufObject,"61.O^+O2>O^+O2");
-      Coll_Flag[62].Flag = (int)json_object_get_number(BufObject,"62.O^+OP>OP+O^");
-      Coll_Flag[63].Flag = (int)json_object_get_number(BufObject,"63.O^+O2A>O2^+OP");
-      Coll_Flag[64].Flag = (int)json_object_get_number(BufObject,"64.O^+O2B>O2^+OP");
-      Coll_Flag[65].Flag = (int)json_object_get_number(BufObject,"65.Ar^+Ar>Ar+Ar^");
-      Coll_Flag[66].Flag = (int)json_object_get_number(BufObject,"66.Ar^+Ar>Ar++Ar");
-      Coll_Flag[67].Flag = (int)json_object_get_number(BufObject,"67.Ar^+O2>O2+Ar^");
-      Coll_Flag[68].Flag = (int)json_object_get_number(BufObject,"68.e+Ar*>e+Ar");
-      Coll_Flag[69].Flag = (int)json_object_get_number(BufObject,"69.O-+Ar^>OP+AR");
-      Coll_Flag[70].Flag = (int)json_object_get_number(BufObject,"70.O-+O2B>e+OP+O2");
-      Coll_Flag[71].Flag = (int)json_object_get_number(BufObject,"71.OD+OP>2OP");
-      Coll_Flag[72].Flag = (int)json_object_get_number(BufObject,"72.OD+O2>OP+O2");
-      Coll_Flag[73].Flag = (int)json_object_get_number(BufObject,"73.OD+O2>OP+O2A");
-      Coll_Flag[74].Flag = (int)json_object_get_number(BufObject,"74.OD+O2>OP+O2B");
-      Coll_Flag[75].Flag = (int)json_object_get_number(BufObject,"75.O2A+OP>OP+O2");
-      Coll_Flag[76].Flag = (int)json_object_get_number(BufObject,"76.O2A+O2>2O2");
-      Coll_Flag[77].Flag = (int)json_object_get_number(BufObject,"77.O2A+O2A>2O2");
-      Coll_Flag[78].Flag = (int)json_object_get_number(BufObject,"78.O2B+O2>2O2");
-      Coll_Flag[79].Flag = (int)json_object_get_number(BufObject,"79.Ar^+OP>Ar+O^");
-      Coll_Flag[80].Flag = (int)json_object_get_number(BufObject,"80.Ar^+O2>Ar+O2^");
-      Coll_Flag[81].Flag = (int)json_object_get_number(BufObject,"81.Ar*+Ar*>e+Ar+Ar^");
-      Coll_Flag[82].Flag = (int)json_object_get_number(BufObject,"82.Ar*+Ar>2Ar");
-      Coll_Flag[83].Flag = (int)json_object_get_number(BufObject,"83.Ar*+OP>OD+Ar");
-      Coll_Flag[84].Flag = (int)json_object_get_number(BufObject,"84.Ar*+OP>OP+Ar");
-      Coll_Flag[85].Flag = (int)json_object_get_number(BufObject,"85.Ar*+O2>2OP+Ar ");
-      Coll_Flag[86].Flag = (int)json_object_get_number(BufObject,"86.Ar*+O2>OP+OD+Ar");
-      Coll_Flag[87].Flag = (int)json_object_get_number(BufObject,"87.Ar*+O2>O2+Ar");
+      Coll_Flag[0].Flag = (float)json_object_get_number(BufObject,"0.e+Ar>e+Ar");
+      Coll_Flag[1].Flag = (float)json_object_get_number(BufObject,"1.e+Ar>e+Ar*");
+      Coll_Flag[2].Flag = (float)json_object_get_number(BufObject,"2.e+Ar>e+Ar*m");
+      Coll_Flag[3].Flag = (float)json_object_get_number(BufObject,"3.e+Ar>2e+Ar+");
+      Coll_Flag[4].Flag = (float)json_object_get_number(BufObject,"4.e+Ar*m>2e+Ar^");
+      Coll_Flag[5].Flag = (float)json_object_get_number(BufObject,"5.e+O2>e+O2");
+      Coll_Flag[6].Flag = (float)json_object_get_number(BufObject,"6.e+O2>e+O2*");
+      Coll_Flag[7].Flag = (float)json_object_get_number(BufObject,"7.e+O2>e+O2*");
+      Coll_Flag[8].Flag = (float)json_object_get_number(BufObject,"8.e+O2>e+O2A");
+      Coll_Flag[9].Flag = (float)json_object_get_number(BufObject,"9.e+O2>e+O2B");
+      Coll_Flag[10].Flag = (float)json_object_get_number(BufObject,"10.e+O2>e+O2*");
+      Coll_Flag[11].Flag = (float)json_object_get_number(BufObject,"11.e+O2>OP+O-");
+      Coll_Flag[12].Flag = (float)json_object_get_number(BufObject,"12.e+O2>e+2OP");
+      Coll_Flag[13].Flag = (float)json_object_get_number(BufObject,"13.e+O2>e+OP+OD");
+      Coll_Flag[14].Flag = (float)json_object_get_number(BufObject,"14.e+O2>e+2OD");
+      Coll_Flag[15].Flag = (float)json_object_get_number(BufObject,"15.e+O2>2e+O2+");
+      Coll_Flag[16].Flag = (float)json_object_get_number(BufObject,"16.e+O2>e+OP+O*");
+      Coll_Flag[17].Flag = (float)json_object_get_number(BufObject,"17.e+O2>e+O++O-");
+      Coll_Flag[18].Flag = (float)json_object_get_number(BufObject,"18.e+O2>2e+O^+OP");
+      Coll_Flag[19].Flag = (float)json_object_get_number(BufObject,"19.e+O2A>2e+O2^");
+      Coll_Flag[20].Flag = (float)json_object_get_number(BufObject,"20.e+O2A>OP+O-");
+      Coll_Flag[21].Flag = (float)json_object_get_number(BufObject,"21.e+O2A>e+O2");
+      Coll_Flag[22].Flag = (float)json_object_get_number(BufObject,"22.e+O2A>e+O2");
+      Coll_Flag[23].Flag = (float)json_object_get_number(BufObject,"23.e+O2A>e+2O"); 
+      Coll_Flag[24].Flag = (float)json_object_get_number(BufObject,"24.e+O2A>e+OP+OD");
+      Coll_Flag[25].Flag = (float)json_object_get_number(BufObject,"25.e+O2A>e+2OD");
+      Coll_Flag[26].Flag = (float)json_object_get_number(BufObject,"26.e+O2A>2e+O^+OP");
+      Coll_Flag[27].Flag = (float)json_object_get_number(BufObject,"27.e+O2B>2e+O2^");
+      Coll_Flag[28].Flag = (float)json_object_get_number(BufObject,"28.e+O2B>OP+O-");
+      Coll_Flag[29].Flag = (float)json_object_get_number(BufObject,"29.e+O2B>e+O2");
+      Coll_Flag[30].Flag = (float)json_object_get_number(BufObject,"30.e+O2B>e+O2");
+      Coll_Flag[31].Flag = (float)json_object_get_number(BufObject,"31.e+O2B>e+2O");
+      Coll_Flag[32].Flag = (float)json_object_get_number(BufObject,"32.e+O2B>e+OP+OD");
+      Coll_Flag[33].Flag = (float)json_object_get_number(BufObject,"33.e+O2B>e+2OD");
+      Coll_Flag[34].Flag = (float)json_object_get_number(BufObject,"34.e+O2B>2e+O++OP");
+      Coll_Flag[35].Flag = (float)json_object_get_number(BufObject,"35.e+O->2e+OP");
+      Coll_Flag[36].Flag = (float)json_object_get_number(BufObject,"36.e+O2+>OP+OD ");
+      Coll_Flag[37].Flag = (float)json_object_get_number(BufObject,"37.e+OP>e+OP");
+      Coll_Flag[38].Flag = (float)json_object_get_number(BufObject,"38.e+OP>e+OD");
+      Coll_Flag[39].Flag = (float)json_object_get_number(BufObject,"39.e+OP>e+O*");
+      Coll_Flag[40].Flag = (float)json_object_get_number(BufObject,"40.e+OP>e+O*");
+      Coll_Flag[41].Flag = (float)json_object_get_number(BufObject,"41.e+OP>e+O*");
+      Coll_Flag[42].Flag = (float)json_object_get_number(BufObject,"42.e+OP>2e+O^");
+      Coll_Flag[43].Flag = (float)json_object_get_number(BufObject,"43.e+OP>e+O*");
+      Coll_Flag[44].Flag = (float)json_object_get_number(BufObject,"44.e+OD>2e+O+");
+      Coll_Flag[45].Flag = (float)json_object_get_number(BufObject,"45.e+OD>e+O");
+      Coll_Flag[46].Flag = (float)json_object_get_number(BufObject,"46.O-+O2>O-+O2");
+      Coll_Flag[47].Flag = (float)json_object_get_number(BufObject,"47.O-+O2>e+OP+O2");
+      Coll_Flag[48].Flag = (float)json_object_get_number(BufObject,"48.O-+OP>e+O2");
+      Coll_Flag[49].Flag = (float)json_object_get_number(BufObject,"49.O-+O2^>OP+O2");
+      Coll_Flag[50].Flag = (float)json_object_get_number(BufObject,"50.O-+O^>2OP");
+      Coll_Flag[51].Flag = (float)json_object_get_number(BufObject,"51.O-+O2A>e+OP+O2");  
+      Coll_Flag[52].Flag = (float)json_object_get_number(BufObject,"52.O2^+OP>O2+O^");
+      Coll_Flag[53].Flag = (float)json_object_get_number(BufObject,"53.O2^+O2>O2+O2^");
+      Coll_Flag[54].Flag = (float)json_object_get_number(BufObject,"54.O2^+O2>O2^+O2");   
+      Coll_Flag[55].Flag = (float)json_object_get_number(BufObject,"55.O2^+O2>O^+OP+O2");
+      Coll_Flag[56].Flag = (float)json_object_get_number(BufObject,"56.O2^+O2A>O2+O2^");
+      Coll_Flag[57].Flag = (float)json_object_get_number(BufObject,"57.O2^+O2B>O2+O2^");
+      Coll_Flag[58].Flag = (float)json_object_get_number(BufObject,"58.O2^+Ar>O2+Ar^");
+      Coll_Flag[59].Flag = (float)json_object_get_number(BufObject,"59.O2^+Ar>O2^+Ar^");
+      Coll_Flag[60].Flag = (float)json_object_get_number(BufObject,"60.O^+O2>OP+O2^");
+      Coll_Flag[61].Flag = (float)json_object_get_number(BufObject,"61.O^+O2>O^+O2");
+      Coll_Flag[62].Flag = (float)json_object_get_number(BufObject,"62.O^+OP>OP+O^");
+      Coll_Flag[63].Flag = (float)json_object_get_number(BufObject,"63.O^+O2A>O2^+OP");
+      Coll_Flag[64].Flag = (float)json_object_get_number(BufObject,"64.O^+O2B>O2^+OP");
+      Coll_Flag[65].Flag = (float)json_object_get_number(BufObject,"65.Ar^+Ar>Ar+Ar^");
+      Coll_Flag[66].Flag = (float)json_object_get_number(BufObject,"66.Ar^+Ar>Ar++Ar");
+      Coll_Flag[67].Flag = (float)json_object_get_number(BufObject,"67.Ar^+O2>O2+Ar^");
+      Coll_Flag[68].Flag = (float)json_object_get_number(BufObject,"68.e+Ar*>e+Ar");
+      Coll_Flag[69].Flag = (float)json_object_get_number(BufObject,"69.O-+Ar^>OP+AR");
+      Coll_Flag[70].Flag = (float)json_object_get_number(BufObject,"70.O-+O2B>e+OP+O2");
+      Coll_Flag[71].Flag = (float)json_object_get_number(BufObject,"71.OD+OP>2OP");
+      Coll_Flag[72].Flag = (float)json_object_get_number(BufObject,"72.OD+O2>OP+O2");
+      Coll_Flag[73].Flag = (float)json_object_get_number(BufObject,"73.OD+O2>OP+O2A");
+      Coll_Flag[74].Flag = (float)json_object_get_number(BufObject,"74.OD+O2>OP+O2B");
+      Coll_Flag[75].Flag = (float)json_object_get_number(BufObject,"75.O2A+OP>OP+O2");
+      Coll_Flag[76].Flag = (float)json_object_get_number(BufObject,"76.O2A+O2>2O2");
+      Coll_Flag[77].Flag = (float)json_object_get_number(BufObject,"77.O2A+O2A>2O2");
+      Coll_Flag[78].Flag = (float)json_object_get_number(BufObject,"78.O2B+O2>2O2");
+      Coll_Flag[79].Flag = (float)json_object_get_number(BufObject,"79.Ar^+OP>Ar+O^");
+      Coll_Flag[80].Flag = (float)json_object_get_number(BufObject,"80.Ar^+O2>Ar+O2^");
+      Coll_Flag[81].Flag = (float)json_object_get_number(BufObject,"81.Ar*+Ar*>e+Ar+Ar^");
+      Coll_Flag[82].Flag = (float)json_object_get_number(BufObject,"82.Ar*+Ar>2Ar");
+      Coll_Flag[83].Flag = (float)json_object_get_number(BufObject,"83.Ar*+OP>OD+Ar");
+      Coll_Flag[84].Flag = (float)json_object_get_number(BufObject,"84.Ar*+OP>OP+Ar");
+      Coll_Flag[85].Flag = (float)json_object_get_number(BufObject,"85.Ar*+O2>2OP+Ar ");
+      Coll_Flag[86].Flag = (float)json_object_get_number(BufObject,"86.Ar*+O2>OP+OD+Ar");
+      Coll_Flag[87].Flag = (float)json_object_get_number(BufObject,"87.Ar*+O2>O2+Ar");
       printf("\tReaction = %d\n",TnRct);
       printf("\tCross section = %d\n",nRct_cx);
       printf("\tReaction rate = %d\n",nRct_rc);
@@ -997,7 +997,7 @@ void InputRead(int argc, char *argv[]) {
    printf("Finish parsing \"%s\"\n",InputFile); 
 }
 void start() {
-   int i,j,k,ID,CID;
+   int i,j,k,ID,CID,SID;
    printf("Initial-setting start\n"); 
    //-------------------------//
    //--------Geometry---------//
@@ -1039,7 +1039,7 @@ void start() {
       vec_C[i].PlasmaRegion = (int) 1;
       vec_C[i].eps_r = (float) 1.0;
    }
-   for (k=0;k<BoundaryNUN;k++){
+   for (k=0;k<BoundaryNUM;k++){
       for (i=BoundaryX0[k];i<=BoundaryX1[k];i++){
          for (j=BoundaryY0[k];j<=BoundaryY1[k];j++){
             ID = i*ngy+j;
@@ -1049,7 +1049,7 @@ void start() {
          }
       }
    }
-   for (k=0;k<DielNUN;k++){
+   for (k=0;k<DielNUM;k++){
       for (i=DielX0[k];i<=DielX1[k];i++){
          for (j=DielY0[k];j<=DielY1[k];j++){
             ID = i*ngy+j;
@@ -1063,7 +1063,7 @@ void start() {
          }
       }
    }
-   for (k=0;k<CondNUN;k++){
+   for (k=0;k<CondNUM;k++){
       for (i=CondX0[k];i<=CondX1[k];i++){
          for (j=CondY0[k];j<=CondY1[k];j++){
             ID = i*ngy + j;
@@ -1302,8 +1302,76 @@ void start() {
       vec_G[ID].area= 0.5*(dx+dy)*zlength;
    }
    // Set Structure for GPU
-   exit(1);
-
+    // make a Set Structure Index
+	// 1~99:dielectric 0:Plasma 100~:conductor //-1~:boundary
+	StructureIndex = MIMalloc((ncx + 2),(ncy + 2));
+   MIInit(StructureIndex, 0, ncx + 2, ncy + 2);
+	vec_StructureIndex = VIMalloc((ncx + 2) * (ncy + 2));
+	VIInit(vec_StructureIndex, 0, (ncx + 2) * (ncy + 2));
+	for (i = 0; i < ncx; i++) {
+		for (j = 0; j < ncy; j++) {
+			StructureIndex[i + 1][j + 1] = 0;
+			for (k = 0; k < DielNUM; k++)
+				if (i >= DielX0[k] && i < DielX1[k] && j >= DielY0[k] && j < DielY1[k])
+					StructureIndex[i + 1][j + 1] = DielM_ID[k];
+			for (k = 0; k < CondNUM; k++)
+				if (i >= CondX0[k] && i < CondX1[k] && j >= CondY0[k] && j < CondY1[k])
+					StructureIndex[i + 1][j + 1] = 100 + CondM_ID[k];
+		}
+	}
+	for (i = 1; i < ngx; i++) {
+		if ((vec_G[(i-1)*ngy].Boundary == NEUMANN || vec_G[i*ngy].Boundary == NEUMANN)
+				&& (StructureIndex[i][1] == 0)) {
+			StructureIndex[i][0] = -vec_G[(i-1)*ngy].Boundary - 2;
+		} else {
+			if (StructureIndex[i][1]) {
+				StructureIndex[i][0] = StructureIndex[i][1];
+			} else
+				StructureIndex[i][0] = -1;
+		}
+		if ((vec_G[(i-1)*ngy+ncy].Boundary == NEUMANN
+				|| vec_G[i*ngy+ncy].Boundary == NEUMANN)
+				&& (StructureIndex[i][ngy - 1] == 0)) {
+			StructureIndex[i][ngy] = -vec_G[(i-1)*ngy+ncy].Boundary - 6;
+		} else {
+			if (StructureIndex[i][ngy - 1]) {
+				StructureIndex[i][ngy] = StructureIndex[i][ngy - 1];
+			} else
+				StructureIndex[i][ngy] = -1;
+		}
+	}
+	for (j = 1; j < ngy; j++) {
+		if ((vec_G[j-1].Boundary == NEUMANN
+				|| vec_G[j].Boundary == NEUMANN)
+				&& (StructureIndex[1][j] == 0)) {
+			StructureIndex[0][j] = -vec_G[j-1].Boundary;
+		} else {
+			if (StructureIndex[1][j]) {
+				StructureIndex[0][j] = StructureIndex[1][j];
+			} else
+				StructureIndex[0][j] = -1;
+		}
+		if ((vec_G[ncx*ngy+j-1].Boundary == NEUMANN
+				|| vec_G[ncx*ngy+j].Boundary == NEUMANN)
+				&& (StructureIndex[ngx - 1][j] == 0)) {
+			StructureIndex[ngx][j] = -vec_G[ncx*ngy+j].Boundary - 4;
+		} else {
+			if (StructureIndex[ngx - 1][j]) {
+				StructureIndex[ngx][j] = StructureIndex[ngx - 1][j];
+			} else
+				StructureIndex[ngx][j] = -1;
+		}
+	}
+	StructureIndex[0][0] = -vec_G[ngy].Boundary - vec_G[1].Boundary - 8;
+	StructureIndex[ncx + 1][0] = -vec_G[(ncx-1)*ngy].Boundary
+			- vec_G[ncx*ngy+1].Boundary - 12;
+	StructureIndex[0][ncy + 1] = -vec_G[ngy+ncy].Boundary
+			- vec_G[ncy-1].Boundary - 16;
+	StructureIndex[ncx + 1][ncy + 1] = -vec_G[(ncy-1)*ngy+ncy].Boundary
+			- vec_G[(ncx)*ngy+ncy-1].Boundary- 20;
+	for (i = 0; i < ncx + 2; i++)
+		for (j = 0; j < ncy + 2; j++)
+			vec_StructureIndex[i * (ncy + 2) + j] = StructureIndex[i][j];
  
   
    /*
@@ -1326,11 +1394,17 @@ void start() {
    }printf("\n");
    exit(1);
    */
+   /*
+   for(j=ngy;j>=0;j--){
+      for(i=0;i<ngx+1;i++){
+         printf("%d",vec_StructureIndex[i * (ncy + 2) + j]);
+      }
+      printf("\n");
+   }printf("\n");
+   exit(1);
+   */
    exit(1); // devolep point
 
-}
-void Print_Vec_G(HGA *A){
-   
 }
 void DumpRead(int argc, char *argv[]) {
    fprintf(stderr,"Tstrp = %d\n",tstep);
