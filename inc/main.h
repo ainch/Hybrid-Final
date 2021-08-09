@@ -1,7 +1,10 @@
 #include "xypic.h"
 
-extern void InputRead(int argc, char *argv[]);
-extern void start();
+extern void InputRead();
+extern void InputFileMake();
+extern void Geometry_setting();
+extern void FieldSolverSetting();
+extern void GasSetting();
 extern void DumpRead(int argc, char *argv[]);
 extern void main_cuda();
 

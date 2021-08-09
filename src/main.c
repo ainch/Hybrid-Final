@@ -18,9 +18,12 @@ int main(int argc, char *argv[])
 		puts(" 2D_Hybrid_PIC -i <InputFile> -d <DumpFile>");
 		exit(1);
 	}
-	//display_title();       	/* Display 2D Field Solver title */
-	InputRead(argc,argv);	/* InputFile Parsing */
-	start();   				/* Initialized */
+	//display_title();       /* Display 2D Field Solver title */
+	InputRead();	 	/* InputFile Parsing */
+	InputFileMake();	/* Make a Input File */
+	Geometry_setting(); 	
+	FieldSolverSetting();
+	GasSetting();
 	DumpRead(argc,argv);	/* DumpFile Read */
 	main_cuda();			/* GPU Start */
  	display_finish();

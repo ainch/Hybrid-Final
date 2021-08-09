@@ -69,8 +69,11 @@ int mMnum;
 int CX_TEC_Flag;
 CollF *Coll_Flag;
 //
-void InputRead(int argc, char *argv[]);
-void start();
+void InputRead();
+void InputFileMake();
+void Geometry_setting();
+void FieldSolverSetting();
+void GasSetting();
 void DumpRead(int argc, char *argv[]);
 int ***TIMalloc(int sizeX,int sizeY,int sizeZ);
 float ***TFMalloc(int sizeX,int sizeY,int sizeZ);

@@ -1,0 +1,51 @@
+{
+    "GPU_Device_Number": {
+        "GPUDevice": 10
+    },
+    "Geometry": {
+        "SystemSpec": {
+            "X_length(m)": 0.039999999105930328,
+            "Y_length(m)": 0.019999999552965164,
+            "Z_length(m)": 1,
+            "NumGridx": 201,
+            "NumGridy": 101
+        },
+        "BoundaryCondition": {
+            "Year": 2010
+        },
+        "ConductorSpec": {
+            "Year": 2010
+        },
+        "Source": {
+            "Year": 2010
+        },
+        "DielectricSpec": {
+            "Year": 2010
+        }
+    },
+    "GasSpecies": {
+        "Year": 2010
+    },
+    "SimulationMethod": {
+        "Year": 2010
+    },
+    "Diagnostics": {
+        "Year": 2010
+    },
+    "Collision_On_Off": {
+        "Year": 2010
+    },
+    "Title": "Inception",
+    "Year": 2010,
+    "Runtime": 148,
+    "Genre": "Sci-Fi",
+    "Director": "Christopher Nolan",
+    "Actors": [
+        "Leonardo DiCaprio",
+        "Joseph Gordon-Levitt",
+        "Ellen Page",
+        "Tom Hardy",
+        "Ken Watanabe"
+    ],
+    "imdbRating": 8.8000000000000007
+}
