@@ -70,7 +70,6 @@ int CX_TEC_Flag;
 CollF *Coll_Flag;
 //
 void InputRead();
-void InputFileMake();
 void Geometry_setting();
 void FieldSolverSetting();
 void GasSetting();

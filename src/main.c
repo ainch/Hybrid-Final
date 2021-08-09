@@ -20,7 +20,6 @@ int main(int argc, char *argv[])
 	}
 	//display_title();       /* Display 2D Field Solver title */
 	InputRead();	 	/* InputFile Parsing */
-	InputFileMake();	/* Make a Input File */
 	Geometry_setting(); 	
 	FieldSolverSetting();
 	GasSetting();
