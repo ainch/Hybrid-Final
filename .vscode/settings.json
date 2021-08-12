@@ -7,7 +7,8 @@
         "random": "cpp",
         "queue": "cpp",
         "stack": "cpp",
-        "complex": "c"
+        "complex": "c",
+        "particle.h": "c"
     },
     "C_Cpp.errorSquiggles": "Disabled"
 }

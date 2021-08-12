@@ -337,6 +337,7 @@ void InputRead() {
       FG[0].y_center = (float)json_object_get_number(BufObject2,"Y0");
       FG[0].y_fall = (float)json_object_get_number(BufObject2,"Y1");
       if(FG[0].Loadtype == SMARTLOAD){
+
       }else if(FG[0].Loadtype == UNIFORM){
          if(FG[0].x_center>=FG[0].x_fall || FG[0].y_center>=FG[0].y_fall)
             exit(1);
@@ -346,6 +347,8 @@ void InputRead() {
       }else if(FG[0].Loadtype == COSINE){
          if(FG[0].x_center*FG[0].x_fall*FG[0].y_center*FG[0].y_fall < 0)
             exit(1);
+      }else if(FG[0].Loadtype == NP_RAIO){
+         
       }else{
          printf("\t\"Loadtype\" is error in NeutralSpecies.\n"); 
          exit(1);
@@ -363,15 +366,18 @@ void InputRead() {
       SP[0].y_center = (float)json_object_get_number(BufObject2,"Y0");
       SP[0].y_fall = (float)json_object_get_number(BufObject2,"Y1");
       if(SP[0].Loadtype == SMARTLOAD){
+
       }else if(SP[0].Loadtype == UNIFORM){
          if(SP[0].x_center>=SP[0].x_fall || SP[0].y_center>=SP[0].y_fall)
             exit(1);
       }else if(SP[0].Loadtype == EXPONETIAL){
          if(SP[0].x_center*SP[0].x_fall*SP[0].y_center*SP[0].y_fall < 0)
             exit(1);
-      }else if(FG[0].Loadtype == COSINE){
+      }else if(SP[0].Loadtype == COSINE){
          if(SP[0].x_center*SP[0].x_fall*SP[0].y_center*SP[0].y_fall < 0)
             exit(1);
+      }else if(SP[0].Loadtype == NP_RAIO){
+         
       }else{
          printf("\t\"Loadtype\" is error in ChargeSpecies.\n"); 
          exit(1);
@@ -382,6 +388,7 @@ void InputRead() {
       SP[0].InitDens = (float)json_object_get_number(BufObject2,"Density");
       SP[0].Temp = (float)json_object_get_number(BufObject2,"Temp(eV)");
       SP[0].np2c = (float)json_object_get_number(BufObject2,"np2c");
+      SP[0].Ratio = (int)json_object_get_number(BufObject2,"Ratio");
       SP[0].MAXNP = (int)json_object_get_number(BufObject2,"Max_np");
       SP[0].mass = 5.485799486e-4 * AMU;
       SP[0].q = -1.0 * CQ;
@@ -391,6 +398,7 @@ void InputRead() {
       SP[1].InitDens = (float)json_object_get_number(BufObject2,"Density");
       SP[1].Temp = (float)json_object_get_number(BufObject2,"Temp(eV)");
       SP[1].np2c = (float)json_object_get_number(BufObject2,"np2c");
+      SP[1].Ratio = (int)json_object_get_number(BufObject2,"Ratio");
       SP[1].MAXNP = (int)json_object_get_number(BufObject2,"Max_np");
       SP[1].mass = 39.9500 * AMU;
       SP[1].q = 1.0 * CQ;
@@ -422,6 +430,8 @@ void InputRead() {
       }else if(FG[0].Loadtype == COSINE){
          if(FG[0].x_center*FG[0].x_fall*FG[0].y_center*FG[0].y_fall < 0)
             exit(1);
+      }else if(FG[0].Loadtype == NP_RAIO){
+         
       }else{
          printf("\t\"Loadtype\" is error in NeutralSpecies.\n"); 
          exit(1);
@@ -454,15 +464,18 @@ void InputRead() {
       SP[0].y_center = (float)json_object_get_number(BufObject2,"Y0");
       SP[0].y_fall = (float)json_object_get_number(BufObject2,"Y1");
       if(SP[0].Loadtype == SMARTLOAD){
+
       }else if(SP[0].Loadtype == UNIFORM){
          if(SP[0].x_center>=SP[0].x_fall || SP[0].y_center>=SP[0].y_fall)
             exit(1);
       }else if(SP[0].Loadtype == EXPONETIAL){
          if(SP[0].x_center*SP[0].x_fall*SP[0].y_center*SP[0].y_fall < 0)
             exit(1);
-      }else if(FG[0].Loadtype == COSINE){
+      }else if(SP[0].Loadtype == COSINE){
          if(SP[0].x_center*SP[0].x_fall*SP[0].y_center*SP[0].y_fall < 0)
             exit(1);
+      }else if(SP[0].Loadtype == NP_RAIO){
+         
       }else{
          printf("\t\"Loadtype\" is error in ChargeSpecies.\n"); 
          exit(1);
@@ -473,6 +486,7 @@ void InputRead() {
       SP[0].InitDens = (float)json_object_get_number(BufObject2,"Density");
       SP[0].Temp = (float)json_object_get_number(BufObject2,"Temp(eV)");
       SP[0].np2c = (float)json_object_get_number(BufObject2,"np2c");
+      SP[0].Ratio = (int)json_object_get_number(BufObject2,"Ratio");
       SP[0].MAXNP = (int)json_object_get_number(BufObject2,"Max_np");
       SP[0].mass = 5.485799486e-4 * AMU;
       SP[0].q = -1.0 * CQ;
@@ -482,6 +496,7 @@ void InputRead() {
       SP[1].InitDens = (float)json_object_get_number(BufObject2,"Density");
       SP[1].Temp = (float)json_object_get_number(BufObject2,"Temp(eV)");
       SP[1].np2c = (float)json_object_get_number(BufObject2,"np2c");
+      SP[1].Ratio = (int)json_object_get_number(BufObject2,"Ratio");
       SP[1].MAXNP = (int)json_object_get_number(BufObject2,"Max_np");
       SP[1].mass = 32.0000 * AMU;
       SP[1].q = 1.0 * CQ;
@@ -491,6 +506,7 @@ void InputRead() {
       SP[2].InitDens = (float)json_object_get_number(BufObject2,"Density");
       SP[2].Temp = (float)json_object_get_number(BufObject2,"Temp(eV)");
       SP[2].np2c = (float)json_object_get_number(BufObject2,"np2c");
+      SP[2].Ratio = (int)json_object_get_number(BufObject2,"Ratio");
       SP[2].MAXNP = (int)json_object_get_number(BufObject2,"Max_np");
       SP[2].mass = 16.000 * AMU;
       SP[2].q = 1.0 * CQ;
@@ -500,6 +516,7 @@ void InputRead() {
       SP[3].InitDens = (float)json_object_get_number(BufObject2,"Density");
       SP[3].Temp = (float)json_object_get_number(BufObject2,"Temp(eV)");
       SP[3].np2c = (float)json_object_get_number(BufObject2,"np2c");
+      SP[3].Ratio = (int)json_object_get_number(BufObject2,"Ratio");
       SP[3].MAXNP = (int)json_object_get_number(BufObject2,"Max_np");
       SP[3].mass = 16.000 * AMU;
       SP[3].q = -1.0 * CQ;
@@ -534,16 +551,28 @@ void InputRead() {
       FG[0].y_center = (float)json_object_get_number(BufObject2,"Y0");
       FG[0].y_fall = (float)json_object_get_number(BufObject2,"Y1");
       if(FG[0].Loadtype == SMARTLOAD){
+
       }else if(FG[0].Loadtype == UNIFORM){
-         if(FG[0].x_center>=FG[0].x_fall || FG[0].y_center>=FG[0].y_fall)
+         if(FG[0].x_center>FG[0].x_fall || FG[0].y_center>FG[0].y_fall)
+         {
+            printf("Error : Load type %d Position ERROR!\n",FG[0].Loadtype);
             exit(1);
+         }  
       }else if(FG[0].Loadtype == EXPONETIAL){
          if(FG[0].x_center*FG[0].x_fall*FG[0].y_center*FG[0].y_fall < 0)
+         {
+            printf("Error : Load type %d Position ERROR!\n",FG[0].Loadtype);
             exit(1);
+         }  
       }else if(FG[0].Loadtype == COSINE){
          if(FG[0].x_center*FG[0].x_fall*FG[0].y_center*FG[0].y_fall < 0)
+         {
+            printf("Error : Load type %d Position ERROR!\n",FG[0].Loadtype);
             exit(1);
-      }else{
+         }  
+      else if(FG[0].Loadtype == NP_RAIO){
+         
+      }}else{
          printf("\t\"Loadtype\" is error in NeutralSpecies.\n"); 
          exit(1);
       }
@@ -580,15 +609,27 @@ void InputRead() {
       SP[0].y_center = (float)json_object_get_number(BufObject2,"Y0");
       SP[0].y_fall = (float)json_object_get_number(BufObject2,"Y1");
       if(SP[0].Loadtype == SMARTLOAD){
+
       }else if(SP[0].Loadtype == UNIFORM){
-         if(SP[0].x_center>=SP[0].x_fall || SP[0].y_center>=SP[0].y_fall)
+         if((SP[0].x_center>=SP[0].x_fall) || (SP[0].y_center>=SP[0].y_fall))
+         {
+            printf("Error : Load type Position ERROR! \n");
             exit(1);
+         }   
       }else if(SP[0].Loadtype == EXPONETIAL){
          if(SP[0].x_center*SP[0].x_fall*SP[0].y_center*SP[0].y_fall < 0)
+         {
+            printf("Error : Load type Position ERROR!\n");
             exit(1);
-      }else if(FG[0].Loadtype == COSINE){
+         }  
+      }else if(SP[0].Loadtype == COSINE){
          if(SP[0].x_center*SP[0].x_fall*SP[0].y_center*SP[0].y_fall < 0)
+         {
+            printf("Error : Load type Position ERROR!\n");
             exit(1);
+         }  
+      }else if(SP[0].Loadtype == NP_RAIO){
+         
       }else{
          printf("\t\"Loadtype\" is error in ChargeSpecies.\n"); 
          exit(1);
@@ -599,6 +640,7 @@ void InputRead() {
       SP[0].InitDens = (float)json_object_get_number(BufObject2,"Density");
       SP[0].Temp = (float)json_object_get_number(BufObject2,"Temp(eV)");
       SP[0].np2c = (float)json_object_get_number(BufObject2,"np2c");
+      SP[0].Ratio = (int)json_object_get_number(BufObject2,"Ratio");
       SP[0].MAXNP = (int)json_object_get_number(BufObject2,"Max_np");
       SP[0].mass = 5.485799486e-4 * AMU;
       SP[0].q = -1.0 * CQ;
@@ -608,6 +650,7 @@ void InputRead() {
       SP[1].InitDens = (float)json_object_get_number(BufObject2,"Density");
       SP[1].Temp = (float)json_object_get_number(BufObject2,"Temp(eV)");
       SP[1].np2c = (float)json_object_get_number(BufObject2,"np2c");
+      SP[1].Ratio = (int)json_object_get_number(BufObject2,"Ratio");
       SP[1].MAXNP = (int)json_object_get_number(BufObject2,"Max_np");
       SP[1].mass = 39.9500 * AMU;
       SP[1].q = 1.0 * CQ;
@@ -617,6 +660,7 @@ void InputRead() {
       SP[2].InitDens = (float)json_object_get_number(BufObject2,"Density");
       SP[2].Temp = (float)json_object_get_number(BufObject2,"Temp(eV)");
       SP[2].np2c = (float)json_object_get_number(BufObject2,"np2c");
+      SP[2].Ratio = (int)json_object_get_number(BufObject2,"Ratio");
       SP[2].MAXNP = (int)json_object_get_number(BufObject2,"Max_np");
       SP[2].mass = 32.0000 * AMU;
       SP[2].q = 1.0 * CQ;
@@ -626,6 +670,7 @@ void InputRead() {
       SP[3].InitDens = (float)json_object_get_number(BufObject2,"Density");
       SP[3].Temp = (float)json_object_get_number(BufObject2,"Temp(eV)");
       SP[3].np2c = (float)json_object_get_number(BufObject2,"np2c");
+      SP[3].Ratio = (int)json_object_get_number(BufObject2,"Ratio");
       SP[3].MAXNP = (int)json_object_get_number(BufObject2,"Max_np");
       SP[3].mass = 16.0000 * AMU;
       SP[3].q = 1.0 * CQ;
@@ -635,6 +680,7 @@ void InputRead() {
       SP[4].InitDens = (float)json_object_get_number(BufObject2,"Density");
       SP[4].Temp = (float)json_object_get_number(BufObject2,"Temp(eV)");
       SP[4].np2c = (float)json_object_get_number(BufObject2,"np2c");
+      SP[4].Ratio = (int)json_object_get_number(BufObject2,"Ratio");
       SP[4].MAXNP = (int)json_object_get_number(BufObject2,"Max_np");
       SP[4].mass = 16.0000 * AMU;
       SP[4].q = -1.0 * CQ;
@@ -656,7 +702,7 @@ void InputRead() {
    dHIST = IVnZC("HistoryDivide",(int)json_object_get_number(SubObject4,"HistoryDivide"));
    N_ave = IVnZC("AverageIter",(int)json_object_get_number(SubObject4,"AverageIter"));
    N_smt = (int)json_object_get_number(SubObject4,"DensitySmoothing");
-   np_lim = IVnZC("ParticleLimit",(int)json_object_get_number(SubObject4,"ParticleLimit"));
+   NP_LIMIT = IVnZC("ParticleLimit",(int)json_object_get_number(SubObject4,"ParticleLimit"));
    ConstB_Flag = (int)json_object_get_number(SubObject4,"ConstB_Flag");
    if(ConstB_Flag){
       ConstBFile = (char*)json_object_get_string(SubObject4,"ConstB_File");
@@ -1697,7 +1743,35 @@ void FieldSolverSetting(){
    //   
 }
 void GasSetting(){
+   int isp;
 
+   printf("Gas and Particle Setting\n");
+   PtD = (HCP *) malloc(nsp * sizeof(HCP));
+   printf("\tParicle Load Type : %d\n",SP[0].Loadtype);
+   printf("\tX0 = %g, X1 = %g, Y0 = %g, Y1 = %g\n",SP[0].x_center, SP[0].x_fall, SP[0].y_center,SP[0].y_fall);
+   for(isp=0;isp<nsp;isp++){
+      SP[isp].q_density = SP[isp].q * SP[isp].np2c;
+	   SP[isp].vti = sqrt(CQ * SP[isp].Temp / SP[isp].mass);
+	   SP[isp].qm = SP[isp].q / SP[isp].mass;
+	   SP[isp].Escale = 0.5 * SP[isp].mass / CQ;
+	   SP[isp].Ascale = SP[isp].qm * dt;
+      PtD[isp].x = VFMalloc(NP_LIMIT);
+      PtD[isp].y = VFMalloc(NP_LIMIT);
+      PtD[isp].vx = VFMalloc(NP_LIMIT);
+      PtD[isp].vy = VFMalloc(NP_LIMIT);
+      PtD[isp].vz = VFMalloc(NP_LIMIT); 
+      PtD[isp].den = VFMalloc(Gsize);
+      SetParticleLoad(isp, SP[isp].InitDens, SP[0].Loadtype,SP[0].x_center, SP[0].x_fall, SP[0].y_center,SP[0].y_fall,SP[isp].vti);
+   }
+   // Particle Data
+   if(DumpFlag == 0){ // No Dump File 
+      for(isp=0;isp<nsp;isp++){
+
+      }
+   }else{
+
+   }
+   exit(1);
 }
 void DumpRead(int argc, char *argv[]) {
    fprintf(stderr,"Tstrp = %d\n",tstep);

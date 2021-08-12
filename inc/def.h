@@ -33,10 +33,11 @@ enum BoundaryType {
     NO_FACE,
 };
 enum LoadType {
-    SMARTLOAD,
     UNIFORM,
     EXPONETIAL,
     COSINE,
+	NP_RAIO,
+	SMARTLOAD,
 };
 enum GasType {
     ARGON,
@@ -76,15 +77,24 @@ typedef struct __Host_Csize_Array{
     float eps_r;
 }HCA;
 typedef struct __Device_Gsize_Array{
-	float Boundary; //Boundary Condition Constant 0~4
-	float CondID;  // Conductor M_ID , NO Conductor is zero
-	float Temp;
-	float BackDens;
+
 }dev_GA;
 typedef struct __Device_Csize_Array{
 
 }dev_CA;
-typedef struct _ChargedParticle
+typedef struct _Host_Charged_Particle
+{
+	float *den;
+	int *MaxPtNumInCell;// SIZE(Gsize)
+	int *PtNumInCell; 	// SIZE(Gsize)
+	int *CellID;// SIZE(NP_LIM)
+    float *x;   // SIZE(NP_LIM)
+    float *y;  	// SIZE(NP_LIM)
+    float *vx;  // SIZE(NP_LIM)
+	float *vy;  // SIZE(NP_LIM)
+	float *vz;  // SIZE(NP_LIM)
+}HCP;
+typedef struct _Device_Charged_Particle
 {
 	//SIZE = MAXNP
 	int CellID;
@@ -93,21 +103,28 @@ typedef struct _ChargedParticle
     float vx;
 	float vy;
 	float vz;
-} CP;
+}dev_CP;
 typedef struct tag_species
 {
 	//Constant
 	char name[10];
-	int  Loadtype;		// density load type
+	int  Loadtype;				// density load type
 	float x_center,x_fall;		// density load position
 	float y_center,y_fall;		// density load position
-	int  S_ID;			// species ID
-	float InitDens;		//initial density
-	float Temp;			//Load temperature
-	float np2c;			// np2c
-	int MAXNP;			// maximum np
+	int  S_ID;					// species ID
+	float InitDens;				//initial density
+	float Temp;					//Load temperature
+	float np2c;					// np2c
+	int Ratio;
+	int MAXNP;					// maximum np
 	float mass;
 	float q;
+	float q_density;
+	float vti;
+	int np;
+	float qm;
+	float Escale;
+	float Ascale;
 }Species;
 typedef struct fluid{
 	char name[10];				// string name

@@ -12,6 +12,7 @@ extern void Argon_CrossSectionSET(CollF *CF);
 extern void Oygen_CrossSectionSET(CollF *CF);
 extern void ArO2_CrossSectionSET(CollF *CF);
 extern void CG_Matrix_Setting(float *A, int *Ai, int *Aj, float **b, float *M, float *Atemp, float *btemp);
+extern void SetParticleLoad(int isp, float Ninit, int load_type, float x_left,float x_right, float y_top, float y_bottom, float vti);
 
 #ifndef __START_H__
 #define __START_H__
@@ -57,7 +58,7 @@ float dtc; // time step for continuity equation
 float PCGtol;
 int HISTMAX;
 int dHIST;
-int np_lim; // total particle limit
+int NP_LIMIT; //Each of particle limit
 int N_ave;
 int N_smt;  // Number of smoothing every timestep
 int ConstB_Flag; // Magnetic field 
@@ -67,7 +68,6 @@ int Basic_Flag; // 0 : Basic, 1: OTHERS
 int nRct_cx,nRct_rc; // Number of reaction _ cross section or Reaction rate
 int TnRct; // Total Number of reaction 
 int mMnum;
-int TecplotS_CX_Flag;
 CollF *Coll_Flag;
 //
 int FieldIter;
@@ -77,7 +77,10 @@ int *Ai,*Aj;
 int **A_idx;
 float *MatM,**cond_b,*temp_b;
 //
+int TecplotS_CX_Flag;
 int TecplotS_Gsize_Flag;
+//
+HCP *PtD;
 //
 void InputRead();
 void Geometry_setting();
@@ -106,5 +109,4 @@ void VFCopy(float *V,float *C,int size);
 void VICopy(int *V,int *C,int size);
 int IVnZC(char A[50],int Value); // Int Value non Zero CHECK
 float FIVnZC(char A[50],float Value);// float Value non Zero CHECK
-void main_Variable_printorSave();
 #endif
