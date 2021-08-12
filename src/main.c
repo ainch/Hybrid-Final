@@ -23,6 +23,8 @@ int main(int argc, char *argv[])
 	Geometry_setting(); 	
 	FieldSolverSetting();
 	GasSetting();
+	if(TecplotS_Gsize_Flag) Main_Variable_printorSave();
+	if(TecplotS_CX_Flag) Cross_Section_data_Save();
 	DumpRead(argc,argv);	/* DumpFile Read */
 	main_cuda();			/* GPU Start */
  	display_finish();

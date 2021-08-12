@@ -64,8 +64,8 @@ typedef struct TEST
     float *d;
 } point;
 typedef struct __Host_Gsize_Array{
-	int Boundary;  // = BoundaryCondition
-	int CondID;
+	int Boundary;  //Boundary Condition Constant 0~4
+	int CondID;		// Conductor ID , NO Conductor is zero
 	float Temp;
 	float BackDens;
     int face;
@@ -76,14 +76,24 @@ typedef struct __Host_Csize_Array{
     float eps_r;
 }HCA;
 typedef struct __Device_Gsize_Array{
-	float Boundary;
-	float CondID;  // Conductor Material ID
+	float Boundary; //Boundary Condition Constant 0~4
+	float CondID;  // Conductor M_ID , NO Conductor is zero
 	float Temp;
 	float BackDens;
 }dev_GA;
 typedef struct __Device_Csize_Array{
 
 }dev_CA;
+typedef struct _ChargedParticle
+{
+	//SIZE = MAXNP
+	int CellID;
+    float x;  
+    float y;
+    float vx;
+	float vy;
+	float vz;
+} CP;
 typedef struct tag_species
 {
 	//Constant
@@ -99,16 +109,6 @@ typedef struct tag_species
 	float mass;
 	float q;
 }Species;
-typedef struct _ChargedParticle
-{
-	//SIZE = MAXNP
-	int CellID;
-    float x;  
-    float y;
-    float vx;
-	float vy;
-	float vz;
-} CP;
 typedef struct fluid{
 	char name[10];				// string name
 	int   Loadtype;				// density load type

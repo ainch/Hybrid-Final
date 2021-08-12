@@ -1,10 +1,13 @@
 #include "xypic.h"
-
+extern int TecplotS_CX_Flag;
+extern int TecplotS_Gsize_Flag;
 extern void InputRead();
 extern void InputFileMake();
 extern void Geometry_setting();
 extern void FieldSolverSetting();
 extern void GasSetting();
+extern void Main_Variable_printorSave();
+extern void Cross_Section_data_Save();
 extern void DumpRead(int argc, char *argv[]);
 extern void main_cuda();
 
@@ -17,7 +20,6 @@ int DumpFlag; // Dump File ON,OFF
 char InputFile[80]; // INPUT FILE NAME
 char DumpFile[80];  // DUMP FILE NAME
 char *ConstBFile;  // DUMP FILE NAME
-
 void display_title();
 void display_finish();
 #endif

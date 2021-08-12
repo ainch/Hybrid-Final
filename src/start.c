@@ -19,6 +19,7 @@ float FVnZC(char A[50],float Value){ // float Value non Zero CHECK
 void InputRead() {
    int i,j;
    int buf;
+   int IDn, IDchk[100], IDchk1, IDchk2;
    float fbuf1,fbuf2;
    JSON_Value *InputValue;
    JSON_Object *MainObject;
@@ -45,8 +46,8 @@ void InputRead() {
    zlength = (float)json_object_get_number(BufObject,"Z_length(m)");
    ngx = (int)json_object_get_number(BufObject,"NumGridx");
    ngy = (int)json_object_get_number(BufObject,"NumGridy");
-   if (ngx < 5 || ngy < 5){
-      printf("\"ngx\",\"ngy\" is too small!\n");
+   if (ngx * ngy < 1024){
+      printf("\"ngx * ngy\" is too small!(>=1024)\n");
       exit(1);
    }
    BufArray = json_object_get_array(SubObject2,"BoundaryCondition");
@@ -98,6 +99,46 @@ void InputRead() {
       printf("\"Conductor\" is too small!(CondNum>=2)\n");
       exit(1);
    }
+   if (CondNUM > 100){
+      printf("\"Conductor\" is too large!(CondNum<100)\n");
+      exit(1);
+   }
+   IDn = 0;
+   VIInit(IDchk,0,100);
+   IDchk1 = 0;
+   for (i=0;i<CondNUM;i++){
+      BufObject = json_array_get_object(BufArray,i);
+      IDchk1 = (int)json_object_get_number(BufObject,"M_ID");
+      if(IDchk1==0){
+         printf("Error : \"M_ID\" > 0\n");
+         exit(1);
+      }else{
+         if(IDn==0){
+            if(IDchk1!=1) {
+               printf("Error : First \"M_ID\" must be 1 \n");
+               exit(1);
+            }
+            IDchk[IDn] = IDchk1;
+            IDn++;
+         }else{
+            IDchk2 = 1; // Just flag
+            if(IDchk[IDn-1]>IDchk1){
+               printf("Error : \"M_ID\" must be written in order.\n");
+               exit(1);
+            }
+            for (j=0;j<IDn;j++){ // Check
+               if(IDchk1==IDchk[j]){
+                  IDchk2 = 0;
+               }
+            }
+            if(IDchk2){
+               IDchk[IDn] = IDchk1;
+               IDn++;
+            }
+         }
+      }
+   }
+   CondNUMR = IDn;
    CondM_ID = VIMalloc(CondNUM);
    CondX0 = VIMalloc(CondNUM);
    CondX1 = VIMalloc(CondNUM);
@@ -176,6 +217,38 @@ void InputRead() {
    BufArray = json_object_get_array(SubObject2,"DielectricSpec");
    DielNUM = (int)json_array_get_count(BufArray);
    printf("\tDielectric # = %d\n",DielNUM); 
+   IDn = 0;
+   VIInit(IDchk,0,100);
+   IDchk1 = 0;
+   for (i=0;i<DielNUM;i++){
+      BufObject = json_array_get_object(BufArray,i);
+      IDchk1 = (int)json_object_get_number(BufObject,"M_ID");
+      if(IDchk1==0){
+         printf("Error : \"M_ID\" > 0\n");
+         exit(1);
+      }else{
+         if(IDn==0){
+            IDchk[IDn] = IDchk1;
+            IDn++;
+         }else{
+            IDchk2 = 1; // Just flag
+            if(IDchk[IDn-1]>IDchk1){
+               printf("Error : \"M_ID\" must be written in order.\n");
+               exit(1);
+            }
+            for (j=0;j<IDn;j++){ // Check
+               if(IDchk1==IDchk[j]){
+                  IDchk2 = 0;
+               }
+            }
+            if(IDchk2){
+               IDchk[IDn] = IDchk1;
+               IDn++;
+            }
+         }
+      }
+   }
+   DielNUMR = IDn;
    DielM_ID = VIMalloc(DielNUM);
    DielX0 = VIMalloc(DielNUM);
    DielX1 = VIMalloc(DielNUM);
@@ -353,26 +426,26 @@ void InputRead() {
          printf("\t\"Loadtype\" is error in NeutralSpecies.\n"); 
          exit(1);
       }
-      BufObject2 = json_object_get_object(BufObject,"OP");
-      strcpy(FG[0].name,"OP");
+      BufObject2 = json_object_get_object(BufObject,"O2A");
+      strcpy(FG[0].name,"O2A");
       FG[0].InitDens =(float)json_object_get_number(BufObject2,"Density");
       FG[0].Temp = (float)json_object_get_number(BufObject2,"Temp(eV)");
-      FG[0].mass = 16.0000 * AMU;
-      BufObject2 = json_object_get_object(BufObject,"OD");
-      strcpy(FG[1].name,"OD");
+      FG[0].mass = 32.0000 * AMU;
+      BufObject2 = json_object_get_object(BufObject,"O2B");
+      strcpy(FG[1].name,"O2B");
       FG[1].InitDens =(float)json_object_get_number(BufObject2,"Density");
       FG[1].Temp = (float)json_object_get_number(BufObject2,"Temp(eV)");
-      FG[1].mass = 16.0000 * AMU;
-      BufObject2 = json_object_get_object(BufObject,"O2A");
-      strcpy(FG[2].name,"O2A");
+      FG[1].mass = 32.0000 * AMU;
+      BufObject2 = json_object_get_object(BufObject,"OP");
+      strcpy(FG[2].name,"OP");
       FG[2].InitDens =(float)json_object_get_number(BufObject2,"Density");
       FG[2].Temp = (float)json_object_get_number(BufObject2,"Temp(eV)");
-      FG[2].mass = 32.0000 * AMU;
-      BufObject2 = json_object_get_object(BufObject,"O2B");
-      strcpy(FG[3].name,"O2B");
+      FG[2].mass = 16.0000 * AMU;
+      BufObject2 = json_object_get_object(BufObject,"OD");
+      strcpy(FG[3].name,"OD");
       FG[3].InitDens =(float)json_object_get_number(BufObject2,"Density");
       FG[3].Temp = (float)json_object_get_number(BufObject2,"Temp(eV)");
-      FG[3].mass = 32.0000 * AMU;
+      FG[3].mass = 16.0000 * AMU;
       BufObject = json_object_get_object(SubObject3,"ChargeSpecies");
       SP[0].Loadtype = (int)json_object_get_number(BufObject,"Loadtype");
       BufObject2 = json_object_get_object(BufObject,"LoadPosition(m)");
@@ -480,25 +553,25 @@ void InputRead() {
       FG[0].Temp = (float)json_object_get_number(BufObject2,"Temp(eV)");
       FG[0].mass = 39.950 * AMU;
       BufObject2 = json_object_get_object(BufObject,"OP");
-      strcpy(FG[1].name,"OP");
+      strcpy(FG[1].name,"O2A");
       FG[1].InitDens =(float)json_object_get_number(BufObject2,"Density");
       FG[1].Temp = (float)json_object_get_number(BufObject2,"Temp(eV)");
-      FG[1].mass = 16.0000 * AMU;
-      BufObject2 = json_object_get_object(BufObject,"OD");
-      strcpy(FG[2].name,"OD");
+      FG[1].mass = 32.0000 * AMU;
+      BufObject2 = json_object_get_object(BufObject,"O2B");
+      strcpy(FG[2].name,"O2B");
       FG[2].InitDens =(float)json_object_get_number(BufObject2,"Density");
       FG[2].Temp = (float)json_object_get_number(BufObject2,"Temp(eV)");
-      FG[2].mass = 16.0000 * AMU;
-      BufObject2 = json_object_get_object(BufObject,"O2A");
-      strcpy(FG[3].name,"O2A");
+      FG[2].mass = 32.0000 * AMU;
+      strcpy(FG[3].name,"OP");
       FG[3].InitDens =(float)json_object_get_number(BufObject2,"Density");
       FG[3].Temp = (float)json_object_get_number(BufObject2,"Temp(eV)");
-      FG[3].mass = 32.0000 * AMU;
-      BufObject2 = json_object_get_object(BufObject,"O2B");
-      strcpy(FG[4].name,"O2B");
+      FG[3].mass = 16.0000 * AMU;
+      BufObject2 = json_object_get_object(BufObject,"OD");
+      strcpy(FG[4].name,"OD");
       FG[4].InitDens =(float)json_object_get_number(BufObject2,"Density");
       FG[4].Temp = (float)json_object_get_number(BufObject2,"Temp(eV)");
-      FG[4].mass = 32.0000 * AMU;
+      FG[4].mass = 16.0000 * AMU;
+      BufObject2 = json_object_get_object(BufObject,"O2A");
       BufObject = json_object_get_object(SubObject3,"ChargeSpecies");
       SP[0].Loadtype = (int)json_object_get_number(BufObject,"Loadtype");
       BufObject2 = json_object_get_object(BufObject,"LoadPosition(m)");
@@ -637,15 +710,16 @@ void InputRead() {
    }else{
       printf("\tMinimized Diagnostics mode\n");
    }
-   /*
    BufObject = json_object_get_object(SubObject5,"TecplotSave");
-   printf("Tecplot2D = %d\n",(int)json_object_get_number(BufObject,"Tecplot2D"));
-   printf("Tec_Movie = %d\n",(int)json_object_get_number(BufObject,"Tec_Movie"));
-   printf("Tec_Movie_FrameNum = %d\n",(int)json_object_get_number(BufObject,"Tec_Movie_FrameNum"));
-   printf("Tec_Ave_Movie = %d\n",(int)json_object_get_number(BufObject,"Tec_Ave_Movie"));
-   printf("Tec_Ave_Movie_Interval = %d\n",(int)json_object_get_number(BufObject,"Tec_Ave_Movie_Interval"));
-   printf("Tec_Ave_Movie_num = %d\n",(int)json_object_get_number(BufObject,"Tec_Ave_Movie_num")); 
-   */
+   TecplotS_Gsize_Flag = (int)json_object_get_number(BufObject,"Init_Gsize_Save");
+   TecplotS_CX_Flag = (int)json_object_get_number(BufObject,"CXdata_Save");
+   //printf("Tecplot2D = %d\n",(int)json_object_get_number(BufObject,"Tecplot2D"));
+   //printf("Tec_Movie = %d\n",(int)json_object_get_number(BufObject,"Tec_Movie"));
+   //printf("Tec_Movie_FrameNum = %d\n",(int)json_object_get_number(BufObject,"Tec_Movie_FrameNum"));
+   //printf("Tec_Ave_Movie = %d\n",(int)json_object_get_number(BufObject,"Tec_Ave_Movie"));
+   //printf("Tec_Ave_Movie_Interval = %d\n",(int)json_object_get_number(BufObject,"Tec_Ave_Movie_Interval"));
+   //printf("Tec_Ave_Movie_num = %d\n",(int)json_object_get_number(BufObject,"Tec_Ave_Movie_num")); 
+   
    /*
    BufObject = json_object_get_object(SubObject5,"DumpFileSave");
    BufArray = json_object_get_array(BufObject,"Cycle");
@@ -767,7 +841,6 @@ void InputRead() {
 	      Coll_Flag[i].RR = 0.0; // Reaction RATE
       }
       BufObject = json_object_get_object(SubObject6,"ArgonCase");
-      CX_TEC_Flag = (int)json_object_get_number(BufObject,"TecplotSave");
       Coll_Flag[0].Flag = (float)json_object_get_number(BufObject,"0.e+Ar>e+Ar");
       Coll_Flag[0].mofM = SP[0].mass/BG[0].mass;
       Coll_Flag[1].Flag = (float)json_object_get_number(BufObject,"1.e+Ar>e+Ar*");
@@ -813,7 +886,6 @@ void InputRead() {
 	      Coll_Flag[i].RR = 0.0; // Reaction RATE
       }
       BufObject = json_object_get_object(SubObject6,"OxygenCase");
-      CX_TEC_Flag = (int)json_object_get_number(BufObject,"TecplotSave");
       Coll_Flag[0].Flag = (float)json_object_get_number(BufObject,"0.e+O2>e+O2");
       Coll_Flag[0].mofM = SP[0].mass/BG[0].mass;
       Coll_Flag[1].Flag = (float)json_object_get_number(BufObject,"1.e+O2>e+O2*");
@@ -973,7 +1045,6 @@ void InputRead() {
 	      Coll_Flag[i].RR = 0.0; // Reaction RATE
       }
       BufObject = json_object_get_object(SubObject6,"Argon/OxygenCase");
-      CX_TEC_Flag = (int)json_object_get_number(BufObject,"TecplotSave");
       Coll_Flag[0].Flag = (float)json_object_get_number(BufObject,"0.e+Ar>e+Ar");
       Coll_Flag[0].mofM = SP[0].mass/BG[0].mass;
       Coll_Flag[1].Flag = (float)json_object_get_number(BufObject,"1.e+Ar>e+Ar*");
@@ -1239,8 +1310,10 @@ void Geometry_setting() {
          for (j=CondY0[k];j<=CondY1[k];j++){
             ID = i*ngy + j;
             vec_G[ID].CondID = CondM_ID[k];
-            if(vec_G[ID].Boundary == 0 || vec_G[ID].Boundary == DIELECTRIC)
+            if(vec_G[ID].Boundary == 0 || vec_G[ID].Boundary == DIELECTRIC){
                vec_G[ID].Boundary = CONDUCTOR;
+               vec_G[ID].Temp = CondTEMP[k];
+            }
             if(i < CondX1[k] && j <CondY1[k]){
                CID = i*ncy + j;
                vec_C[CID].PlasmaRegion = (int) 0;
@@ -1587,40 +1660,41 @@ void Geometry_setting() {
 	for (i = 0; i < ncx + 2; i++)
 		for (j = 0; j < ncy + 2; j++)
 			vec_StructureIndex[i * (ncy + 2) + j] = StructureIndex[i][j];
-   /*
-   for(j=ncy-1;j>=0;j--){
-      for(i=0;i<ncx;i++){
-         CID = i*ncy + j;
-         printf("%d",vec_C[CID].PlasmaRegion);
-      }
-      printf("\n");
-   }
-   exit(1);
-   */
-  /*
-   for(j=ngy-1;j>=0;j--){
-      for(i=0;i<ngx;i++){
-         ID = i*ngy + j;
-         printf("%d",vec_G[ID].Boundary);
-      }
-      printf("\n");
-   }printf("\n");
-   exit(1);
-   */
-   /*
-   for(j=ngy;j>=0;j--){
-      for(i=0;i<ngx+1;i++){
-         printf("%d",vec_StructureIndex[i * (ncy + 2) + j]);
-      }
-      printf("\n");
-   }printf("\n");
-   exit(1);
-   */
-   //exit(1); // devolep point
-
 }
 void FieldSolverSetting(){
-   exit(1);
+   int i,j,k;
+   int CID,GID;
+   
+   FieldIter = 0;
+   A_size = 0; 
+   A_idx = MIMalloc(ngx,ngy);
+   MIInit(A_idx,0,ngx,ngy);
+   for (i = 0; i < ngx; i++) {
+		for (j = 0; j < ngy; j++) {
+         GID = i*ngy+j;
+			if ((!vec_G[GID].CondID)&&(vec_G[GID].Boundary != DIRICHLET)){
+            A_size++;
+            A_idx[i][j] = A_size;
+			}
+		}
+	}
+   MatA = VFMalloc(5 * A_size);
+   MatTA = VFMalloc(5 * A_size);
+   Ai = VIMalloc(A_size + 1);
+	Aj = VIMalloc(5 * A_size);
+   MatM = VFMalloc(A_size);
+   cond_b = MFMalloc(CondNUMR, A_size); // for Laplace solution
+   temp_b = VFMalloc(A_size);           // for Laplace solution
+   VFInit(MatA,0.0,5*A_size);
+   VFInit(MatTA,0.0,5*A_size);
+   VIInit(Ai,0.0,A_size+1);
+   VIInit(Aj,0.0,5*A_size);
+   VFInit(MatM,0.0,A_size);
+   MFInit(cond_b,0.0,CondNUMR,A_size);
+   VFInit(temp_b,0.0,A_size);
+   //
+   CG_Matrix_Setting(MatA, Ai, Aj, cond_b, MatM, MatTA, temp_b);
+   //   
 }
 void GasSetting(){
 
@@ -1794,4 +1868,3 @@ void VICopy(int *V,int *C,int size)
 
     return;
 }
-
