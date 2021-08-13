@@ -13,11 +13,9 @@ extern void Oygen_CrossSectionSET(CollF *CF);
 extern void ArO2_CrossSectionSET(CollF *CF);
 extern void CG_Matrix_Setting(float *A, int *Ai, int *Aj, float **b, float *M, float *Atemp, float *btemp);
 extern void SetParticleLoad(int isp, float Ninit, int load_type, float x_left,float x_right, float y_top, float y_bottom, float vti);
-
 #ifndef __START_H__
 #define __START_H__
 // C Variable declaration
-long int seed; // related to Random number
 int device_num;
 float xlength,ylength,zlength;
 int ngx,ngy,Gsize;
@@ -79,6 +77,8 @@ float *MatM,**cond_b,*temp_b;
 //
 int TecplotS_CX_Flag;
 int TecplotS_Gsize_Flag;
+int TecplotS_Particle_Flag;
+int TecplotS_Particle_Num;
 //
 HCP *PtD;
 //

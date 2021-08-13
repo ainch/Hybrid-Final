@@ -83,7 +83,7 @@ typedef struct __Device_Csize_Array{
 
 }dev_CA;
 typedef struct _Host_Charged_Particle
-{
+{ // Bufer in CPU
 	float *den;
 	int *MaxPtNumInCell;// SIZE(Gsize)
 	int *PtNumInCell; 	// SIZE(Gsize)

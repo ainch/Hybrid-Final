@@ -1,4 +1,114 @@
 #include "Tecplot.h"
+
+void Initial_Particle_Save(int size,HCP *PtData){
+	FILE *fp;
+	char filename[512];
+	int i,j,index,isp;
+	float **buf_x,**buf_y,**buf_vx,**buf_vy,**buf_vz;
+	int *SAVE_NP;
+
+	buf_x = MFMalloc(nsp,size);
+	buf_y = MFMalloc(nsp,size);
+	buf_vx = MFMalloc(nsp,size);
+	buf_vy = MFMalloc(nsp,size);
+	buf_vz = MFMalloc(nsp,size);
+	SAVE_NP = VIMalloc(nsp);
+	MFInit(buf_x,0.0,nsp,size);
+	MFInit(buf_x,0.0,nsp,size);
+	MFInit(buf_x,0.0,nsp,size);
+	MFInit(buf_x,0.0,nsp,size);
+	MFInit(buf_x,0.0,nsp,size);
+	VIInit(SAVE_NP,0,nsp);
+	for(isp=0;isp<nsp;isp++){
+		if(SP[isp].np>size){
+			SAVE_NP[isp] = size;
+			for(i=0;i<SAVE_NP[isp];i++){
+				//printf("isp= %d, i = %d\n",isp,i);
+				index=frand()*((float)SP[isp].np-1.0);
+				buf_x[isp][i]=dx*PtData[isp].x[index];
+				buf_y[isp][i]=dy*PtData[isp].y[index];
+				buf_vx[isp][i]=PtData[isp].vx[index];
+				buf_vy[isp][i]=PtData[isp].vy[index];
+				buf_vz[isp][i]=PtData[isp].vz[index];
+			}
+		}else{
+			SAVE_NP[isp]=SP[isp].np;
+			for(i=0;i<SAVE_NP[isp];i++){
+				//printf("isp= %d, i = %d\n",isp,i);
+				buf_x[isp][i]=dx*PtData[isp].x[i];
+				buf_y[isp][i]=dy*PtData[isp].y[i];
+				buf_vx[isp][i]=PtData[isp].vx[i];
+				buf_vy[isp][i]=PtData[isp].vy[i];
+				buf_vz[isp][i]=PtData[isp].vz[i];
+			}
+		}
+	}
+	sprintf(filename,"Initial_Pt_TEC.dat");
+	fp = fopen(filename,"w");
+	fprintf(fp, "TITLE = \"2D PIC Movie\"\n");
+	fprintf(fp, "VARIABLES = \"X(m)\",\"Y(m)\",\"Vx(m/s)\",\"Vy(m/s)\",\"Vz(m/s)\"\n");
+	// GEOMETRY
+    fprintf(fp, "GEOMETRY\n");
+    fprintf(fp, "F=POINT\n");
+    fprintf(fp, "CS=GRID\n");
+    fprintf(fp, "X=0.00,Y=0.00,Z=0.00\n");
+    fprintf(fp, "C=BLACK\n");
+    fprintf(fp, "S=GLOBAL\n");
+    fprintf(fp, "L=SOLID\n");
+    fprintf(fp, "PL=4\n");
+    fprintf(fp, "LT=0.1\n");
+    fprintf(fp, "CLIPPING=CLIPTOVIEWPORT\n");
+    fprintf(fp, "DRAWORDER=AFTERDATA\n");
+    fprintf(fp, "MFC=\"\"\n");
+    fprintf(fp, "T=RECTANGLE %g %g\n",xlength,ylength);
+    for(i=0;i<CondNUM;i++){
+        fprintf(fp, "GEOMETRY\n");
+        fprintf(fp, "F=POINT\n");
+        fprintf(fp, "CS=GRID\n");
+        fprintf(fp, "X=%g,Y=%g,Z=0.00\n",CondX0[i]*dx,CondY0[i]*dy);
+        fprintf(fp, "C=BLACK\n");
+        fprintf(fp, "S=GLOBAL\n");
+        fprintf(fp, "L=SOLID\n");
+        fprintf(fp, "PL=4\n");
+        fprintf(fp, "LT=0.1\n");
+        fprintf(fp, "CLIPPING=CLIPTOVIEWPORT\n");
+        fprintf(fp, "DRAWORDER=AFTERDATA\n");
+        fprintf(fp, "MFC=\"\"\n");
+        fprintf(fp, "T=RECTANGLE %g %g\n",CondX1[i]*dx-CondX0[i]*dx,CondY1[i]*dy-CondY0[i]*dy);
+    }
+    for(i=0;i<DielNUM;i++){
+        fprintf(fp, "GEOMETRY\n");
+        fprintf(fp, "F=POINT\n");
+        fprintf(fp, "CS=GRID\n");
+        fprintf(fp, "X=%g,Y=%g,Z=0.00\n",DielX0[i]*dx,DielY0[i]*dy);
+        fprintf(fp, "C=BLACK\n");
+        fprintf(fp, "S=GLOBAL\n");
+        fprintf(fp, "L=SOLID\n");
+        fprintf(fp, "PL=4\n");
+        fprintf(fp, "LT=0.1\n");
+        fprintf(fp, "CLIPPING=CLIPTOVIEWPORT\n");
+        fprintf(fp, "DRAWORDER=AFTERDATA\n");
+        fprintf(fp, "MFC=\"\"\n");
+        fprintf(fp, "T=RECTANGLE %g %g\n",DielX1[i]*dx-DielX0[i]*dx,DielY1[i]*dy-DielY0[i]*dy);
+    }
+	for(isp=0;isp<nsp;isp++){
+		fprintf(fp, "ZONE T=\"ZONE %d\"\n",isp+1);
+		fprintf(fp, " STRANDID=0, SOLUTIONTIME=1\n");
+		fprintf(fp, " I=%d, J=1, K=1, ZONETYPE=Ordered\n",SAVE_NP[isp]);
+		fprintf(fp, " DATAPACKING=POINT\n");
+		fprintf(fp, " DT=(SINGLE SINGLE SINGLE SINGLE SINGLE)\n");
+		for (i = 0; i < SAVE_NP[isp]; i++) {
+			fprintf(fp,"%0.3e %0.3e %0.3e %0.3e %0.3e\n",buf_x[isp][i],buf_y[isp][i],buf_vx[isp][i],buf_vy[isp][i],buf_vz[isp][i]);
+		}
+	}
+	fclose(fp);	
+	MFFree(buf_x,nsp);
+	MFFree(buf_y,nsp);
+	MFFree(buf_vx,nsp);
+	MFFree(buf_vy,nsp);
+	MFFree(buf_vz,nsp);
+	free(SAVE_NP);
+}
 void Cross_Section_data_Save(){
 	FILE *fp;
 	int i,kk;
@@ -6,7 +116,7 @@ void Cross_Section_data_Save(){
 	char filename[512];
     
     if(MainGas==ARGON){
-		sprintf(filename,"CX_Argon_TEC1D.dat");
+		sprintf(filename,"CrossX_Ar_TEC.dat");
 		fp = fopen(filename,"w");
 		fprintf(fp, "TITLE = \"Argon Cross Section Data\"\n");
 		// VARIABLES NAMES
@@ -99,7 +209,7 @@ void Cross_Section_data_Save(){
 		}
 		fclose(fp);
     }else if(MainGas==OXYGEN){
-		sprintf(filename,"CX_Oxygen_TEC1D.dat");
+		sprintf(filename,"CrossX_O2_TEC.dat");
 		fp = fopen(filename,"w");
 		fprintf(fp, "TITLE = \"Oxygen Cross Section Data\"\n");
 		// VARIABLES NAMES
@@ -238,7 +348,7 @@ void Cross_Section_data_Save(){
 		kk=0;fprintf(fp,"\t");for(i=0;i<N_LOGX;i++){fprintf(fp,"%.3e\t",O2_Data[i].cx_57);kk++;if(kk==nbar){fprintf(fp,"\n\t");kk=0;}}
 		fclose(fp);
     }else if(MainGas==ARO2){
-		sprintf(filename,"CX_ArO2_TEC1D.dat");
+		sprintf(filename,"CrossX_ArO2_TEC.dat");
 		fp = fopen(filename,"w");
 		fprintf(fp, "TITLE = \"Argon+Oxygen Cross Section Data\"\n");
 		// VARIABLES NAMES
@@ -404,7 +514,7 @@ void Main_Variable_printorSave(){
     FILE *fp;
     int nbar,kk,Gbuf;
    
-    fp = fopen("GsizeData.dat", "w");
+    fp = fopen("GsizeData_TEC.dat", "w");
     fprintf(fp, "TITLE = \"2D-PIC Gsize data set\"\n");
     fprintf(fp, "VARIABLES = \"X\",\"Y\",\n");
     fprintf(fp, "\"Boundary\",\n");

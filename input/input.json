@@ -107,11 +107,15 @@
     },
     "Diagnostics":
     {
-        "BasicDiagnostic":1,
+        "BasicDiagnostic":0,
         "TecplotSave":
         {
-            "Init_Gsize_Save":1,
-            "CXdata_Save":1,
+            "Initial_Setting":{
+                "Init_Gsize_Save":0,
+                "Init_CXdata_Save":0,
+                "Init_Particle_Save":0,
+                "Init_Particle_Num":500000
+            },
             "Tecplot2D":10,
             "Tec_Movie":10,
             "Tec_Movie_FrameNum":100,

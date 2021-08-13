@@ -19,6 +19,7 @@ float FVnZC(char A[50],float Value){ // float Value non Zero CHECK
 void InputRead() {
    int i,j;
    int buf;
+   int PRINT_Flag = 0;
    int IDn, IDchk[100], IDchk1, IDchk2;
    float fbuf1,fbuf2;
    JSON_Value *InputValue;
@@ -52,7 +53,7 @@ void InputRead() {
    }
    BufArray = json_object_get_array(SubObject2,"BoundaryCondition");
    BoundaryNUM = (int)json_array_get_count(BufArray);
-   printf("\tBoundary # = %d\n",BoundaryNUM); 
+   if(PRINT_Flag) printf("\tBoundary # = %d\n",BoundaryNUM); 
    if (BoundaryNUM < 4){
       printf("\"BoundaryCondition\" is too small!(BoundaryNum>=4)\n");
       exit(1);
@@ -94,7 +95,7 @@ void InputRead() {
    }
    BufArray = json_object_get_array(SubObject2,"ConductorSpec");
    CondNUM = (int)json_array_get_count(BufArray);
-   printf("\tConductor # = %d\n",CondNUM); 
+   if(PRINT_Flag) printf("\tConductor # = %d\n",CondNUM); 
    if (CondNUM < 2){
       printf("\"Conductor\" is too small!(CondNum>=2)\n");
       exit(1);
@@ -172,7 +173,7 @@ void InputRead() {
    }
    BufArray = json_object_get_array(SubObject2,"Source");
    SrcNUM = (int)json_array_get_count(BufArray);
-   printf("\tSource # = %d\n",SrcNUM); 
+   if(PRINT_Flag) printf("\tSource # = %d\n",SrcNUM); 
    SrcM_ID = VIMalloc(SrcNUM);
    SrcDC = VFMalloc(SrcNUM);
    SrcPOWER = VFMalloc(SrcNUM);
@@ -216,7 +217,7 @@ void InputRead() {
    }
    BufArray = json_object_get_array(SubObject2,"DielectricSpec");
    DielNUM = (int)json_array_get_count(BufArray);
-   printf("\tDielectric # = %d\n",DielNUM); 
+   if(PRINT_Flag) printf("\tDielectric # = %d\n",DielNUM); 
    IDn = 0;
    VIInit(IDchk,0,100);
    IDchk1 = 0;
@@ -294,22 +295,22 @@ void InputRead() {
    MainGas = (int)json_object_get_number(SubObject3,"Type(0:Ar,1:O2,2:Ar/O2)");
    switch (MainGas) {
 	case ARGON: {	// ONLY ARGON
-      printf("\tArgon gas\n"); 
+      if(PRINT_Flag) printf("\tArgon gas\n"); 
 		nsp = 2;		nfsp = 1;		nBG = 1;
 		break;
 	}
 	case OXYGEN: { // Oxygen
-      printf("\tOxygen gas\n"); 
+      if(PRINT_Flag) printf("\tOxygen gas\n"); 
 		nsp = 4;		nfsp = 4;		nBG = 1;
 		break;
 	}
 	case ARO2: { // Argon.Oxygen
-      printf("\tArgon + Oxygen gas\n"); 
+      if(PRINT_Flag) printf("\tArgon + Oxygen gas\n"); 
 		nsp = 5;		nfsp = 5;		nBG = 2;
 		break;
 	}
    default: {
-      printf("\t\"Type\" is error in GasSpecies.\n"); 
+      if(PRINT_Flag) printf("\t\"Type\" is error in GasSpecies.\n"); 
       exit(1);
    }
 	}
@@ -689,14 +690,14 @@ void InputRead() {
    //-------------------------//
    //----SimulationMethod-----//
    //-------------------------//
-   printf("Read SimulationMethod\n");
+   if(PRINT_Flag) printf("Read SimulationMethod\n");
    SubObject4 = json_object_get_object(MainObject,"SimulationMethod");   
    DT_PIC = IVnZC("TimeStep_PIC",(int)json_object_get_number(SubObject4,"TimeStep_PIC"));
    DT_CONTI = IVnZC("TimeStep_Conti",(int)json_object_get_number(SubObject4,"TimeStep_Conti"));
    dt = 1.0 / Max_FREQ / (float)DT_PIC;
    dtc = dt * (float)DT_CONTI;
-   printf("\tPIC TimeStep = %g s\n",dt);
-   printf("\tContinuity TimeStep = %g s\n",dtc);
+   if(PRINT_Flag) printf("\tPIC TimeStep = %g s\n",dt);
+   if(PRINT_Flag) printf("\tContinuity TimeStep = %g s\n",dtc);
    PCGtol = FVnZC("PCGMarginOfError",(float)json_object_get_number(SubObject4,"PCGMarginOfError"));
    HISTMAX = IVnZC("HistoryMax",(int)json_object_get_number(SubObject4,"HistoryMax"));
    dHIST = IVnZC("HistoryDivide",(int)json_object_get_number(SubObject4,"HistoryDivide"));
@@ -747,18 +748,22 @@ void InputRead() {
    //-------------------------//
    //-------Diagnostics-------//
    //-------------------------//
-   printf("Read Diagnostics\n");
+   if(PRINT_Flag) printf("Read Diagnostics\n");
    SubObject5 = json_object_get_object(MainObject,"Diagnostics");
    Basic_Flag = (int)json_object_get_number(SubObject5,"BasicDiagnostic");
    if(Basic_Flag){
-      printf("\tBasic_Flag = %d",Basic_Flag);
-      printf(", General Diagostics mode\n");
+      printf("\tDiagnostic_ON\n");
    }else{
+      printf("\tDiagnostic_OFF\n");
       printf("\tMinimized Diagnostics mode\n");
    }
    BufObject = json_object_get_object(SubObject5,"TecplotSave");
-   TecplotS_Gsize_Flag = (int)json_object_get_number(BufObject,"Init_Gsize_Save");
-   TecplotS_CX_Flag = (int)json_object_get_number(BufObject,"CXdata_Save");
+   BufObject2 = json_object_get_object(BufObject,"Initial_Setting");
+   TecplotS_Gsize_Flag = (int)json_object_get_number(BufObject2,"Init_Gsize_Save");
+   TecplotS_CX_Flag = (int)json_object_get_number(BufObject2,"Init_CXdata_Save");
+   TecplotS_Particle_Flag = (int)json_object_get_number(BufObject2,"Init_Particle_Save");
+   TecplotS_Particle_Num = (int)json_object_get_number(BufObject2,"Init_Particle_Num");
+
    //printf("Tecplot2D = %d\n",(int)json_object_get_number(BufObject,"Tecplot2D"));
    //printf("Tec_Movie = %d\n",(int)json_object_get_number(BufObject,"Tec_Movie"));
    //printf("Tec_Movie_FrameNum = %d\n",(int)json_object_get_number(BufObject,"Tec_Movie_FrameNum"));
@@ -1744,11 +1749,10 @@ void FieldSolverSetting(){
 }
 void GasSetting(){
    int isp;
-
    printf("Gas and Particle Setting\n");
    PtD = (HCP *) malloc(nsp * sizeof(HCP));
    printf("\tParicle Load Type : %d\n",SP[0].Loadtype);
-   printf("\tX0 = %g, X1 = %g, Y0 = %g, Y1 = %g\n",SP[0].x_center, SP[0].x_fall, SP[0].y_center,SP[0].y_fall);
+   printf("\tLoad : X0 = %g, X1 = %g, Y0 = %g, Y1 = %g\n",SP[0].x_center, SP[0].x_fall, SP[0].y_center,SP[0].y_fall);
    for(isp=0;isp<nsp;isp++){
       SP[isp].q_density = SP[isp].q * SP[isp].np2c;
 	   SP[isp].vti = sqrt(CQ * SP[isp].Temp / SP[isp].mass);
@@ -1761,20 +1765,18 @@ void GasSetting(){
       PtD[isp].vy = VFMalloc(NP_LIMIT);
       PtD[isp].vz = VFMalloc(NP_LIMIT); 
       PtD[isp].den = VFMalloc(Gsize);
+      VFInit(PtD[isp].x,0,NP_LIMIT);
+      VFInit(PtD[isp].y,0,NP_LIMIT);
+      VFInit(PtD[isp].vx,0,NP_LIMIT);
+      VFInit(PtD[isp].vy,0,NP_LIMIT);
+      VFInit(PtD[isp].vz,0,NP_LIMIT);
+      VFInit(PtD[isp].den,0,Gsize);
       SetParticleLoad(isp, SP[isp].InitDens, SP[0].Loadtype,SP[0].x_center, SP[0].x_fall, SP[0].y_center,SP[0].y_fall,SP[isp].vti);
    }
-   // Particle Data
-   if(DumpFlag == 0){ // No Dump File 
-      for(isp=0;isp<nsp;isp++){
-
-      }
-   }else{
-
-   }
-   exit(1);
 }
 void DumpRead(int argc, char *argv[]) {
-   fprintf(stderr,"Tstrp = %d\n",tstep);
+   printf("Not yet\n");
+   exit(1);
 }
 
 float **MFMalloc(int sizeX,int sizeY)
