@@ -41,6 +41,7 @@ int main(int argc, char *argv[])
 	display_title();       /* Display 2D Field Solver title */
 	InputRead();	 	/* InputFile Parsing */
 	Geometry_setting(); 	
+	Source_setting();
 	FieldSolverSetting();
 	GasSetting();
 	if(TecplotS_Gsize_Flag) 	Main_Variable_printorSave();

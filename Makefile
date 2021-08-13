@@ -29,9 +29,10 @@ C_OBJS = $(OBJ_DIR)/main.o \
 #          $(OBJ_DIR)/fdtd.o
 
 CU_OBJS = $(OBJ_DIR)/cuda_main.o \
-          $(OBJ_DIR)/cuda_start.o 
+          $(OBJ_DIR)/cuda_start.o \
+          $(OBJ_DIR)/cuda_Init.o \
+          $(OBJ_DIR)/cuda_Field.o 
 #          $(OBJ_DIR)/cuda_run.o \
-#          $(OBJ_DIR)/cuda_field.o \
 #          $(OBJ_DIR)/cuda_move.o \
 #          $(OBJ_DIR)/cuda_rand.o \
 #          $(OBJ_DIR)/cuda_mccAr_cell.o \
@@ -52,6 +53,8 @@ C_H_FILES = inc/xypic.h \
 CU_H_FILES = inc/xypic.cuh \
              inc/cuda_main.cuh \
              inc/cuda_start.cuh \
+             inc/cuda_Init.cuh \
+             inc/cuda_Field.cuh \
              inc/helper_cuda.h \
              inc/main.h \
              inc/interop.cuh \

@@ -694,10 +694,6 @@ void InputRead() {
    SubObject4 = json_object_get_object(MainObject,"SimulationMethod");   
    DT_PIC = IVnZC("TimeStep_PIC",(int)json_object_get_number(SubObject4,"TimeStep_PIC"));
    DT_CONTI = IVnZC("TimeStep_Conti",(int)json_object_get_number(SubObject4,"TimeStep_Conti"));
-   dt = 1.0 / Max_FREQ / (float)DT_PIC;
-   dtc = dt * (float)DT_CONTI;
-   if(PRINT_Flag) printf("\tPIC TimeStep = %g s\n",dt);
-   if(PRINT_Flag) printf("\tContinuity TimeStep = %g s\n",dtc);
    PCGtol = FVnZC("PCGMarginOfError",(float)json_object_get_number(SubObject4,"PCGMarginOfError"));
    HISTMAX = IVnZC("HistoryMax",(int)json_object_get_number(SubObject4,"HistoryMax"));
    dHIST = IVnZC("HistoryDivide",(int)json_object_get_number(SubObject4,"HistoryDivide"));
@@ -1289,9 +1285,23 @@ void InputRead() {
    }
    printf("Finish parsing \"%s\"\n",InputFile); 
 }
+void Source_setting(){
+   printf("Initial Source setting\n"); 
+   dt = 1.0 / Max_FREQ / (float)DT_PIC;
+   dtc = dt * (float)DT_CONTI;
+   CYCLE_NUM = Max_FREQ / Min_FREQ * DT_PIC;
+   printf("\tPIC TimeStep = %g (s)\n",dt);
+   printf("\tContinuity TimeStep = %g (s)\n",dtc);
+   printf("\tMinimum Freq Cycle step # = %d (#)\n",CYCLE_NUM);
+   if(CYCLE_NUM == 0){
+      printf("Error : Minimum Freq Cycle step.\n");
+      exit(1);
+   }
+   
+}
 void Geometry_setting() {
    int i,j,k,ID,CID,SID;
-   printf("Initial-setting start\n"); 
+   printf("Initial Geometry setting\n"); 
    //-------------------------//
    //--------Geometry---------//
    //-------------------------//

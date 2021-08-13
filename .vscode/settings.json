@@ -8,7 +8,14 @@
         "queue": "cpp",
         "stack": "cpp",
         "complex": "c",
-        "particle.h": "c"
+        "particle.h": "c",
+        "bitset": "cpp",
+        "chrono": "cpp",
+        "algorithm": "cpp",
+        "__bit_reference": "cpp",
+        "map": "cpp",
+        "set": "cpp",
+        "unordered_map": "cpp"
     },
     "C_Cpp.errorSquiggles": "Disabled"
 }

@@ -27,7 +27,7 @@ float *x_Garray,*y_Garray;
 int BoundaryNUM;
 int *BoundaryX0,*BoundaryY0,*BoundaryX1,*BoundaryY1,*BoundaryBC;
 float *BoundaryTEMP;
-int CondNUM,CondNUMR;
+int CondNUM,CondNUMR;  // CondNUMR is Real Conductor number
 int*CondM_ID, *CondX0,*CondX1,*CondY0,*CondY1;
 float *CondTEMP;
 int SrcNUM;
@@ -53,6 +53,7 @@ int DT_PIC;
 int DT_CONTI;
 float dt;   // timestsep for PIC
 float dtc; // time step for continuity equation
+int CYCLE_NUM; // Minimum frequency number of cycle
 float PCGtol;
 int HISTMAX;
 int dHIST;
@@ -83,6 +84,7 @@ int TecplotS_Particle_Num;
 HCP *PtD;
 //
 void InputRead();
+void Source_setting();
 void Geometry_setting();
 void FieldSolverSetting();
 void GasSetting();

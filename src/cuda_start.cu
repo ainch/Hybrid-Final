@@ -25,18 +25,49 @@ void info_Device()
 	printf("-------------------- Device%d --------------------\n", device_num);
 	printf("Name: %s \n", prop.name);
 	printf("Computer capability: %d.%d \n", prop.major, prop.minor);
-	printf("Clock rate: %d\n", prop.clockRate);
+	//printf("Clock rate: %d\n", prop.clockRate);
 	printf("Total Global Mem.: %u Mbytes\n", prop.totalGlobalMem/1024/1024);
-	printf("Total constant Mem.: %u Kbytes\n", prop.totalConstMem/1024);
-	printf("Shared Mem. per block: %u bytes \n", prop.sharedMemPerBlock);
-	printf("Registers available per block.: %u #\n", prop.regsPerBlock);
-	printf("Max Mem. pitch: %ld\n", prop.memPitch);
+	//printf("Total constant Mem.: %u Kbytes\n", prop.totalConstMem/1024);
+	//printf("Shared Mem. per block: %u bytes \n", prop.sharedMemPerBlock);
+	//printf("Registers available per block.: %u #\n", prop.regsPerBlock);
+	//printf("Max Mem. pitch: %ld\n", prop.memPitch);
 	printf("Multiprocessor count: %d\n", prop.multiProcessorCount);
 	printf("Threads in warp: %d \n", prop.warpSize);
 	printf("Max thread dimensions: (%d, %d, %d) \n",prop.maxThreadsDim[0], prop.maxThreadsDim[1], prop.maxThreadsDim[2]);
 	printf("Max grid dimensions: (%d, %d, %d) \n",prop.maxGridSize[0], prop.maxGridSize[1], prop.maxGridSize[2]);
-	puts ("---------------------------------------------------\n");
+	printf("---------------------------------------------------\n");	
 }
 void start_cuda(){
+
+	/*** Field solver ***/
+	//FieldSolver = PCG_SOLVER;
+	/*** Move ***/
+	if(ConstB_Flag){
+		//MOVE = MoveB_cuda;
+	}else {
+		//MOVE = Move_cuda;
+	}
+	switch(MainGas){
+	case ARGON:
+		//SORT_BOUNDARY = AR_SortAndBoundary_cuda;
+		//MCC		= ArMccDiag_cuda;
+		//CONTIEQ = Ar_solve_continuity_eqn;
+		//DIAG    = Diagnostic;
+		break;
+	case OXYGEN:
+		//SORT_BOUNDARY = Oxy_SortAndBoundary_cuda;
+		//MCC		= OxyMccDiag_cuda;
+		//CONTIEQ = Oxy_solve_continuity_eqn;
+		//DIAG    = Diagnostic;
+		break;
+	case ARO2:
+		//SORT_BOUNDARY = ARO2_SortAndBoundary_cuda;
+		//MCC		= ARO2_MccDiag_cuda;
+		//CONTIEQ = ARO2_solve_continuity_eqn;
+		//DIAG    = Diagnostic;
+		break;
+	}
+	/*** Deposit ***/
+	//DEPOSIT = Deposit_cuda;
 
 }

@@ -7,6 +7,7 @@ extern int TecplotS_Particle_Num;
 extern HCP *PtD;
 extern void InputRead();
 extern void InputFileMake();
+extern void Source_setting();
 extern void Geometry_setting();
 extern void FieldSolverSetting();
 extern void GasSetting();
@@ -28,4 +29,11 @@ char DumpFile[80];  // DUMP FILE NAME
 char *ConstBFile;  // DUMP FILE NAME
 void display_title();
 void display_finish();
+void (*FieldSolver)();
+void (*MOVE)();
+void (*SORT_BOUNDARY)();
+void (*MCC)();
+void (*DEPOSIT)();
+void (*CONTIEQ)();
+void (*DIAG)();
 #endif
