@@ -21,15 +21,15 @@ enum BoundaryCondition {
     CONDUCTOR,
     DIELECTRIC,
 };
-enum BoundaryType {
-    LEFT,
+enum BoundaryType { 
+    LEFT, 
     RIGHT,
-    UP,
-    DOWN,
-    UL_CORN,
+    UP,	  
+    DOWN, 
+    UL_CORN, 
     UR_CORN,
-    LL_CORN,
-    LR_CORN,
+    LL_CORN, 
+    LR_CORN, 
     NO_FACE,
 };
 enum LoadType {

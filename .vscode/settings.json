@@ -15,7 +15,8 @@
         "__bit_reference": "cpp",
         "map": "cpp",
         "set": "cpp",
-        "unordered_map": "cpp"
+        "unordered_map": "cpp",
+        "load.h": "c"
     },
     "C_Cpp.errorSquiggles": "Disabled"
 }

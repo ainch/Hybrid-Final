@@ -16,6 +16,7 @@ extern void SetParticleLoad(int isp, float Ninit, int load_type, float x_left,fl
 #ifndef __START_H__
 #define __START_H__
 // C Variable declaration
+int PRINT_Flag;
 int device_num;
 float xlength,ylength,zlength;
 int ngx,ngy,Gsize;
@@ -54,6 +55,7 @@ int DT_CONTI;
 float dt;   // timestsep for PIC
 float dtc; // time step for continuity equation
 int CYCLE_NUM; // Minimum frequency number of cycle
+int PCG_Method;
 float PCGtol;
 int HISTMAX;
 int dHIST;
@@ -71,10 +73,11 @@ CollF *Coll_Flag;
 //
 int FieldIter;
 int A_size;
-float *MatA,*MatTA;
+float *A_val,*MatTA;
 int *Ai,*Aj;
 int **A_idx;
 float *MatM,**cond_b,*temp_b;
+float **phi_dw,**phi_u;
 //
 int TecplotS_CX_Flag;
 int TecplotS_Gsize_Flag;
@@ -86,6 +89,7 @@ HCP *PtD;
 void InputRead();
 void Source_setting();
 void Geometry_setting();
+float Face_To_Area(int Face);
 void FieldSolverSetting();
 void GasSetting();
 void DumpRead(int argc, char *argv[]);

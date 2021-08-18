@@ -19,9 +19,9 @@ float FVnZC(char A[50],float Value){ // float Value non Zero CHECK
 void InputRead() {
    int i,j;
    int buf;
-   int PRINT_Flag = 0;
    int IDn, IDchk[100], IDchk1, IDchk2;
    float fbuf1,fbuf2;
+   PRINT_Flag = 1;
    JSON_Value *InputValue;
    JSON_Object *MainObject;
    JSON_Object *SubObject1,*SubObject2,*SubObject3;
@@ -47,10 +47,6 @@ void InputRead() {
    zlength = (float)json_object_get_number(BufObject,"Z_length(m)");
    ngx = (int)json_object_get_number(BufObject,"NumGridx");
    ngy = (int)json_object_get_number(BufObject,"NumGridy");
-   if (ngx * ngy < 1024){
-      printf("\"ngx * ngy\" is too small!(>=1024)\n");
-      exit(1);
-   }
    BufArray = json_object_get_array(SubObject2,"BoundaryCondition");
    BoundaryNUM = (int)json_array_get_count(BufArray);
    if(PRINT_Flag) printf("\tBoundary # = %d\n",BoundaryNUM); 
@@ -694,6 +690,7 @@ void InputRead() {
    SubObject4 = json_object_get_object(MainObject,"SimulationMethod");   
    DT_PIC = IVnZC("TimeStep_PIC",(int)json_object_get_number(SubObject4,"TimeStep_PIC"));
    DT_CONTI = IVnZC("TimeStep_Conti",(int)json_object_get_number(SubObject4,"TimeStep_Conti"));
+   PCG_Method = (int)json_object_get_number(SubObject4,"PCG_Method");
    PCGtol = FVnZC("PCGMarginOfError",(float)json_object_get_number(SubObject4,"PCGMarginOfError"));
    HISTMAX = IVnZC("HistoryMax",(int)json_object_get_number(SubObject4,"HistoryMax"));
    dHIST = IVnZC("HistoryDivide",(int)json_object_get_number(SubObject4,"HistoryDivide"));
@@ -759,14 +756,12 @@ void InputRead() {
    TecplotS_CX_Flag = (int)json_object_get_number(BufObject2,"Init_CXdata_Save");
    TecplotS_Particle_Flag = (int)json_object_get_number(BufObject2,"Init_Particle_Save");
    TecplotS_Particle_Num = (int)json_object_get_number(BufObject2,"Init_Particle_Num");
-
    //printf("Tecplot2D = %d\n",(int)json_object_get_number(BufObject,"Tecplot2D"));
    //printf("Tec_Movie = %d\n",(int)json_object_get_number(BufObject,"Tec_Movie"));
    //printf("Tec_Movie_FrameNum = %d\n",(int)json_object_get_number(BufObject,"Tec_Movie_FrameNum"));
    //printf("Tec_Ave_Movie = %d\n",(int)json_object_get_number(BufObject,"Tec_Ave_Movie"));
    //printf("Tec_Ave_Movie_Interval = %d\n",(int)json_object_get_number(BufObject,"Tec_Ave_Movie_Interval"));
    //printf("Tec_Ave_Movie_num = %d\n",(int)json_object_get_number(BufObject,"Tec_Ave_Movie_num")); 
-   
    /*
    BufObject = json_object_get_object(SubObject5,"DumpFileSave");
    BufArray = json_object_get_array(BufObject,"Cycle");
@@ -869,7 +864,6 @@ void InputRead() {
    printf("Init_Velocity = %d\n",(int)json_object_get_number(BufObject,"Init_Velocity"));
    printf("Tecplot_Save = %d\n",(int)json_object_get_number(BufObject,"Tecplot_Save")); 
    */   
-  
    //-------------------------//
    //-----Collision_On_Off-----//
    //-------------------------//
@@ -1342,13 +1336,20 @@ void Geometry_setting() {
       vec_C[i].PlasmaRegion = (int) 1;
       vec_C[i].eps_r = (float) 1.0;
    }
-   for (k=0;k<BoundaryNUM;k++){
-      for (i=BoundaryX0[k];i<=BoundaryX1[k];i++){
-         for (j=BoundaryY0[k];j<=BoundaryY1[k];j++){
-            ID = i*ngy+j;
-            vec_G[ID].Temp = BoundaryTEMP[k];
-            if(vec_G[ID].Boundary != DIRICHLET)
-               vec_G[ID].Boundary = BoundaryBC[k];
+   //Make Boundary 
+   for(j=0;j<ngy;j++){
+      for(i=0;i<ngx;i++){
+         ID = i*ngy+j;
+         for (k=0;k<BoundaryNUM;k++){
+            if((i>=BoundaryX0[k]&&i<=BoundaryX1[k])&&(j>=BoundaryY0[k]&&j<=BoundaryY1[k])){
+               if(BoundaryBC[k]==DIRICHLET){
+                  vec_G[ID].Boundary = DIRICHLET;
+                  vec_G[ID].Temp = BoundaryTEMP[k];     
+               }else if(vec_G[ID].Boundary!=DIRICHLET && BoundaryBC[k]==NEUMANN){
+                  vec_G[ID].Boundary = NEUMANN;   
+                  vec_G[ID].Temp = BoundaryTEMP[k];  
+               }
+            }  
          }
       }
    }
@@ -1384,6 +1385,7 @@ void Geometry_setting() {
       }
    }
    int P1,P2,P3,P4;
+   int FACE1,FACE2;
    for(i=0+1; i<ngx-1; i++){
       for(j=0+1; j<ngy-1; j++){
          ID = i*ngy+j;
@@ -1396,70 +1398,30 @@ void Geometry_setting() {
          P3 = vec_C[CID-1].eps_r;
          P4 = vec_C[CID-ncy-1].eps_r;
          if(vec_G[ID].Boundary == DIELECTRIC){
-            if((P2==1.0 && P1==1.0 && P4==1.0) || (P2!=0.0 && P1!=0.0 && P4!=0.0 && P3==0.0)) {
-					//          //
-					//          //
-					//     -----//
-					//     |----//
-					//     |----//               
+            if((P2==1.0 && P1==1.0 && P4==1.0) || (P2!=0.0 && P1!=0.0 && P4!=0.0 && P3==0.0)) {             
                vec_G[ID].face=UL_CORN;
-               vec_G[ID].area= 0.5*(dx+dy)*zlength;
-            }else if((P2==1.0 && P1==1.0 && P3==1.0) || (P2!=0.0 && P1!=0.0 && P3!=0.0 && P4==0.0)) {
-					//          //
-					//          //
-					//------    //
-					//-----|    //
-					//-----|    //               
+               vec_G[ID].area= Face_To_Area(UL_CORN);
+            }else if((P2==1.0 && P1==1.0 && P3==1.0) || (P2!=0.0 && P1!=0.0 && P3!=0.0 && P4==0.0)) {            
                vec_G[ID].face=UR_CORN;
-               vec_G[ID].area= 0.5*(dx+dy)*zlength;
+               vec_G[ID].area= Face_To_Area(UR_CORN);
             }else if((P2==1.0 && P1==1.0 && P4!=1.0 && P3!=1.0) || (P2!=0.0 && P1!=0.0 && P4==0.0 && P3==0.0)) {
-					//          //
-					//          //
-					//----------//
-					//----------//
-					//----------//
                vec_G[ID].face=UP;
-               vec_G[ID].area= dx*zlength;
-            }else if((P4==1.0 && P3==1.0 && P2==1.0) || (P2!=0.0 && P4!=0.0 && P3!=0.0 && P1==0.0)) {
-					//     |----//
-					//     |----//
-					//     |----//
-					//          //
-					//          //               
+               vec_G[ID].area= Face_To_Area(UP);
+            }else if((P4==1.0 && P3==1.0 && P2==1.0) || (P2!=0.0 && P4!=0.0 && P3!=0.0 && P1==0.0)) {             
                vec_G[ID].face=LL_CORN;
-               vec_G[ID].area= 0.5*(dx+dy)*zlength;
-            }else if((P4==1.0 && P3==1.0 && P1==1.0) || (P1!=0.0 && P4!=0.0 && P3!=0.0 && P2==0.0)) {
-					//----|     //
-					//----|     //
-					//----|     //
-					//          //
-					//          //               
+               vec_G[ID].area= Face_To_Area(LL_CORN);
+            }else if((P4==1.0 && P3==1.0 && P1==1.0) || (P1!=0.0 && P4!=0.0 && P3!=0.0 && P2==0.0)) {            
                vec_G[ID].face=LR_CORN;
-               vec_G[ID].area= 0.5*(dx+dy)*zlength;
-            }else if((P4==1.0 && P3==1.0 && P1!=1.0 && P2!=1.0) || (P4!=0.0 && P3!=0.0 && P1==0.0 && P2==0.0)) {
-					//----------//
-					//----------//
-					//----------//
-					//          //
-					//          //               
+               vec_G[ID].area= Face_To_Area(LR_CORN);
+            }else if((P4==1.0 && P3==1.0 && P1!=1.0 && P2!=1.0) || (P4!=0.0 && P3!=0.0 && P1==0.0 && P2==0.0)) {             
                vec_G[ID].face=DOWN;
-               vec_G[ID].area= dx*zlength;
-            }else if((P4==1.0 && P2==1.0 && P1!=1.0 && P3!=1.0) || (P4!=0.0 && P2!=0.0 && P1==0.0 && P3==0.0)) {
-					//     |----//
-					//     |----//
-					//     |----//
-					//     |----//
-					//     |----//               
+               vec_G[ID].area= Face_To_Area(DOWN);
+            }else if((P4==1.0 && P2==1.0 && P1!=1.0 && P3!=1.0) || (P4!=0.0 && P2!=0.0 && P1==0.0 && P3==0.0)) {              
                vec_G[ID].face=LEFT;
-               vec_G[ID].area= dy*zlength;
-            }else if((P4!=1.0 && P2!=1.0 && P1==1.0 && P3==1.0) || (P4==0.0 && P2==0.0 && P1!=0.0 && P3!=0.0)) {
-					//----|     //
-					//----|     //
-					//----|     //
-					//----|     //
-					//----|     //               
+               vec_G[ID].area= Face_To_Area(LEFT);
+            }else if((P4!=1.0 && P2!=1.0 && P1==1.0 && P3==1.0) || (P4==0.0 && P2==0.0 && P1!=0.0 && P3!=0.0)) {              
                vec_G[ID].face=RIGHT;
-               vec_G[ID].area= dy*zlength;
+               vec_G[ID].area= Face_To_Area(RIGHT);
             }  
          }
          if(vec_G[ID].Boundary == CONDUCTOR){
@@ -1517,7 +1479,7 @@ void Geometry_setting() {
             vec_G[ID].area=dy*zlength;
          }
       }else if(vec_G[ID].Boundary==NEUMANN) {
-         vec_G[ID].Boundary=NO_FACE;
+         vec_G[ID].face=NO_FACE;
          vec_G[ID].area=dy*zlength;
          if(vec_G[ID+1].CondID==0 && vec_G[ID-1].CondID!=0 && vec_G[ID].CondID!=0) {
             vec_G[ID].face=UP;
@@ -1714,48 +1676,146 @@ void Geometry_setting() {
 		}
 	}
    // Boundary edge check
-	StructureIndex[0][0] = -vec_G[ngy].Boundary - vec_G[1].Boundary - 8;
-	StructureIndex[ncx + 1][0] = -vec_G[(ncx-1)*ngy].Boundary - vec_G[ncx*ngy+1].Boundary - 12;
-	StructureIndex[0][ncy + 1] = -vec_G[ngy+ncy].Boundary	- vec_G[ncy-1].Boundary - 16;
-	StructureIndex[ncx + 1][ncy + 1] = -vec_G[(ncy-1)*ngy+ncy].Boundary - vec_G[(ncx)*ngy+ncy-1].Boundary- 20;
+	StructureIndex[0][0] = -vec_G[0].Boundary;
+	StructureIndex[ncx + 1][0] = -vec_G[(ncx-1)*ngy].Boundary;
+	StructureIndex[0][ncy + 1] = -vec_G[ngy+ncy].Boundary;
+	StructureIndex[ncx + 1][ncy + 1] = -vec_G[(ncy-1)*ngy+ncy].Boundary;
 	for (i = 0; i < ncx + 2; i++)
 		for (j = 0; j < ncy + 2; j++)
 			vec_StructureIndex[i * (ncy + 2) + j] = StructureIndex[i][j];
+
+   if(PRINT_Flag && Gsize<400){
+      printf("vec_G[ID].Boundary\n");
+      for(j=ngy-1;j>=0;j--){
+         for(i=0;i<ngx;i++){
+            ID = i*ngy+j;
+            printf(" %d",vec_G[ID].Boundary);
+         }printf("\n");
+      }printf("\n");
+      printf("vec_G[ID].CondID\n");
+      for(j=ngy-1;j>=0;j--){
+         for(i=0;i<ngx;i++){
+            ID = i*ngy+j;
+            printf(" %d",vec_G[ID].CondID);
+         }printf("\n");
+      }printf("\n");
+      printf("vec_G[ID].Temp\n");
+      for(j=ngy-1;j>=0;j--){
+         for(i=0;i<ngx;i++){
+            ID = i*ngy+j;
+            printf(" %3g",vec_G[ID].Temp);
+         }printf("\n");
+      }printf("\n");
+      printf("vec_G[ID].face\n");
+      for(j=ngy-1;j>=0;j--){
+         for(i=0;i<ngx;i++){
+            ID = i*ngy+j;
+            printf(" %d",vec_G[ID].face);
+         }printf("\n");
+      }printf("\n");
+      printf("vec_G[ID].area\n");
+      for(j=ngy-1;j>=0;j--){
+         for(i=0;i<ngx;i++){
+            ID = i*ngy+j;
+            printf(" %g",vec_G[ID].area);
+         }printf("\n");
+      }printf("\n");
+      printf("vec_C[CID].PlasmaRegion\n");
+      for(j=ncy-1;j>=0;j--){
+         for(i=0;i<ncx;i++){
+            CID = i*ncy+j;
+            printf(" %d",vec_C[CID].PlasmaRegion);
+         }printf("\n");
+      }printf("\n");
+      printf("vec_C[CID].eps_r\n");
+      for(j=ncy-1;j>=0;j--){
+         for(i=0;i<ncx;i++){
+            CID = i*ncy+j;
+            printf(" %g",vec_C[CID].eps_r);
+         }printf("\n");
+      }printf("\n");
+      printf("StructureIndex[i][j]\n");
+      for(j=ncy+1;j>=0;j--){
+         for(i=0;i<ncy+2;i++){
+            printf(" %4d",StructureIndex[i][j]);
+         }printf("\n");
+      }printf("\n");
+   }
 }
 void FieldSolverSetting(){
    int i,j,k;
    int CID,GID;
    
    FieldIter = 0;
-   A_size = 0; 
+   A_size = 1;  //one-based index
    A_idx = MIMalloc(ngx,ngy);
    MIInit(A_idx,0,ngx,ngy);
    for (i = 0; i < ngx; i++) {
 		for (j = 0; j < ngy; j++) {
          GID = i*ngy+j;
 			if ((!vec_G[GID].CondID)&&(vec_G[GID].Boundary != DIRICHLET)){
-            A_size++;
             A_idx[i][j] = A_size;
+            A_size++;
 			}
 		}
 	}
-   MatA = VFMalloc(5 * A_size);
+   A_size--;
+   A_val = VFMalloc(5 * A_size);
    MatTA = VFMalloc(5 * A_size);
    Ai = VIMalloc(A_size + 1);
 	Aj = VIMalloc(5 * A_size);
-   MatM = VFMalloc(A_size);
+   MatM = VFMalloc(A_size); // Preconditioner
    cond_b = MFMalloc(CondNUMR, A_size); // for Laplace solution
    temp_b = VFMalloc(A_size);           // for Laplace solution
-   VFInit(MatA,0.0,5*A_size);
+   //phi_dw = MatrixMalloc(CondNUMR, ngx); 
+	//phi_u = MatrixMalloc(CondNUMR, ngx);
+   VFInit(A_val,0.0,5*A_size);
    VFInit(MatTA,0.0,5*A_size);
    VIInit(Ai,0.0,A_size+1);
    VIInit(Aj,0.0,5*A_size);
    VFInit(MatM,0.0,A_size);
    MFInit(cond_b,0.0,CondNUMR,A_size);
    VFInit(temp_b,0.0,A_size);
+   //MFInit(phi_dw,0.0,CondNUMR,A_size);
+   //MFInit(phi_u,0.0,CondNUMR,A_size);
    //
-   CG_Matrix_Setting(MatA, Ai, Aj, cond_b, MatM, MatTA, temp_b);
-   //   
+   CG_Matrix_Setting(A_val, Ai, Aj, cond_b, MatM, MatTA, temp_b);
+   //
+   if(PRINT_Flag && A_size<100){
+      printf("A_size=%d\n",A_size);
+      printf("A_idx[i][j]\n");
+      for(j=ngy-1;j>=0;j--){
+         for(i=0;i<ngx;i++){
+            printf(" %2d",A_idx[i][j]);
+         }printf("\n");
+      }printf("\n");
+      printf("A_val\n");
+      for(i=0;i<5*A_size;i++){
+         printf(" %g",A_val[i]);
+      }printf("\n");
+      printf("TA_val\n");
+      for(i=0;i<5*A_size;i++){
+         printf(" %g",MatTA[i]);
+      }printf("\n");
+      printf("Aj\n");
+      for(i=0;i<5*A_size;i++){
+         printf(" %d",Aj[i]);
+      }printf("\n");
+      printf("Ai\n");
+      for(i=0;i<A_size+1;i++){
+         printf(" %d",Ai[i]);
+      }printf("\n");
+      printf("temp_b[i]\n");
+      for(i=0;i<A_size;i++){
+         printf(" %g",temp_b[i]);
+      }printf("\n");
+      printf("Condb\n");
+      for(j=0;j<CondNUMR;j++){
+         for(i=0;i<A_size;i++){
+            printf(" %g",cond_b[j][i]);
+         }printf("\n");
+      }
+   }
 }
 void GasSetting(){
    int isp;
@@ -1788,7 +1848,37 @@ void DumpRead(int argc, char *argv[]) {
    printf("Not yet\n");
    exit(1);
 }
-
+float Face_To_Area(int Face){
+   if(Face ==LEFT){
+      return dy*zlength;
+   } 
+   else if(Face == RIGHT){
+      return dy*zlength;
+   } 
+   else if(Face == UP){
+      return dx*zlength;
+   } 	  
+   else if(Face == DOWN){
+      return dx*zlength;
+   }  
+   else if(Face == UL_CORN){
+      return 0.5*(dx+dy)*zlength;
+   } 
+   else if(Face == UR_CORN){
+      return 0.5*(dx+dy)*zlength;
+   } 
+   else if(Face == LL_CORN){
+      return 0.5*(dx+dy)*zlength;
+   }  
+   else if(Face == LR_CORN){
+      return 0.5*(dx+dy)*zlength;
+   }  
+   else if(Face == NO_FACE){
+      return dy*zlength;
+   }else{
+      exit(1);
+   }
+}
 float **MFMalloc(int sizeX,int sizeY)
 {
     int i;

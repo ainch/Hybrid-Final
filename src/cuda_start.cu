@@ -40,6 +40,15 @@ void info_Device()
 void start_cuda(){
 
 	/*** Field solver ***/
+	if(PCG_Method==0){
+		
+	}else if(PCG_Method==1){
+
+	}else if(PCG_Method==2){
+
+	}else if(PCG_Method==3){
+
+	}
 	//FieldSolver = PCG_SOLVER;
 	/*** Move ***/
 	if(ConstB_Flag){
