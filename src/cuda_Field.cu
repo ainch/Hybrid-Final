@@ -57,14 +57,107 @@ void PCG_SOLVER_Laplace(){
 	}
     //////////////////////////////////////////////////////////////////////////////
 	
-    int grid,block,mingrid;
+    int grid,block,mingrid,TID;
     // Find good grid and block size
     cudaOccupancyMaxPotentialBlockSize(&mingrid,&block,(void*)PCG,0,Gsize); 
     grid = (Gsize + block - 1) / block;
     printf("minGridSize = %d\n",mingrid);
     printf("blockSize = %d\n",block);
     printf("gridSize = %d\n",grid);
-
+    // cpu version test
+    int Anum,k;
+    float rsold = 0.0;
+    float rnew = 0.0;
+    float rr=0.0;
+    float pap = 0.0;
+    float alpha,beta;
+    float rz1,rz0;
+    float *AX,*X,*B,*R0,*Z0,*P0,*AP,*PAP,*RZ0,*RZ1;
+    float **sol;
+    X = VFMalloc(A_size);
+    B = VFMalloc(A_size);
+    R0 = VFMalloc(A_size);
+    AX = VFMalloc(A_size);
+    Z0 = VFMalloc(A_size);
+    P0 = VFMalloc(A_size);
+    AP = VFMalloc(A_size);
+    PAP = VFMalloc(A_size);
+    RZ0 = VFMalloc(A_size);
+    RZ1 = VFMalloc(A_size);
+    sol = MFMalloc(CondNUMR,Gsize);
+    VFInit(X,0.0,A_size);
+    VFInit(B,0.0,A_size);
+    VFInit(AX,0.0,A_size);
+    VFInit(R0,0.0,A_size);
+    VFInit(Z0,0.0,A_size);
+    VFInit(P0,0.0,A_size);
+    VFInit(AP,0.0,A_size);
+    VFInit(PAP,0.0,A_size);
+    VFInit(RZ0,0.0,A_size);
+    VFInit(RZ1,0.0,A_size);
+    MFInit(sol,0.0,CondNUMR,Gsize);
+    for (k = 0; k < CondNUMR; k++) {
+        VFCopy(B,cond_b[k],A_size);
+        rsold = 0.0;
+        FieldIter = 0;
+        for(TID=0;TID<A_size;TID++){
+            AX[TID] = 0;
+            for(i=Ai[TID]-Ai[0];i<Ai[TID+1]-Ai[0];i++){
+                AX[TID] += A_val[i]*X[TID];
+            }
+            R0[TID] = B[TID] - AX[TID];
+            Z0[TID] = MatM[TID] * R0[TID];
+            P0[TID] = Z0[TID];
+            rsold += R0[TID]*Z0[TID];
+        }
+        printf("rsold=%g\n",rsold);
+        while(rsold>PCGtol*PCGtol){
+            FieldIter++;
+            pap = 0.0;
+            for(TID=0;TID<A_size;TID++){
+                AP[TID] = 0;
+                for(i=Ai[TID]-Ai[0];i<Ai[TID+1]-Ai[0];i++){
+                    AP[TID] += A_val[i]*P0[TID];
+                }
+                printf("PAP[%d] = %g\n",TID,AP[TID]);
+                PAP[TID] = P0[TID] * AP[TID];
+                pap += PAP[TID]; //Reduction
+            }
+            exit(1);
+            alpha = rsold/pap;
+            for(TID=0;TID<A_size;TID++){
+                X[TID] = X[TID] + alpha * P0[TID];
+                R0[TID] = R0[TID] - alpha * AP[TID];
+                Z0[TID] = MatM[TID] * R0[TID];
+                rnew += R0[TID]*Z0[TID];  //Reduction
+            }
+            beta = rnew/rsold;
+            for(TID=0;TID<A_size;TID++){ 
+                P0[TID] = Z0[TID] + beta*P0[TID];
+            }
+            rsold = rnew;
+            rnew = 0.0;
+            printf("alpha %d = %2g, pap = %g, Beta %d = %2g, rsold=%2g\n",FieldIter-1,alpha,pap,FieldIter-1,beta,rsold);
+        }
+        printf("\nrsold=%g, FieldIter=%d\n",rz1,FieldIter);
+        for(i=0;i<ngx;i++){
+            for(j=0;j<ngy;j++){
+                TID = i*ngy+j;
+                if(vec_A_idx[TID] !=0){
+                    sol[k][TID] = X[vec_A_idx[TID]-1];
+                }
+            }
+        }
+        printf("Solution %d\n",k);
+        for(j=ngy-1;j>=0;j--){
+            for(i=0;i<ngx;i++){
+                TID = i*ngy+j;
+                printf("%6.2g", sol[k][TID]);
+            }printf("\n");
+        }printf("\n");
+        VFInit(X,0.0,A_size);
+    }
+    exit(1);
     PCGtol *= 1e-3;
     for (i = 0; i < CondNUMR; i++) {
         cudaMemcpy(dev_b, cond_b[i], A_size * sizeof(float),cudaMemcpyHostToDevice);
@@ -76,7 +169,7 @@ void PCG_SOLVER_Laplace(){
         printf("FieldIter = %d\n",FieldIter);
     }
     PCGtol *= 1e3;
-    exit(1);
+    
 }
 void Set_MatrixPCG_cuda(){
     

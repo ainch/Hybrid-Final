@@ -28,7 +28,7 @@ void info_Device()
 	//printf("Clock rate: %d\n", prop.clockRate);
 	printf("Total Global Mem.: %u Mbytes\n", prop.totalGlobalMem/1024/1024);
 	//printf("Total constant Mem.: %u Kbytes\n", prop.totalConstMem/1024);
-	//printf("Shared Mem. per block: %u bytes \n", prop.sharedMemPerBlock);
+	printf("Shared Mem. per block: %u bytes \n", prop.sharedMemPerBlock);
 	//printf("Registers available per block.: %u #\n", prop.regsPerBlock);
 	//printf("Max Mem. pitch: %ld\n", prop.memPitch);
 	printf("Multiprocessor count: %d\n", prop.multiProcessorCount);

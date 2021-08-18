@@ -12,6 +12,9 @@ extern int *Ai,*Aj;
 extern int **A_idx;
 extern float *MatM,**cond_b,*temp_b;
 extern float **phi_dw,**phi_u;
+extern float *VFMalloc(int size);
+extern void VFInit(float *V,float C,int size);
+extern void VFCopy(float *V,float *C,int size);
 
 #ifndef __CUDA_FIELD_CUH__
 #define __CUDA_FIELD_CUH__
