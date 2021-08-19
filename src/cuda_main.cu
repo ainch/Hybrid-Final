@@ -176,13 +176,13 @@ __global__ void testKernel(point *p)
 __global__ void MakeVectorForMoveKernel(int ngx,int ngy,point *p)
 {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
-    p[i].a = ngx;
-    p[i].b = ngy;
+    p[i].a = (float)ngx;
+    p[i].b = (float)ngy;
 }
 int test(void)
 {
     // set number of points 
-    int numPoints    = 4;
+    int numPoints    = 16;
     int gpuBlockSize = 4;
     int pointSize    = sizeof(point);
     int numBytes     = numPoints * pointSize;
@@ -194,7 +194,6 @@ int test(void)
     cudaMalloc((void**)&gpuPointArray, numBytes);
 
     // launch kernel
-    //MakeVectorForMoveKernel<<<gpuGridSize,gpuBlockSize>>>(ngx,ngy,gpuPointArray);
     testKernel<<<gpuGridSize,gpuBlockSize>>>(gpuPointArray);
 
     // retrieve the results

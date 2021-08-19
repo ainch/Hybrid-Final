@@ -12,7 +12,16 @@ void Set_Particle_cuda(){
 void Set_Device_Parameter(){
     int grid,block;
     int mingrid;
-
+    
+    int   *vec_cond_Garray;
+    int   *vec_boundary_Garray;
+    int   *vec_face_Garray;
+    float *vec_area_Garray;
+    float *vec_eps_Carray;
+    float *dev_Sigma;
+    int   *dev_face_Garray;
+    float *dev_area_Garray;
+    float *dev_eps_Carray;
     // Find good grid and block size
     cudaOccupancyMaxPotentialBlockSize(&mingrid,&block,(void*)SetSeed,0,Gsize); 
     grid = (Gsize + block - 1) / block;

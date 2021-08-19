@@ -21,7 +21,7 @@ void InputRead() {
    int buf;
    int IDn, IDchk[100], IDchk1, IDchk2;
    float fbuf1,fbuf2;
-   PRINT_Flag = 1;
+   PRINT_Flag = 0;
    JSON_Value *InputValue;
    JSON_Object *MainObject;
    JSON_Object *SubObject1,*SubObject2,*SubObject3;

@@ -61,9 +61,25 @@ enum GasType {
 typedef struct TEST
 {
     float a, b;
-    float *c;
-    float *d;
 } point;
+typedef struct __Device_PCG_Const_Set{
+	int A_size;
+	int Iter;
+	float tol;
+	float tol2;
+    float rsold;
+    float Temp;
+    float rnew;
+	float alpha;
+	float beta;
+}DPS_Const;
+typedef struct __Device_PCG_DATA_Set{
+	float vecR;
+	float vecZ;
+	float vecP;
+    float vecAP;
+    float vecM;
+}DPS_Data;
 typedef struct __Host_Gsize_Array{
 	int Boundary;  //Boundary Condition Constant 0~4
 	int CondID;		// Conductor ID , NO Conductor is zero

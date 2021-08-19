@@ -606,3 +606,78 @@ void Main_Variable_printorSave(){
     }
     fclose(fp);
 }
+void CPU_PCG_Laplace_Solution_Save(float **Sol){
+    int i,j,k;
+    FILE *fp;
+    int nbar,kk,Gbuf;
+   
+    fp = fopen("CPU_LAPPCG_TEC2D.dat", "w");
+    fprintf(fp, "TITLE = \"2D-PIC CPU PCG SOLUTION\"\n");
+    fprintf(fp, "VARIABLES = \"X\",\"Y\",\n");
+	for(k=0;k<CondNUMR;k++){
+		fprintf(fp, "\"Cond %d_Solution\",\n",k);
+	}
+	fprintf(fp, "ZONE I = %d, J = %d, F=BLOCK,\n", ngx, ngy);
+    nbar = 6;
+    // x_Garray
+    kk = 0;for(j=0;j<ngy;j++){fprintf(fp, "\t");for(i=0;i<ngx;i++){
+    fprintf(fp, "%.3e\t",
+			x_Garray[i]
+    );kk++;if(kk==nbar){fprintf(fp, "\n\t");kk=0;}}kk=0;fprintf(fp, "\n");}
+    // y_Garray
+    kk = 0;for(j=0;j<ngy;j++){fprintf(fp, "\t");for(i=0;i<ngx;i++){
+    fprintf(fp, "%.3e\t",
+			y_Garray[j]
+    );kk++;if(kk==nbar){fprintf(fp, "\n\t");kk=0;}}kk=0;fprintf(fp, "\n");}
+	for(k=0;k<CondNUMR;k++){
+    	kk = 0;for(j=0;j<ngy;j++){fprintf(fp, "\t");for(i=0;i<ngx;i++){
+    	fprintf(fp, "%g\t",
+				Sol[k][i*ngy+j]
+    	);kk++;if(kk==nbar){fprintf(fp, "\n\t");kk=0;}}kk=0;fprintf(fp, "\n");}
+	}
+	// GEOMETRY
+    fprintf(fp, "GEOMETRY\n");
+    fprintf(fp, "F=POINT\n");
+    fprintf(fp, "CS=GRID\n");
+    fprintf(fp, "X=0.00,Y=0.00,Z=0.00\n");
+    fprintf(fp, "C=BLACK\n");
+    fprintf(fp, "S=GLOBAL\n");
+    fprintf(fp, "L=SOLID\n");
+    fprintf(fp, "PL=4\n");
+    fprintf(fp, "LT=0.1\n");
+    fprintf(fp, "CLIPPING=CLIPTOVIEWPORT\n");
+    fprintf(fp, "DRAWORDER=AFTERDATA\n");
+    fprintf(fp, "MFC=\"\"\n");
+    fprintf(fp, "T=RECTANGLE %g %g\n",xlength,ylength);
+    for(i=0;i<CondNUM;i++){
+        fprintf(fp, "GEOMETRY\n");
+        fprintf(fp, "F=POINT\n");
+        fprintf(fp, "CS=GRID\n");
+        fprintf(fp, "X=%g,Y=%g,Z=0.00\n",CondX0[i]*dx,CondY0[i]*dy);
+        fprintf(fp, "C=BLACK\n");
+        fprintf(fp, "S=GLOBAL\n");
+        fprintf(fp, "L=SOLID\n");
+        fprintf(fp, "PL=4\n");
+        fprintf(fp, "LT=0.1\n");
+        fprintf(fp, "CLIPPING=CLIPTOVIEWPORT\n");
+        fprintf(fp, "DRAWORDER=AFTERDATA\n");
+        fprintf(fp, "MFC=\"\"\n");
+        fprintf(fp, "T=RECTANGLE %g %g\n",CondX1[i]*dx-CondX0[i]*dx,CondY1[i]*dy-CondY0[i]*dy);
+    }
+    for(i=0;i<DielNUM;i++){
+        fprintf(fp, "GEOMETRY\n");
+        fprintf(fp, "F=POINT\n");
+        fprintf(fp, "CS=GRID\n");
+        fprintf(fp, "X=%g,Y=%g,Z=0.00\n",DielX0[i]*dx,DielY0[i]*dy);
+        fprintf(fp, "C=BLACK\n");
+        fprintf(fp, "S=GLOBAL\n");
+        fprintf(fp, "L=SOLID\n");
+        fprintf(fp, "PL=4\n");
+        fprintf(fp, "LT=0.1\n");
+        fprintf(fp, "CLIPPING=CLIPTOVIEWPORT\n");
+        fprintf(fp, "DRAWORDER=AFTERDATA\n");
+        fprintf(fp, "MFC=\"\"\n");
+        fprintf(fp, "T=RECTANGLE %g %g\n",DielX1[i]*dx-DielX0[i]*dx,DielY1[i]*dy-DielY0[i]*dy);
+    }
+    fclose(fp);
+}
