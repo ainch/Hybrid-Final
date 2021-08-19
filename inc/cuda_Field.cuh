@@ -22,8 +22,14 @@ float *Lap_TEMP_Sol; // Temperature Solution of Laplace Equation
 float **Lap_PHI_Sol; // Each of conductor Phi Solution of Laplace Equation, This is Device value
 float **Lap_SIG_Sol; // Each of conductor Sigma Solution of Laplace Equation for external circuit
 size_t pitch;
+float rsold,rnew,Temp;
+float alpha,beta;
+// Single CPU PCG parameter
+float *AX,*X,*B,*R0,*Z0,*P0,*AP,*PAP;
+// ORIGIN GPU PCG parameter
 void Set_MatrixPCG_cuda();
 void PCG_SOLVER_Laplace();
+int PCG_SINGLECPU();
 __global__ void PCG(int Iter,int Gsize,int Asize,float *A,int *Ai,int *Aj,float *X,float *b);
 __global__ void SaveAT2D(float *A, size_t pitch, int height, float *PHI, int n);
 __global__ void LoadAT2D(float *A, size_t pitch, int height, float *PHI, int n);
