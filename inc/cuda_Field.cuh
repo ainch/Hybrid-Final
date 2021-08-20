@@ -43,7 +43,7 @@ void PCG_SOLVER_Laplace();
 int PCG_SINGLECPU();
 __global__ void Make_PCG_DATA_Init(DPS_Data *p, int size,float *MatrixM);
 __global__ void Make_PCG_Const_Init(DPS_Const *p,int Asize, float tol);
-__global__ void PCG_LAP(int *Iter,int Gsize,int Asize,float *A,int *Ai,int *Aj,float *M,float *AP,float *R,float *Z,float *P,float *X,float *b);
+__global__ void PCG_LAP(float *A,int *Ai,int *Aj, DPS_Const *PCG_C, DPS_Data *PCG_D,float *X,float *b);
 __global__ void SaveAT2D(float *A, size_t pitch, int height, float *PHI, int n);
 __global__ void LoadAT2D(float *A, size_t pitch, int height, float *PHI, int n);
 #endif

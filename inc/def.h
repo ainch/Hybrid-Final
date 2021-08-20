@@ -74,11 +74,11 @@ typedef struct __Device_PCG_Const_Set{
 	float beta;
 }DPS_Const;
 typedef struct __Device_PCG_DATA_Set{
-	float vecR;
-	float vecZ;
-	float vecP;
-    float vecAP;
-    float vecM;
+	float R;
+	float Z;
+	float P;
+    float AP;
+    float M;
 }DPS_Data;
 typedef struct __Host_Gsize_Array{
 	int Boundary;  //Boundary Condition Constant 0~4

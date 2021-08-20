@@ -6,13 +6,16 @@ void PCG_SOLVER_Laplace(){
     // Lap_TEMP_Sol[Gsize] : Temperature Profile
     // Lap_PHI_Sol[CondNUMR][Gsize] : Each of conductor Phi Profile, This is Device value
     // Lap_SIG_Sol[CondNUMR][CondNUMR] : Each of conductor Sigma Profile for external circuit
-    int i,j; 
+    int i,j,k,TID; 
 
     //////////////////////////////////////////////////////////////////////////////
     int grid,block,mingrid;
-    float *buf;
     int IIter;
+    float *buf;
+    float **CPUsol;
+    CPUsol = MFMalloc(CondNUMR,Gsize);
     buf = VFMalloc(A_size);
+
     printf("<FIELD SOVER>\n");
 	printf(" Laplace eq. using PCG\n");
 	printf(" Matrix Size = %d X %d = %d\n", A_size, A_size, A_size*A_size);
@@ -23,25 +26,39 @@ void PCG_SOLVER_Laplace(){
     printf("blockSize = %d\n",block);
     printf("gridSize = %d\n",grid);
   
-    for (i = 0; i < CondNUMR; i++) {
-        cudaMemcpy(dev_b, cond_b[i], A_size * sizeof(float),cudaMemcpyHostToDevice);
-        for(j=0;j<A_size;j++){
-			//if(cond_b[i][j] !=0 )
-				//printf("cond_b[%d][%d] = %g\n",i,j,cond_b[i][j]);
-		} 
-        IIter = 10;
-        //printf("IIter = %d\n",IIter);
-        //PCG_LAP<<<grid,block>>>(&IIter,Gsize,A_size,dev_A,dev_Ai,dev_Aj,dev_M,dev_AP,dev_R,dev_Z,dev_P,dev_X,dev_b);
-        //printf("IIter = %d\n",IIter);
-        //cudaMemcpy(buf, dev_R, A_size * sizeof(float),cudaMemcpyDeviceToHost);
-        //printf("buf = %d\n",buf[1]);
+    for (k = 0; k < CondNUMR; k++) {
+        checkCudaErrors(cudaMemcpy(dev_b, cond_b[k], A_size * sizeof(float),cudaMemcpyHostToDevice));
+        checkCudaErrors(cudaMemset((void *) dev_X, 0, A_size * sizeof(float)));
+        PCG_LAP<<<grid,block>>>(dev_A,dev_Ai,dev_Aj,dev_PCG_const,dev_PCG_DATA,dev_X,dev_b);
+        checkCudaErrors(cudaMemcpy(buf, dev_X, A_size * sizeof(float),cudaMemcpyDeviceToHost));
+        //checkCudaErrors(cudaMemcpy(Host_PCG_const, dev_PCG_const, sizeof(DPS_Const), cudaMemcpyDeviceToHost));
+        //checkCudaErrors(cudaMemcpy(Host_PCG_DATA, dev_PCG_DATA, A_size*sizeof(DPS_Data), cudaMemcpyDeviceToHost));
+        for(j=ngy-1;j>=0;j--){
+            for(i=0;i<ngx;i++){
+                TID = i*ngy+j;
+                if((vec_G[TID].CondID-1)==k){
+                    CPUsol[k][TID] = 1.0;
+                }
+                if(vec_A_idx[TID]){
+                    CPUsol[k][TID] = buf[vec_A_idx[TID]-1];
+                }
+            }
+        }
+        /*
+        for(j=ngy-1;j>=0;j--){
+            for(i=0;i<ngx;i++){
+                TID = i*ngy+j;
+                printf("%6.2g",CPUsol[k][TID]);
+            }printf("\n");
+        }printf("\n");
+        */
     }
-    //exit(1);
+    exit(1);
 }
 void Set_MatrixPCG_cuda(){
     int TID;
     int i,j,k; 
-    int PCG_Laplace_SINGLECPU_Flag=0;
+    int PCG_Laplace_SINGLECPU_Flag=1;
     float **CPUsol;
 	//vec_cond_Garray = (int *) malloc(ngx * ngy * sizeof(int));
 	//vec_boundary_Garray = (int *) malloc(ngx * ngy * sizeof(int));
@@ -78,31 +95,14 @@ void Set_MatrixPCG_cuda(){
     // cudaMemset((void *) array, 0, Gsize * sizeof(int));
     
     //Make a Field constant set  
+    Host_PCG_const = (DPS_Const*)malloc(sizeof(DPS_Const));
     checkCudaErrors(cudaMalloc((void**)&dev_PCG_const,sizeof(DPS_Const)));
     Make_PCG_Const_Init<<<1,1>>>(dev_PCG_const,A_size,PCGtol);
-    Host_PCG_const = (DPS_Const*)malloc(sizeof(DPS_Const));
-    checkCudaErrors(cudaMemcpy(Host_PCG_const, dev_PCG_const, sizeof(DPS_Const), cudaMemcpyDeviceToHost));
    
     //Make a Field DATA set  
+    Host_PCG_DATA = (DPS_Data*)malloc(A_size*sizeof(DPS_Data));
     checkCudaErrors(cudaMalloc((void**)&dev_PCG_DATA, A_size*sizeof(DPS_Data)));
     Make_PCG_DATA_Init<<<A_size/4,4>>>(dev_PCG_DATA,A_size,dev_M);
-
-    Host_PCG_DATA = (DPS_Data*)malloc(A_size*sizeof(DPS_Data));
-    checkCudaErrors(cudaMemcpy(Host_PCG_DATA, dev_PCG_DATA, A_size*sizeof(DPS_Data), cudaMemcpyDeviceToHost));
-    for (i=0;i<A_size;i++){
-        printf("[%d]%g R=%g,Z=%g,P=%g,AP=%g,M=%g\n",i,MatM[i],Host_PCG_DATA[i].vecR,Host_PCG_DATA[i].vecZ,Host_PCG_DATA[i].vecP,Host_PCG_DATA[i].vecAP,Host_PCG_DATA[i].vecM);
-    }
-    exit(1);
-    //printf("testKernel results:\n");
-    //printf("point.a: %g, point.b: %g\n",CPU_BUF[0].tol,CPU_BUF[0].tol2);
-    //printf("point.a: %g, point.b: %g\n",CPU_BUF[0].tol2,CPU_BUF[0].tol2);
-    //printf("point.a: %d, point.b: %g\n",CPU_BUF[0].A_size,CPU_BUF[0].tol);
-    //free(CPU_BUF);
-    // retrieve the results
-    
-
-    
-        // deallocate memory
     
     if(PCG_Laplace_SINGLECPU_Flag==1){
 		printf(" Preconditioner[Jacovi]\n"); 
@@ -127,6 +127,7 @@ void Set_MatrixPCG_cuda(){
         CPUsol = MFMalloc(CondNUMR,Gsize);
         for (k = 0; k < CondNUMR; k++) {
             VFCopy(B,cond_b[k],A_size);
+            VFInit(X,0.0,A_size);
             FieldIter = PCG_SINGLECPU();
             printf("Solution %d",k);
             printf(" : Conductor %d = 1 V, Other CondUCTOR = 0 V\n",k);
@@ -154,18 +155,18 @@ void Set_MatrixPCG_cuda(){
             */
             CPU_PCG_Laplace_Solution_Save(CPUsol);
         }
-        exit(1);
+        //exit(1);
 	}
 }
 __global__ void Make_PCG_DATA_Init(DPS_Data *p, int size,float *MatrixM){
     int TID = blockIdx.x * blockDim.x + threadIdx.x;
     if(TID>=size) return;
-    printf("TID = %d, M = %g\n",TID,MatrixM[TID]);
-    p[TID].vecR = 0.0;
-    p[TID].vecZ = 0.0;
-    p[TID].vecP = 0.0;
-    p[TID].vecAP = 0.0;
-    p[TID].vecM = MatrixM[TID];
+    //printf("TID = %d, M = %g\n",TID,MatrixM[TID]);
+    p[TID].R = 0.0;
+    p[TID].Z = 0.0;
+    p[TID].P = 0.0;
+    p[TID].AP = 0.0;
+    p[TID].M = MatrixM[TID];
 }
 __global__ void Make_PCG_Const_Init(DPS_Const *p,int Asize, float tol){
     int i = blockIdx.x * blockDim.x + threadIdx.x;
@@ -202,91 +203,91 @@ int PCG_SINGLECPU(){
             for(i=Ai[TID]-Ai[0];i<Ai[TID+1]-Ai[0];i++){
                 AP[TID] += A_val[i]*P0[Aj[i]-Ai[0]];
             }
+            //printf("AP[%d] = %g\n",TID,P0[TID]);
             PAP[TID] = P0[TID] * AP[TID];
             Temp += PAP[TID]; //AtomicAdd!!
         }
-        alpha = rsold/Temp;
+        alpha = (Temp)? rsold/Temp:0.0f ;
         for(TID=0;TID<A_size;TID++){
             X[TID] = X[TID] + alpha * P0[TID];
             R0[TID] = R0[TID] - alpha * AP[TID];
             Z0[TID] = MatM[TID] * R0[TID];
             rnew += R0[TID]*Z0[TID];  //AtomicAdd!!
         }
-        beta = rnew/rsold;
+        beta = (rsold) ? rnew/rsold: 0.0f;
         for(TID=0;TID<A_size;TID++){ 
             P0[TID] = Z0[TID] + beta*P0[TID];
         }
         rsold = rnew;
         rnew = 0.0;
+        //printf("Iter = %d, Temp = %g, alpha = %g, beta = %g, rsold = %g\n",Iter,Temp,alpha,beta,rsold);
     }
     return Iter;
 }
-__global__ void PCG_LAP(int *Iter,int Gsize,int Asize,float *A,int *Ai,int *Aj,float *M,float *AP,float *R,float *Z,float *P,float *X,float *b){
+__global__ void PCG_LAP(float *A,int *Ai,int *Aj,DPS_Const *PCG_C,DPS_Data *PCG_D,float *X,float *b){
     int TID=blockDim.x*(gridDim.x*blockIdx.y+blockIdx.x)+threadIdx.x;
-    if(TID>=Asize) return;
+    if(TID>=PCG_C[0].A_size) return;
     int i;
-    //float tol2;
-    float a;
-
-    for(i=Ai[TID]-Ai[0];i<Ai[TID+1]-Ai[0];i++){
-        AP[TID] += A[i]*X[Aj[i]-Ai[0]];
+    float sum;
+    float *rs1,*rs2,*rs3;
+    int MAXITER = 20000;
+    // cal  AP = A * P
+    for(i=Ai[TID]-1;i<Ai[TID+1]-1;i++){
+        PCG_D[TID].AP += A[i] * X[Aj[i]-1];
     }
-    R[TID] = b[TID] - AP[TID];
-    Z[TID] = M[TID] * R[TID];
-    P[TID] = Z[TID];
-    a = R[TID]*Z[TID];
-    *Iter = 100;
-    
-    //__syncthreads();
-    //printf("TID = %d, a = %g\n",TID,a);  
-    //atomicAdd(&rsold,a);
-    //if(TID==0) printf("rsold %d= %g\n",TID,rsold);       
-    //if(TID==10) printf("rsold %d= %g\n",TID,rsold);  
-
-    /*
-    rsold = 0;
-    for(TID=0;TID<A_size;TID++){
-        AX[TID] = 0;
-        for(i=Ai[TID]-Ai[0];i<Ai[TID+1]-Ai[0];i++){
-            AX[TID] += A_val[i]*X[Aj[i]-Ai[0]];
+    PCG_D[TID].R = b[TID] - PCG_D[TID].AP;
+    PCG_D[TID].Z = PCG_D[TID].M * PCG_D[TID].R;
+    PCG_D[TID].P = PCG_D[TID].Z;
+    sum = PCG_D[TID].R*PCG_D[TID].Z;
+    if(TID==0) PCG_C[0].rsold = 0;
+    __syncthreads();
+    atomicAdd(&PCG_C[0].rsold,sum);
+    //if(TID==0) printf("maxNorm [%d]= %g\n",TID,PCG_C[0].rsold);  
+    //if(TID==10) printf("maxNorm [%d]= %g\n",TID,PCG_C[0].rsold);  
+    //if(TID==0) printf(" [%d]Initial rsold = %g, tol2 = %g\n",TID,PCG_C[0].rsold,PCG_C[0].tol2);
+    if(TID==0) PCG_C[0].Iter = 0;
+     __syncthreads();
+    while(PCG_C[0].rsold > PCG_C[0].tol2){
+        if(TID==0) PCG_C[0].Iter++;
+        __syncthreads();
+        //if(TID==0) printf(" [%d]Iter %d start!\n",TID,PCG_C[0].Iter);
+        PCG_D[TID].AP = 0;
+        for(i=Ai[TID]-1;i<Ai[TID+1]-1;i++){
+            PCG_D[TID].AP += A[i] * PCG_D[Aj[i]-1].P;
         }
-        R0[TID] = B[TID] - AX[TID];
-        Z0[TID] = MatM[TID] * R0[TID];
-        P0[TID] = Z0[TID];
-        rsold += R0[TID]*Z0[TID];
+        //printf("[%d] AP = %g\n",TID,PCG_D[TID].P);
+        sum = PCG_D[TID].P * PCG_D[TID].AP;
+        if(TID==0) PCG_C[0].Temp = 0;
+        __syncthreads();
+        atomicAdd(&PCG_C[0].Temp,sum);
+        //if(TID==0) printf(" [%d]Temp = %g\n",TID,PCG_C[0].Temp);       
+        if(PCG_C[0].Iter>MAXITER){
+            //if(TID==0) printf("Iteration[%d] = %g\n",TID,PCG_C[0].Iter);    
+            break;
+        } 
+        if(TID==0){
+            PCG_C[0].alpha = (PCG_C[0].Temp)? PCG_C[0].rsold/PCG_C[0].Temp : 0.0f; 
+        } 
+        __syncthreads();     
+        X[TID] = X[TID] + PCG_C[0].alpha * PCG_D[TID].P;
+        PCG_D[TID].R = PCG_D[TID].R - PCG_C[0].alpha * PCG_D[TID].AP;
+        PCG_D[TID].Z = PCG_D[TID].M * PCG_D[TID].R;
+        sum = PCG_D[TID].R * PCG_D[TID].Z;
+        if(TID==0) PCG_C[0].rnew = 0;
+        __syncthreads();
+        atomicAdd(&PCG_C[0].rnew,sum);
+       //if(TID==0) printf(" [%d]rnew = %g\n",TID,PCG_C[0].rnew);     
+        if(TID==0){
+             PCG_C[0].beta = (PCG_C[0].rsold)? PCG_C[0].rnew/PCG_C[0].rsold : 0.0f;
+        }
+        __syncthreads();
+        PCG_D[TID].P = PCG_D[TID].Z + PCG_C[0].beta*PCG_D[TID].P;    
+        if(TID==0) PCG_C[0].rsold = PCG_C[0].rnew;
+        __syncthreads();
+        if(TID==0) printf(" [%d]Iter %d,Temp = %g,alpha = %g,beat = %g, rsold = %g\n",TID,PCG_C[0].Iter,PCG_C[0].Temp,PCG_C[0].alpha,PCG_C[0].beta,PCG_C[0].rsold);
     }
-    tol2 = PCGtol*PCGtol;
-    //printf("rsold=%g\n",rsold);
-    while(rsold>tol2){
-        Iter++;
-        Temp = 0.0;
-        for(TID=0;TID<A_size;TID++){
-            AP[TID] = 0;
-            for(i=Ai[TID]-Ai[0];i<Ai[TID+1]-Ai[0];i++){
-                AP[TID] += A_val[i]*P0[Aj[i]-Ai[0]];
-                //printf("[%d],[%d] %g, %g\n",TID,Aj[i],A_val[i],P0[TID]);
-            }
-            //printf("PAP[%d] = %g\n",TID,AP[TID]);
-            PAP[TID] = P0[TID] * AP[TID];
-            Temp += PAP[TID]; //Reduction
-        }
-        alpha = rsold/Temp;
-        for(TID=0;TID<A_size;TID++){
-            X[TID] = X[TID] + alpha * P0[TID];
-            R0[TID] = R0[TID] - alpha * AP[TID];
-            Z0[TID] = MatM[TID] * R0[TID];
-            rnew += R0[TID]*Z0[TID];  //Reduction
-        }
-        beta = rnew/rsold;
-        for(TID=0;TID<A_size;TID++){ 
-            P0[TID] = Z0[TID] + beta*P0[TID];
-        }
-        rsold = rnew;
-        rnew = 0.0;
-        //printf("alpha %d = %2g, Temp = %g, Beta %d = %2g, rsold=%2g\n",FieldIter-1,alpha,Temp,FieldIter-1,beta,rsold);
-    }
-    */
-
+    if(TID==0) printf("Iter [%d]= %d, ",TID,PCG_C[0].Iter);  
+    if(TID==0) printf("maxNorm [%d]= %g\n",TID,PCG_C[0].rsold);  
 }
 __global__ void SaveAT2D(float *A, size_t pitch, int height, float *PHI, int n){
     // High save and load for Matrix type variable 
