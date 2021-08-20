@@ -16,6 +16,7 @@
 #define __XYPIC_CU_H__
 
 #endif
-
+//https://m.blog.naver.com/PostView.naver?isHttpsRedirect=true&blogId=icysword&logNo=140202424642 
+//Stream concept
 
 

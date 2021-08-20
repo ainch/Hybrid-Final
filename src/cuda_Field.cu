@@ -26,10 +26,14 @@ void PCG_SOLVER_Laplace(){
     printf("blockSize = %d\n",block);
     printf("gridSize = %d\n",grid);
   
-    for (k = 0; k < CondNUMR; k++) {
+    for (k = 0; k < CondNUMR-1; k++) {
         checkCudaErrors(cudaMemcpy(dev_b, cond_b[k], A_size * sizeof(float),cudaMemcpyHostToDevice));
         checkCudaErrors(cudaMemset((void *) dev_X, 0, A_size * sizeof(float)));
-        PCG_LAP<<<grid,block>>>(dev_A,dev_Ai,dev_Aj,dev_PCG_const,dev_PCG_DATA,dev_X,dev_b);
+        //  Method 1
+        //PCG_LAP<<<grid,block>>>(dev_A,dev_Ai,dev_Aj,dev_PCG_const,dev_PCG_DATA,dev_X,dev_b);
+        //  Method 2
+        FieldIter = PCG_LAP_Divide(grid,block);
+        //
         checkCudaErrors(cudaMemcpy(buf, dev_X, A_size * sizeof(float),cudaMemcpyDeviceToHost));
         //checkCudaErrors(cudaMemcpy(Host_PCG_const, dev_PCG_const, sizeof(DPS_Const), cudaMemcpyDeviceToHost));
         //checkCudaErrors(cudaMemcpy(Host_PCG_DATA, dev_PCG_DATA, A_size*sizeof(DPS_Data), cudaMemcpyDeviceToHost));
@@ -98,7 +102,8 @@ void Set_MatrixPCG_cuda(){
     Host_PCG_const = (DPS_Const*)malloc(sizeof(DPS_Const));
     checkCudaErrors(cudaMalloc((void**)&dev_PCG_const,sizeof(DPS_Const)));
     Make_PCG_Const_Init<<<1,1>>>(dev_PCG_const,A_size,PCGtol);
-   
+    checkCudaErrors(cudaMemcpy(Host_PCG_const, dev_PCG_const, sizeof(DPS_Const), cudaMemcpyDeviceToHost));
+
     //Make a Field DATA set  
     Host_PCG_DATA = (DPS_Data*)malloc(A_size*sizeof(DPS_Data));
     checkCudaErrors(cudaMalloc((void**)&dev_PCG_DATA, A_size*sizeof(DPS_Data)));
@@ -158,6 +163,43 @@ void Set_MatrixPCG_cuda(){
         //exit(1);
 	}
 }
+int PCG_LAP_Divide(int grid,int block){
+    int Iter = 0;
+    float *dev_rsold;
+    float *dev_Temp;
+    float *dev_rnew;
+    float rsold,rnew,Temp;
+    float alpha,beta;
+    
+    checkCudaErrors(cudaMalloc((void**) &dev_rsold,sizeof(dev_rsold)));
+    checkCudaErrors(cudaMemset((void *) dev_rsold, 0,  sizeof(dev_rsold)));
+    checkCudaErrors(cudaMalloc((void**) &dev_Temp,sizeof(dev_Temp)));
+    checkCudaErrors(cudaMemset((void *) dev_Temp, 0,  sizeof(dev_Temp)));
+    checkCudaErrors(cudaMalloc((void**) &dev_rnew,sizeof(dev_rnew)));
+    checkCudaErrors(cudaMemset((void *) dev_rnew, 0,  sizeof(dev_rnew)));
+
+    Make_PCG_DATA_Init<<<A_size/4,4>>>(dev_PCG_DATA,A_size,dev_M);
+    PCG_LAP_Part0<<<grid,block>>>(dev_A,dev_Ai,dev_Aj,dev_PCG_const,dev_PCG_DATA,dev_X,dev_b,dev_rsold);
+    cudaMemcpy(&rsold, dev_rsold, sizeof(dev_rsold), cudaMemcpyDeviceToHost);
+    printf("Iter = %d, rsold = %g\n",Iter,rsold);
+    while(rsold>Host_PCG_const[0].tol2){
+        Iter++;
+        PCG_LAP_Part1<<<grid,block>>>(dev_A,dev_Ai,dev_Aj,dev_PCG_const,dev_PCG_DATA,dev_Temp);
+        cudaMemcpy(&Temp, dev_Temp, sizeof(dev_Temp), cudaMemcpyDeviceToHost);
+        alpha = (Temp) ? rsold/Temp : 0.0f;
+        printf("Iter = %d, alpha = %g\n",Iter,alpha);
+        PCG_LAP_Part2<<<grid,block>>>(dev_PCG_const,dev_PCG_DATA,dev_X,alpha, dev_rnew);
+        cudaMemcpy(&rnew, dev_rnew, sizeof(dev_rnew), cudaMemcpyDeviceToHost);
+        beta = (rsold) ? rnew/rsold : 0.0f;
+        printf("Iter = %d, beta = %g\n",Iter,beta);
+        PCG_LAP_Part3<<<grid,block>>>(dev_PCG_const,dev_PCG_DATA,beta);
+        rsold = rnew;
+        cudaMemset((void *) dev_Temp, 0,  sizeof(dev_Temp));
+        cudaMemset((void *) dev_rnew, 0,  sizeof(dev_rnew));
+        if(Iter<10) printf("Iter = %d, Temp = %g, alpha = %g, beta = %g, rsold = %g\n",Iter,Temp,alpha,beta,rsold);
+    }
+    return Iter;
+}
 __global__ void Make_PCG_DATA_Init(DPS_Data *p, int size,float *MatrixM){
     int TID = blockIdx.x * blockDim.x + threadIdx.x;
     if(TID>=size) return;
@@ -183,6 +225,9 @@ __global__ void Make_PCG_Const_Init(DPS_Const *p,int Asize, float tol){
 int PCG_SINGLECPU(){
     int TID,i,Iter=0;
     float tol2;
+    float rsold,rnew,Temp;
+    float alpha,beta;
+
     rsold = 0;
     for(TID=0;TID<A_size;TID++){
         AX[TID] = 0;
@@ -220,7 +265,7 @@ int PCG_SINGLECPU(){
         }
         rsold = rnew;
         rnew = 0.0;
-        //printf("Iter = %d, Temp = %g, alpha = %g, beta = %g, rsold = %g\n",Iter,Temp,alpha,beta,rsold);
+        if(Iter<10) printf("Iter = %d, Temp = %g, alpha = %g, beta = %g, rsold = %g\n",Iter,Temp,alpha,beta,rsold);
     }
     return Iter;
 }
@@ -230,7 +275,15 @@ __global__ void PCG_LAP(float *A,int *Ai,int *Aj,DPS_Const *PCG_C,DPS_Data *PCG_
     int i;
     float sum;
     float *rs1,*rs2,*rs3;
-    int MAXITER = 20000;
+    int MAXITER = 20;
+    //Initial
+    if(TID==0){
+        PCG_C[0].Iter = 0;
+        PCG_C[0].rsold = 0;
+        PCG_C[0].Temp = 0;
+        PCG_C[0].rnew = 0;
+    } 
+    __syncthreads();
     // cal  AP = A * P
     for(i=Ai[TID]-1;i<Ai[TID+1]-1;i++){
         PCG_D[TID].AP += A[i] * X[Aj[i]-1];
@@ -239,16 +292,16 @@ __global__ void PCG_LAP(float *A,int *Ai,int *Aj,DPS_Const *PCG_C,DPS_Data *PCG_
     PCG_D[TID].Z = PCG_D[TID].M * PCG_D[TID].R;
     PCG_D[TID].P = PCG_D[TID].Z;
     sum = PCG_D[TID].R*PCG_D[TID].Z;
-    if(TID==0) PCG_C[0].rsold = 0;
-    __syncthreads();
     atomicAdd(&PCG_C[0].rsold,sum);
     //if(TID==0) printf("maxNorm [%d]= %g\n",TID,PCG_C[0].rsold);  
     //if(TID==10) printf("maxNorm [%d]= %g\n",TID,PCG_C[0].rsold);  
     //if(TID==0) printf(" [%d]Initial rsold = %g, tol2 = %g\n",TID,PCG_C[0].rsold,PCG_C[0].tol2);
-    if(TID==0) PCG_C[0].Iter = 0;
-     __syncthreads();
     while(PCG_C[0].rsold > PCG_C[0].tol2){
-        if(TID==0) PCG_C[0].Iter++;
+        if(TID==0){
+            PCG_C[0].Iter++;
+            PCG_C[0].Temp = 0;
+            PCG_C[0].rnew = 0;
+        } 
         __syncthreads();
         //if(TID==0) printf(" [%d]Iter %d start!\n",TID,PCG_C[0].Iter);
         PCG_D[TID].AP = 0;
@@ -257,8 +310,6 @@ __global__ void PCG_LAP(float *A,int *Ai,int *Aj,DPS_Const *PCG_C,DPS_Data *PCG_
         }
         //printf("[%d] AP = %g\n",TID,PCG_D[TID].P);
         sum = PCG_D[TID].P * PCG_D[TID].AP;
-        if(TID==0) PCG_C[0].Temp = 0;
-        __syncthreads();
         atomicAdd(&PCG_C[0].Temp,sum);
         //if(TID==0) printf(" [%d]Temp = %g\n",TID,PCG_C[0].Temp);       
         if(PCG_C[0].Iter>MAXITER){
@@ -273,8 +324,6 @@ __global__ void PCG_LAP(float *A,int *Ai,int *Aj,DPS_Const *PCG_C,DPS_Data *PCG_
         PCG_D[TID].R = PCG_D[TID].R - PCG_C[0].alpha * PCG_D[TID].AP;
         PCG_D[TID].Z = PCG_D[TID].M * PCG_D[TID].R;
         sum = PCG_D[TID].R * PCG_D[TID].Z;
-        if(TID==0) PCG_C[0].rnew = 0;
-        __syncthreads();
         atomicAdd(&PCG_C[0].rnew,sum);
        //if(TID==0) printf(" [%d]rnew = %g\n",TID,PCG_C[0].rnew);     
         if(TID==0){
@@ -289,6 +338,51 @@ __global__ void PCG_LAP(float *A,int *Ai,int *Aj,DPS_Const *PCG_C,DPS_Data *PCG_
     if(TID==0) printf("Iter [%d]= %d, ",TID,PCG_C[0].Iter);  
     if(TID==0) printf("maxNorm [%d]= %g\n",TID,PCG_C[0].rsold);  
 }
+__global__ void PCG_LAP_Part0(float *A,int *Ai,int *Aj,DPS_Const *PCG_C,DPS_Data *PCG_D,float *X,float *b,float *rsold){
+    int TID=blockDim.x*(gridDim.x*blockIdx.y+blockIdx.x)+threadIdx.x;
+    if(TID>=PCG_C[0].A_size) return;
+    int i;
+    float sum;
+    // cal  AP = A * P
+    for(i=Ai[TID]-1;i<Ai[TID+1]-1;i++){
+        PCG_D[TID].AP += A[i] * X[Aj[i]-1];
+    }
+    PCG_D[TID].R = b[TID] - PCG_D[TID].AP;
+    PCG_D[TID].Z = PCG_D[TID].M * PCG_D[TID].R;
+    PCG_D[TID].P = PCG_D[TID].Z;
+    sum = PCG_D[TID].R*PCG_D[TID].Z;
+    atomicAdd(rsold,sum); 
+}
+__global__ void PCG_LAP_Part1(float *A,int *Ai,int *Aj,DPS_Const *PCG_C,DPS_Data *PCG_D,float *Temp){
+    int TID=blockDim.x*(gridDim.x*blockIdx.y+blockIdx.x)+threadIdx.x;
+    if(TID>=PCG_C[0].A_size) return;
+    int i;
+    float sum;
+    PCG_D[TID].AP = 0;
+    for(i=Ai[TID]-1;i<Ai[TID+1]-1;i++){
+        PCG_D[TID].AP += A[i] * PCG_D[Aj[i]-1].P;
+    }
+    sum = PCG_D[TID].P * PCG_D[TID].AP;
+    atomicAdd(Temp,sum);
+}
+__global__ void PCG_LAP_Part2(DPS_Const *PCG_C,DPS_Data *PCG_D,float *X,float alpha,float *rnew){
+    int TID=blockDim.x*(gridDim.x*blockIdx.y+blockIdx.x)+threadIdx.x;
+    if(TID>=PCG_C[0].A_size) return;
+    int i;
+    float sum;
+    printf("alpha = %g\n",alpha);
+    X[TID] = X[TID] + alpha * PCG_D[TID].P;
+    PCG_D[TID].R = PCG_D[TID].R - alpha * PCG_D[TID].AP;
+    PCG_D[TID].Z = PCG_D[TID].M * PCG_D[TID].R;
+    sum = PCG_D[TID].R * PCG_D[TID].Z;
+    atomicAdd(rnew,sum);
+}
+__global__ void PCG_LAP_Part3(DPS_Const *PCG_C,DPS_Data *PCG_D,float beta){
+    int TID=blockDim.x*(gridDim.x*blockIdx.y+blockIdx.x)+threadIdx.x;
+    if(TID>=PCG_C[0].A_size) return;
+    PCG_D[TID].P = PCG_D[TID].Z + beta * PCG_D[TID].P;
+}
+
 __global__ void SaveAT2D(float *A, size_t pitch, int height, float *PHI, int n){
     // High save and load for Matrix type variable 
 	int TID=blockDim.x*(gridDim.x*blockIdx.y+blockIdx.x)+threadIdx.x;

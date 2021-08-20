@@ -62,7 +62,7 @@ typedef struct TEST
 {
     float a, b;
 } point;
-typedef struct __Device_PCG_Const_Set{
+typedef struct __Global_PCG_Const_Set{
 	int A_size;
 	int Iter;
 	float tol;
@@ -73,7 +73,7 @@ typedef struct __Device_PCG_Const_Set{
 	float alpha;
 	float beta;
 }DPS_Const;
-typedef struct __Device_PCG_DATA_Set{
+typedef struct __Global_PCG_DATA_Set{
 	float R;
 	float Z;
 	float P;

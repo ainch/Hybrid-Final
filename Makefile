@@ -15,7 +15,6 @@ LIBS  = -L$(CUDA_DIR)/lib64 -lm -ldl -lcurand -lcublas -lcusparse -lcusolver -lc
 SRC_DIR := ./src
 OBJ_DIR := ./obj
 
-
 C_OBJS = $(OBJ_DIR)/main.o \
           $(OBJ_DIR)/parson.o \
           $(OBJ_DIR)/start.o \
