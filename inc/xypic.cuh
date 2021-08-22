@@ -20,6 +20,8 @@
 #include "helper_cuda.h"
 #include "interop.cuh"
 
+#include <cooperative_groups.h>
+
 #ifndef __CUDS_XYPIC__H
 #define __CUDS_XYPIC__H
 // extern C Function declaration

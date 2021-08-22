@@ -55,8 +55,9 @@ int DT_CONTI;
 float dt;   // timestsep for PIC
 float dtc; // time step for continuity equation
 int CYCLE_NUM; // Minimum frequency number of cycle
-int PCG_Method;
+int Field_Solver_Flag;
 float PCGtol;
+float PCGtol2;
 int HISTMAX;
 int dHIST;
 int NP_LIMIT; //Each of particle limit

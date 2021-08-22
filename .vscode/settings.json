@@ -16,7 +16,8 @@
         "map": "cpp",
         "set": "cpp",
         "unordered_map": "cpp",
-        "load.h": "c"
+        "load.h": "c",
+        "filesystem": "cpp"
     },
     "C_Cpp.errorSquiggles": "Disabled"
 }

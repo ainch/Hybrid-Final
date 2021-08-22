@@ -690,8 +690,9 @@ void InputRead() {
    SubObject4 = json_object_get_object(MainObject,"SimulationMethod");   
    DT_PIC = IVnZC("TimeStep_PIC",(int)json_object_get_number(SubObject4,"TimeStep_PIC"));
    DT_CONTI = IVnZC("TimeStep_Conti",(int)json_object_get_number(SubObject4,"TimeStep_Conti"));
-   PCG_Method = (int)json_object_get_number(SubObject4,"PCG_Method");
+   Field_Solver_Flag = (int)json_object_get_number(SubObject4,"Field_Solver");
    PCGtol = FVnZC("PCGMarginOfError",(float)json_object_get_number(SubObject4,"PCGMarginOfError"));
+   PCGtol2 = PCGtol*PCGtol;
    HISTMAX = IVnZC("HistoryMax",(int)json_object_get_number(SubObject4,"HistoryMax"));
    dHIST = IVnZC("HistoryDivide",(int)json_object_get_number(SubObject4,"HistoryDivide"));
    N_ave = IVnZC("AverageIter",(int)json_object_get_number(SubObject4,"AverageIter"));

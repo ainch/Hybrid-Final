@@ -3,7 +3,7 @@
 extern int device_num;
 extern int ConstB_Flag; // Magnetic field 
 extern int MainGas; // Gas type 0:argon, 1:oxygen, 2:argon/oxygen
-extern int PCG_Method;
+extern int Field_Solver_Flag;
 extern void (*FieldSolver)();
 extern void (*MOVE)();
 extern void (*SORT_BOUNDARY)();

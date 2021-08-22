@@ -606,12 +606,13 @@ void Main_Variable_printorSave(){
     }
     fclose(fp);
 }
-void CPU_PCG_Laplace_Solution_Save(float **Sol){
+void Field_Laplace_Solution_Save(char *Filename,float **Sol){
     int i,j,k;
     FILE *fp;
+	char filename[512];
     int nbar,kk,Gbuf;
-   
-    fp = fopen("CPU_LAPPCG_TEC2D.dat", "w");
+    sprintf(filename,"%s_Solution_TEC.dat",Filename);
+    fp = fopen(filename, "w");
     fprintf(fp, "TITLE = \"2D-PIC CPU PCG SOLUTION\"\n");
     fprintf(fp, "VARIABLES = \"X\",\"Y\",\n");
 	for(k=0;k<CondNUMR;k++){

@@ -31,5 +31,5 @@ extern void MFFree(float **M,int sizeX);
 void Initial_Particle_Save(int size,HCP *PtD);
 void Cross_Section_data_Save();
 void Main_Variable_printorSave();
-void CPU_PCG_Laplace_Solution_Save(float **Sol);
+void Field_Laplace_Solution_Save(char *Filename,float **Sol);
 #endif
