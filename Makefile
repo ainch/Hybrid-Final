@@ -6,7 +6,7 @@ OPENMP=-fopenmp
 OPENMP_CUDA=-Xcompiler -fopenmp -lgomp
 # CFLAGS = -O3
 CFLAGS =
-CUFLAGS= -arch=sm_75 -use_fast_math --ptxas-options=-v
+CUFLAGS= -arch=sm_75 -use_fast_math --ptxas-options=-v -rdc=true
 # CUFLAGS= -gencode arch=compute_52,code=sm_52 -use_fast_math --ptxas-options=-v
 LFLAGS = -lm
 CUDA_DIR=/usr/local/cuda-10.2

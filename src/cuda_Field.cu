@@ -1,4 +1,7 @@
 #include "cuda_Field.cuh"
+// FOR Field method 4
+#define THREADS_PER_BLOCK 512   
+//
 void Field_Method0_Initial(){
     // CPU Conjugate Gradient
     printf(" Field Solver : [CPU] Conjugate Gradient\n"); 
@@ -79,14 +82,7 @@ void Field_Method3_Initial(){
     printf(" Cuda Function : Cuda Graphs launch\n"); 
     printf(" Laplace Equation\n"); 
     printf(" Matrix Size = %d X %d = %d\n", A_size, A_size, A_size*A_size);
-    // Cuda Handle setting
-    cublasHandle = 0;
-    cublasStatus = cublasCreate(&cublasHandle);
-    checkCudaErrors(cublasStatus);
-    cusparseHandle = 0;
-    checkCudaErrors(cusparseCreate(&cusparseHandle));
-    cusparseStatus = cusparseCreate(&cusparseHandle);
-    checkCudaErrors(cusparseStatus);
+
     // Data cpu > gpu
     checkCudaErrors(cudaMalloc((void**) &dev_A, 5 * A_size * sizeof(float)));
 	checkCudaErrors(cudaMalloc((void**) &dev_Aj, 5 * A_size * sizeof(int)));
@@ -99,8 +95,6 @@ void Field_Method3_Initial(){
     checkCudaErrors(cudaMemcpy(dev_A, A_val, 5 * A_size * sizeof(float), cudaMemcpyHostToDevice));
 	checkCudaErrors(cudaMemcpy(dev_Aj, Aj, 5 * A_size * sizeof(int), cudaMemcpyHostToDevice));
 	checkCudaErrors(cudaMemcpy(dev_Ai, Ai, (A_size + 1) * sizeof(int), cudaMemcpyHostToDevice));
-    // stream
-    checkCudaErrors(cudaStreamCreate(&stream1));
     /* Wrap raw data into cuSPARSE generic API objects */
     matA = NULL;
     vecx = NULL;
@@ -118,14 +112,15 @@ void Field_Method4_Initial(){
     printf(" Cuda Function : Multi Block\n"); 
     printf(" Laplace Equation\n"); 
     printf(" Matrix Size = %d X %d = %d\n", A_size, A_size, A_size*A_size);
+    // Data cpu > gpu
     checkCudaErrors(cudaMalloc((void**) &dev_A, 5 * A_size * sizeof(float)));
 	checkCudaErrors(cudaMalloc((void**) &dev_Aj, 5 * A_size * sizeof(int)));
 	checkCudaErrors(cudaMalloc((void**) &dev_Ai, (A_size + 1) * sizeof(int)));
 	checkCudaErrors(cudaMalloc((void**) &dev_b,  A_size * sizeof(float)));
 	checkCudaErrors(cudaMalloc((void**) &dev_X,  A_size * sizeof(float)));
-    // Initialize
-    checkCudaErrors(cudaMemset((void *) dev_X, 0, A_size * sizeof(float)));
-    //Copy
+    checkCudaErrors(cudaMalloc((void**) &dev_AP,  A_size * sizeof(float)));
+    checkCudaErrors(cudaMalloc((void**) &dev_R,  A_size * sizeof(float)));
+    checkCudaErrors(cudaMalloc((void**) &dev_P,  A_size * sizeof(float)));
     checkCudaErrors(cudaMemcpy(dev_A, A_val, 5 * A_size * sizeof(float), cudaMemcpyHostToDevice));
 	checkCudaErrors(cudaMemcpy(dev_Aj, Aj, 5 * A_size * sizeof(int), cudaMemcpyHostToDevice));
 	checkCudaErrors(cudaMemcpy(dev_Ai, Ai, (A_size + 1) * sizeof(int), cudaMemcpyHostToDevice));
@@ -196,6 +191,7 @@ void PCG_SOLVER_Laplace(){
 			vec_A_idx[j + i * ngy] = A_idx[i][j];
 		} 
 	}
+
     if(Field_Solver_Flag == 0){// [CPU] Conjugate Gradient 
         Field_Method0_Initial(); // Initial Setting
         for (k = 0; k < CondNUMR; k++) {
@@ -274,7 +270,17 @@ void PCG_SOLVER_Laplace(){
         Field_Laplace_Solution_Save(Namebuf,CPUsol);
     }else if(Field_Solver_Flag == 3){// [GPU] Conjugate Gradient + Cuda Graphs launch
 		Field_Method3_Initial(); // Initial Setting
+        // stream
         for (k = 0; k < CondNUMR; k++) {
+            // Cuda Handle setting
+            checkCudaErrors(cudaStreamCreate(&stream1));
+            cublasHandle = 0;
+            cublasStatus = cublasCreate(&cublasHandle);
+            checkCudaErrors(cublasStatus);
+            cusparseHandle = 0;
+            checkCudaErrors(cusparseCreate(&cusparseHandle));
+            cusparseStatus = cusparseCreate(&cusparseHandle);
+            checkCudaErrors(cusparseStatus);
             checkCudaErrors(cudaMemcpy(dev_R, cond_b[k], A_size * sizeof(float),cudaMemcpyHostToDevice));
             checkCudaErrors(cudaMemset((void *) dev_X, 0, A_size * sizeof(float)));
             FieldIter = CG_GPU_CudaGraphs();
@@ -296,17 +302,76 @@ void PCG_SOLVER_Laplace(){
                     }
                 }
             }
+            checkCudaErrors(cudaGraphExecDestroy(graphExec));
+            checkCudaErrors(cudaGraphDestroy(initGraph));
+            checkCudaErrors(cudaStreamDestroy(streamForGraph));
+            checkCudaErrors(cudaStreamDestroy(stream1));
+            checkCudaErrors(cusparseDestroy(cusparseHandle));
+            checkCudaErrors(cublasDestroy(cublasHandle));
         }
         sprintf(Namebuf,"GPU_CG_Graph");
-        Field_Laplace_Solution_Save(Namebuf,CPUsol);
+        Field_Laplace_Solution_Save(Namebuf,CPUsol);        
     }else if(Field_Solver_Flag == 4){// [GPU] Conjugate Gradient + Multi Block
-		Field_Method4_Initial(); // Initial Setting
-        for (k = 0; k < CondNUMR; k++) {
+        Field_Method4_Initial(); // Initial Setting
+        //Make a Field constant set  
+        Host_PCG_const = (DPS_Const*)malloc(sizeof(DPS_Const));
+        checkCudaErrors(cudaMalloc((void**)&dev_PCG_const,sizeof(DPS_Const)));
+        Make_PCG_Const_Init<<<1,1>>>(dev_PCG_const,A_size,PCGtol);
+        checkCudaErrors(cudaMemcpy(Host_PCG_const, dev_PCG_const, sizeof(DPS_Const), cudaMemcpyDeviceToHost));
+        //checkCudaErrors(cudaMemcpy(Host_PCG_const, dev_PCG_const, sizeof(DPS_Const), cudaMemcpyDeviceToHost));
 
-            
+        cudaDeviceProp deviceProp;
+        int sMemSize = sizeof(double) * THREADS_PER_BLOCK;
+        int numBlocksPerSm = 0;
+        int numThreads = THREADS_PER_BLOCK;
+        checkCudaErrors(cudaGetDeviceProperties(&deviceProp, device_num));
+        if (!deviceProp.managedMemory) {
+            // This sample requires being run on a device that supports Unified Memory
+            fprintf(stderr, "Unified Memory not supported on this device\n");
+            exit(EXIT_WAIVED);
+        }
+        // This sample requires being run on a device that supports Cooperative Kernel Launch
+        if (!deviceProp.cooperativeLaunch)
+        {
+            printf("\nSelected GPU (%d) does not support Cooperative Kernel Launch, Waiving the run\n", device_num);
+            exit(EXIT_WAIVED);
+        }
+        // Statistics about the GPU device
+        printf("> GPU device has %d Multi-Processors, SM %d.%d compute capabilities\n\n",
+           deviceProp.multiProcessorCount, deviceProp.major, deviceProp.minor);
+        
+        checkCudaErrors(cudaOccupancyMaxActiveBlocksPerMultiprocessor(&numBlocksPerSm, gpuConjugateGradient, numThreads, sMemSize));
+        int numSms = deviceProp.multiProcessorCount;
+        dim3 dimGrid(numSms*numBlocksPerSm, 1, 1), dimBlock(THREADS_PER_BLOCK, 1, 1);
+        float nz = 5*A_size;
+        //
+        double *dot_result;
+        cudaMallocManaged((void **)&dot_result, sizeof(double));
+        *dot_result = 0.0;
+        //
+        checkCudaErrors(cudaMalloc((void**)&dot_result,sizeof(float)));
+        void *kernelArgs[] = {
+            (void*)&dev_Ai,
+            (void*)&dev_Aj,
+            (void*)&dev_A,
+            (void*)&dev_X,
+            (void*)&dev_AP,
+            (void*)&dev_P,
+            (void*)&dev_R,
+            (void*)&dev_PCG_const,
+            (void*)&dot_result,
+        };
+        for (k = 0; k < CondNUMR; k++) {
+            checkCudaErrors(cudaMemcpy(dev_PCG_const, Host_PCG_const,sizeof(DPS_Const), cudaMemcpyHostToDevice));
+            checkCudaErrors(cudaMemcpy(dev_b, cond_b[k], A_size * sizeof(float),cudaMemcpyHostToDevice));
+            checkCudaErrors(cudaMemcpy(dev_R, dev_b, A_size * sizeof(float),cudaMemcpyDeviceToDevice));
+            checkCudaErrors(cudaMemset((void *) dev_X, 0, A_size * sizeof(float)));
+            checkCudaErrors(cudaMemset((void *) dev_AP, 0, A_size * sizeof(float)));
+            checkCudaErrors(cudaMemset((void *) dev_P, 0, A_size * sizeof(float)));
             printf("Solution %d",k);
             printf(" : Conductor %d = 1 V, Other CondUCTOR = 0 V\n",k);
-            printf("FieldIter = %d\n",FieldIter);
+            checkCudaErrors(cudaLaunchCooperativeKernel((void *)gpuConjugateGradient, dimGrid, dimBlock, kernelArgs, sMemSize, NULL));
+            checkCudaErrors(cudaDeviceSynchronize());
             // Make a Solution
             VFInit(CPUsol[k],0.0,Gsize);
             checkCudaErrors(cudaMemcpy(buf, dev_X, A_size * sizeof(float),cudaMemcpyDeviceToHost));
@@ -377,31 +442,25 @@ void PCG_SOLVER_Laplace(){
     }else{
 
     }
-    
-    // Laplace Solution
-    cudaMallocPitch(&Lap_PHI_Sol, &pitch, Gsize * sizeof(float), CondNUMR); // for Laplace Solution
-    //cudaMalloc((void**) &Lap_TEMP_Sol, Gsize * sizeof(int));
-    // cudaMemset((void *) array, 0, Gsize * sizeof(int));
-    
-    //Make a Field constant set  
-    Host_PCG_const = (DPS_Const*)malloc(sizeof(DPS_Const));
-    checkCudaErrors(cudaMalloc((void**)&dev_PCG_const,sizeof(DPS_Const)));
-    Make_PCG_Const_Init<<<1,1>>>(dev_PCG_const,A_size,PCGtol);
-    checkCudaErrors(cudaMemcpy(Host_PCG_const, dev_PCG_const, sizeof(DPS_Const), cudaMemcpyDeviceToHost));
-    //checkCudaErrors(cudaMemcpy(Host_PCG_const, dev_PCG_const, sizeof(DPS_Const), cudaMemcpyDeviceToHost));
+
     //Make a Field DATA set  
     Host_PCG_DATA = (DPS_Data*)malloc(A_size*sizeof(DPS_Data));
     checkCudaErrors(cudaMalloc((void**)&dev_PCG_DATA, A_size*sizeof(DPS_Data)));
     Make_PCG_DATA_Init<<<A_size/4,4>>>(dev_PCG_DATA,A_size,dev_M);
     //checkCudaErrors(cudaMemcpy(Host_PCG_DATA, dev_PCG_DATA, A_size*sizeof(DPS_Data), cudaMemcpyDeviceToHost));
+    // Laplace Solution
+    cudaMallocPitch(&Lap_PHI_Sol, &pitch, Gsize * sizeof(float), CondNUMR); // for Laplace Solution
+    //cudaMalloc((void**) &Lap_TEMP_Sol, Gsize * sizeof(int));
+    // cudaMemset((void *) array, 0, Gsize * sizeof(int));
+    
+
            // Find good grid and block size
         //cudaOccupancyMaxPotentialBlockSize(&mingrid,&FIELD_BLOCK,(void*)cusparseSpMV,0,Gsize); 
         //FIELD_GRID = (Gsize + FIELD_BLOCK - 1) / FIELD_BLOCK;
         //printf("blockSize = %d\n",FIELD_BLOCK);
         //printf("gridSize = %d\n",FIELD_GRID);
     // For test
-    cusparseDestroy(cusparseHandle);
-    cublasDestroy(cublasHandle);
+
     if (matA       ) { checkCudaErrors(cusparseDestroySpMat(matA)); }
     if (vecx       ) { checkCudaErrors(cusparseDestroyDnVec(vecx)); }
     if (vecAP      ) { checkCudaErrors(cusparseDestroyDnVec(vecAP)); }
@@ -428,6 +487,7 @@ int CG_CPU(){
         P0[TID] = R0[TID];
         rsold += R0[TID]*R0[TID]; //AtomicAdd!!
     }
+    printf("First:result[0].rsold = %g\n",rsold);
     tol2 = PCGtol*PCGtol;
     while(rsold>tol2){
         Iter++;
@@ -453,7 +513,7 @@ int CG_CPU(){
         }
         rsold = rnew;
         rnew = 0.0;
-        //if(Iter<10) printf("Iter = %d, Temp = %g, alpha = %g, beta = %g, rsold = %g\n",Iter,Temp,alpha,beta,rsold);
+        if(Iter<10) printf("Iter = %d, Temp = %g, alpha = %g, beta = %g, rsold = %g\n",Iter,Temp,alpha,beta,rsold);
     }
     return Iter;
 }
@@ -558,6 +618,7 @@ int CG_GPU(){
 int CG_GPU_CudaGraphs(){
     int iter;
     int max_iter = 10000;
+    static int init_Flag = 0;
     float a = 1.0;
     float b = 0.0;
     float na = -1.0;
@@ -608,6 +669,7 @@ int CG_GPU_CudaGraphs(){
     checkCudaErrors(cudaStreamCreate(&streamForGraph));
     checkCudaErrors(cublasSetStream(cublasHandle, stream1));
     checkCudaErrors(cusparseSetStream(cusparseHandle, stream1));
+   // if(init_Flag == 0){
     // Capture start
     checkCudaErrors(cudaStreamBeginCapture(stream1, cudaStreamCaptureModeGlobal));
     r1_div_x<<<1, 1, 0, stream1>>>(d_r1, d_r0, d_b);
@@ -635,12 +697,15 @@ int CG_GPU_CudaGraphs(){
     checkCudaErrors(cudaGraphInstantiate(&graphExec, initGraph, NULL, NULL, 0));
     checkCudaErrors(cublasSetStream(cublasHandle, stream1));
     checkCudaErrors(cusparseSetStream(cusparseHandle, stream1));
+        init_Flag++;
+    //}
     while (r1 > PCGtol2 && iter <= max_iter) {
         checkCudaErrors(cudaGraphLaunch(graphExec, streamForGraph));
         checkCudaErrors(cudaStreamSynchronize(streamForGraph));
-        if(iter<10) printf("iteration = %3d, residual = %e\n", iter, sqrt(r1));
+        //printf("iteration = %3d, residual = %e\n", iter, sqrt(r1));
     iter++;
     }
+
     return iter;
 }
 __global__ void PCG_LAP(float *A,int *Ai,int *Aj,DPS_Const *PCG_C,DPS_Data *PCG_D,float *X,float *b){
@@ -711,7 +776,6 @@ __global__ void PCG_LAP(float *A,int *Ai,int *Aj,DPS_Const *PCG_C,DPS_Data *PCG_
     if(TID==0) printf("Iter [%d]= %d, ",TID,PCG_C[0].Iter);  
     if(TID==0) printf("maxNorm [%d]= %g\n",TID,PCG_C[0].rsold);  
 }
-
 __global__ void Make_PCG_DATA_Init(DPS_Data *p, int size,float *MatrixM){
     int TID = blockIdx.x * blockDim.x + threadIdx.x;
     if(TID>=size) return;
@@ -736,7 +800,6 @@ __global__ void Make_PCG_Const_Init(DPS_Const *p,int Asize, float tol){
 }
 __global__ void initVectors(float *rhs, float *x, int N) {
   size_t gid = blockIdx.x * blockDim.x + threadIdx.x;
-
   for (size_t i = gid; i < N; i += gridDim.x * blockDim.x) {
     rhs[i] = 1.0;
     x[i] = 0.0;
@@ -754,7 +817,6 @@ __global__ void a_minus(float *a, float *na) {
     na[0] = -(a[0]);
   }
 }
-
 __global__ void SaveAT2D(float *A, size_t pitch, int height, float *PHI, int n){
     // High save and load for Matrix type variable 
 	int TID=blockDim.x*(gridDim.x*blockIdx.y+blockIdx.x)+threadIdx.x;
@@ -774,4 +836,184 @@ __global__ void LoadAT2D(float *A, size_t pitch, int height, float *PHI, int n){
 	float *row=(float *)((char *)A+height*pitch);
 
 	PHI[TID]=row[TID];
+}
+__device__ void gpuSpMV(int *I, int *J, float *val, int nnz, int num_rows, float alpha, float *inputVecX, 
+                        float *outputVecY, cg::thread_block &cta, const cg::grid_group &grid){
+    for (int i=grid.thread_rank(); i < num_rows; i+= grid.size())    {
+        int row_elem = I[i];
+        int next_row_elem = I[i+1];
+        int num_elems_this_row = next_row_elem - row_elem;
+        float output = 0.0;
+        for (int j=0; j < num_elems_this_row; j++){
+            // I or J or val arrays - can be put in shared memory 
+            // as the access is random and reused in next calls of gpuSpMV function.
+            output +=  alpha*val[row_elem + j] * inputVecX[J[row_elem + j]];
+        }
+        outputVecY[i] = output;
+    }
+}
+__device__ void gpuSaxpy(float *x, float *y, float a, int size, const cg::grid_group &grid){
+    for (int i=grid.thread_rank(); i < size; i+= grid.size()){        
+        y[i] = a*x[i] + y[i];
+    }
+}
+__device__ void gpuRSaxpy(float *x, float *y, float a, int size, const cg::grid_group &grid){
+    for (int i=grid.thread_rank(); i < size; i+= grid.size()){        
+        y[i] = a*y[i] + x[i];
+    }
+}
+__device__ void gpuDotProduct(float *vecA, float *vecB, double *result, int size, const cg::thread_block &cta, const cg::grid_group &grid)
+{
+   __shared__ double tmp[THREADS_PER_BLOCK];
+    double temp_sum = 0.0;
+    for (int i=grid.thread_rank(); i < size; i+=grid.size()){
+        temp_sum += (double) (vecA[i] * vecB[i]);
+    }
+    tmp[cta.thread_rank()] = temp_sum;
+    cg::sync(cta);
+    cg::thread_block_tile<32> tile32 = cg::tiled_partition<32>(cta);
+    double beta  = temp_sum;
+    double temp;
+    for (int i = tile32.size() / 2; i > 0; i >>= 1) {
+        if (tile32.thread_rank() < i) {
+            temp       = tmp[cta.thread_rank() + i];
+            beta       += temp;
+            tmp[cta.thread_rank()] = beta;
+        }
+        cg::sync(tile32);
+    }
+    cg::sync(cta);
+    if (cta.thread_rank() == 0) {
+        beta  = 0.0;
+        for (int i = 0; i < cta.size(); i += tile32.size()) {
+            beta  += tmp[i];
+        }
+        atomicAdd(result, beta);
+    }
+}
+__device__ void gpuCopyVector(float *srcA, float *destB, int size, const cg::grid_group &grid){
+    for (int i=grid.thread_rank(); i < size; i+= grid.size()){
+        destB[i] = srcA[i];
+    }
+}
+__device__ void gpuScaleVector(float *vec, float alpha, int size, const cg::grid_group &grid){
+    for (int i=grid.thread_rank(); i < size; i+= grid.size()){
+        vec[i] = alpha*vec[i];
+    }
+}
+__global__ void gpuConjugateGradient(int *I, int *J, float *val, float *x,  float *Ax, float *p, float *r, 
+            DPS_Const *result)
+{
+    cg::thread_block cta = cg::this_thread_block();
+    cg::grid_group grid = cg::this_grid();
+
+    int max_iter = 10000;
+    float alpha = 1.0;
+    float alpham1 = -1.0;
+    float r0 = 0.0, r1, b, a, na;
+    int nnz = 5 * result[0].A_size;
+    int N = result[0].A_size;
+
+    if (threadIdx.x == 0 && blockIdx.x == 0) result[0].rsold = 0.0;
+    cg::sync(grid);
+    gpuSpMV(I, J, val, nnz, N, alpha, x, Ax, cta, grid);
+    cg::sync(grid);
+    gpuSaxpy(Ax, r, alpham1, N, grid);
+    if(threadIdx.x == 0 && blockIdx.x == 0){
+        printf("First:Ax[2] = %g\n",r[2]);
+        printf("First:result[0].rsold = %g\n",result[0].rsold);
+    }
+    cg::sync(grid);
+    //gpuDotProduct(r, r, &result[0].rsold, N, cta, grid);
+    cg::sync(grid);
+    int k = 1;
+    while (result[0].rsold > result[0].tol2 && k <= max_iter)
+    {
+        if (k > 1){
+            b = result[0].rnew / result[0].rsold;
+            if (threadIdx.x == 0 && blockIdx.x == 0) result[0].rsold = result[0].rnew;
+            gpuScaleVector(p, b, N, grid);
+            cg::sync(grid);
+            gpuSaxpy(r, p, alpha, N, grid);
+        }else{
+            gpuCopyVector(r, p, N, grid);
+        }
+        cg::sync(grid);
+        gpuSpMV(I, J, val, nnz, N, alpha, p, Ax, cta, grid);
+        if (threadIdx.x == 0 && blockIdx.x == 0) result[0].Temp = 0.0;
+        cg::sync(grid);
+       // gpuDotProduct(p, Ax, &result[0].Temp, N, cta, grid);
+        cg::sync(grid);
+        a = result[0].rsold / result[0].Temp;
+        //if(threadIdx.x == 0 && blockIdx.x == 0 && k<10) printf("result[0].Temp = %g, a = %g\n",result[0].Temp);
+        gpuSaxpy(p, x, a, N, grid);
+        na = -a;
+        gpuSaxpy(Ax, r, na, N, grid);
+        if (threadIdx.x == 0 && blockIdx.x == 0) result[0].rnew = 0.0;
+        cg::sync(grid);
+        //gpuDotProduct(r, r, &result[0].rnew, N, cta, grid);
+        cg::sync(grid);
+        //if(threadIdx.x == 0 && blockIdx.x == 0 && k<10) printf("result[0].rnew = %g, a = %g\n",result[0].rnew);
+        k++;
+        if(threadIdx.x == 0 && blockIdx.x == 0 && k<20) printf("Iter = %d, Res = %g, b = %g, a = %g\n",k,result[0].rnew,b,a);
+    }
+    if(threadIdx.x == 0 && blockIdx.x == 0 ) printf("End Iter = %d, Res = %g, b = %g, a = %g\n",k,result[0].rnew,b,a);
+}
+__global__ void gpuConjugateGradient(int *I, int *J, float *val, float *x,  float *Ax, float *p, float *r, 
+            DPS_Const *result,double *d_result)
+{
+    cg::thread_block cta = cg::this_thread_block();
+    cg::grid_group grid = cg::this_grid();
+    int k = 0;
+    int max_iter = 10000;
+    float a = 1.0;
+    float na = -1.0;
+    int nnz = 5 * result[0].A_size;
+    int N = result[0].A_size;
+    float rsold,rnew,Temp;
+    float nalpha,alpha,beta;
+
+    rsold = 0.0;
+    if (threadIdx.x == 0 && blockIdx.x == 0){
+        *d_result = 0.0;  
+    } 
+    gpuSpMV(I, J, val, nnz, N, a, x, Ax, cta, grid); 
+    gpuSaxpy(Ax, r, na, N, grid); 
+    gpuCopyVector(r, p, N, grid);
+    cg::sync(grid);
+    gpuDotProduct(r, r, d_result, N, cta, grid); 
+    cg::sync(grid);
+    rsold = *d_result;
+    if(threadIdx.x == 0 && blockIdx.x == 0){
+        printf("First:Ax[2] = %g [5]%g\n",r[2],r[5]);
+        printf("First:result[0].rsold = %g\n",rsold);
+    }
+    while (rsold > result[0].tol2 && k <= max_iter){
+        k++;
+        gpuSpMV(I, J, val, nnz, N, a, p, Ax, cta, grid);
+        if (threadIdx.x == 0 && blockIdx.x == 0){
+            *d_result = 0.0;  
+        } 
+        cg::sync(grid);
+        gpuDotProduct(p, Ax, d_result, N, cta, grid);
+        cg::sync(grid);
+        Temp = *d_result;
+        alpha = (Temp)? rsold/Temp:0.0f;
+        gpuSaxpy(p, x, alpha, N, grid);
+        nalpha = -alpha;
+        gpuSaxpy(Ax, r, nalpha, N, grid);
+        if (threadIdx.x == 0 && blockIdx.x == 0){
+            *d_result = 0.0;  
+        } 
+        cg::sync(grid);
+        gpuDotProduct(r, r, d_result, N, cta, grid);
+        cg::sync(grid);
+        rnew = *d_result;
+        beta = (rsold) ? rnew/rsold: 0.0f;
+        gpuRSaxpy(r, p, beta, N, grid);
+        rsold = rnew;
+        rnew = 0.0;
+        if(threadIdx.x == 0 && blockIdx.x == 0 && k<20) printf("Iter = %d, temp = %g,  AL = %g, BE = %g Res = %g\n",k,Temp,alpha,beta,rsold);
+    }
+    if(threadIdx.x == 0 && blockIdx.x == 0 ) printf("End Iter = %d, Res = %g, b = %g, a = %g\n",k,Temp,alpha,beta,rsold);
 }
