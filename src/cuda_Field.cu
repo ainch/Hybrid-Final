@@ -497,10 +497,14 @@ int CG_CPU(){
             for(i=Ai[TID]-Ai[0];i<Ai[TID+1]-Ai[0];i++){
                 AP[TID] += A_val[i]*P0[Aj[i]-Ai[0]];
             }
+            //if(P0[TID]!=0) printf("p[%d] = %g\n",TID,P0[TID]);
             //printf("AP[%d] = %g\n",TID,P0[TID]);
             PAP[TID] = P0[TID] * AP[TID];
             Temp += PAP[TID]; //AtomicAdd!!
+            
         }
+        //printf("Temp = %g\n",Temp);
+        //exit(1);
         alpha = (Temp)? rsold/Temp:0.0f ;
         for(TID=0;TID<A_size;TID++){
             X[TID] = X[TID] + alpha * P0[TID];
@@ -513,7 +517,7 @@ int CG_CPU(){
         }
         rsold = rnew;
         rnew = 0.0;
-        if(Iter<10) printf("Iter = %d, Temp = %g, alpha = %g, beta = %g, rsold = %g\n",Iter,Temp,alpha,beta,rsold);
+        //if(Iter<10) printf("Iter = %d, Temp = %g, alpha = %g, beta = %g, rsold = %g\n",Iter,Temp,alpha,beta,rsold);
     }
     return Iter;
 }
@@ -609,7 +613,7 @@ int CG_GPU(){
         cublasSaxpy(cublasHandle, A_size, &nalpha, dev_AP, 1, dev_R, 1);
         cublasSdot(cublasHandle, A_size, dev_R, 1, dev_R, 1, &rnew);
         cudaDeviceSynchronize();
-        if(iter<10) printf("Iter = %d, Temp = %g, alpha = %g, beta = %g, rsold = %g\n",iter,Temp,a,b,rsold);
+        //if(iter<10) printf("Iter = %d, Temp = %g, alpha = %g, beta = %g, rsold = %g\n",iter,Temp,a,b,rsold);
         iter++;
     }
     return iter;
@@ -840,14 +844,21 @@ __global__ void LoadAT2D(float *A, size_t pitch, int height, float *PHI, int n){
 __device__ void gpuSpMV(int *I, int *J, float *val, int nnz, int num_rows, float alpha, float *inputVecX, 
                         float *outputVecY, cg::thread_block &cta, const cg::grid_group &grid){
     for (int i=grid.thread_rank(); i < num_rows; i+= grid.size())    {
+        // i = 0 ~ A_size-1; 
+        //printf("val[%d][]\n",i);
+        //for(i=Ai[TID]-Ai[0];i<Ai[TID+1]-Ai[0];i++){
+        //    AX[TID] += A_val[i]*X[Aj[i]-Ai[0]];
+        //}
         int row_elem = I[i];
         int next_row_elem = I[i+1];
         int num_elems_this_row = next_row_elem - row_elem;
         float output = 0.0;
-        for (int j=0; j < num_elems_this_row; j++){
+        for (int j=row_elem-1; j < next_row_elem-1; j++){
+            //if(i==0) printf("val[%d][]\n",j);
             // I or J or val arrays - can be put in shared memory 
             // as the access is random and reused in next calls of gpuSpMV function.
-            output +=  alpha*val[row_elem + j] * inputVecX[J[row_elem + j]];
+            output +=  alpha*val[j] * inputVecX[J[j]-1];
+            //if(i==0) printf("val[%d][%d] = %g, %g, %g\n",j,J[j]-1,val[j],inputVecX[J[j]-1],output);
         }
         outputVecY[i] = output;
     }
@@ -902,68 +913,11 @@ __device__ void gpuScaleVector(float *vec, float alpha, int size, const cg::grid
     }
 }
 __global__ void gpuConjugateGradient(int *I, int *J, float *val, float *x,  float *Ax, float *p, float *r, 
-            DPS_Const *result)
-{
-    cg::thread_block cta = cg::this_thread_block();
-    cg::grid_group grid = cg::this_grid();
-
-    int max_iter = 10000;
-    float alpha = 1.0;
-    float alpham1 = -1.0;
-    float r0 = 0.0, r1, b, a, na;
-    int nnz = 5 * result[0].A_size;
-    int N = result[0].A_size;
-
-    if (threadIdx.x == 0 && blockIdx.x == 0) result[0].rsold = 0.0;
-    cg::sync(grid);
-    gpuSpMV(I, J, val, nnz, N, alpha, x, Ax, cta, grid);
-    cg::sync(grid);
-    gpuSaxpy(Ax, r, alpham1, N, grid);
-    if(threadIdx.x == 0 && blockIdx.x == 0){
-        printf("First:Ax[2] = %g\n",r[2]);
-        printf("First:result[0].rsold = %g\n",result[0].rsold);
-    }
-    cg::sync(grid);
-    //gpuDotProduct(r, r, &result[0].rsold, N, cta, grid);
-    cg::sync(grid);
-    int k = 1;
-    while (result[0].rsold > result[0].tol2 && k <= max_iter)
-    {
-        if (k > 1){
-            b = result[0].rnew / result[0].rsold;
-            if (threadIdx.x == 0 && blockIdx.x == 0) result[0].rsold = result[0].rnew;
-            gpuScaleVector(p, b, N, grid);
-            cg::sync(grid);
-            gpuSaxpy(r, p, alpha, N, grid);
-        }else{
-            gpuCopyVector(r, p, N, grid);
-        }
-        cg::sync(grid);
-        gpuSpMV(I, J, val, nnz, N, alpha, p, Ax, cta, grid);
-        if (threadIdx.x == 0 && blockIdx.x == 0) result[0].Temp = 0.0;
-        cg::sync(grid);
-       // gpuDotProduct(p, Ax, &result[0].Temp, N, cta, grid);
-        cg::sync(grid);
-        a = result[0].rsold / result[0].Temp;
-        //if(threadIdx.x == 0 && blockIdx.x == 0 && k<10) printf("result[0].Temp = %g, a = %g\n",result[0].Temp);
-        gpuSaxpy(p, x, a, N, grid);
-        na = -a;
-        gpuSaxpy(Ax, r, na, N, grid);
-        if (threadIdx.x == 0 && blockIdx.x == 0) result[0].rnew = 0.0;
-        cg::sync(grid);
-        //gpuDotProduct(r, r, &result[0].rnew, N, cta, grid);
-        cg::sync(grid);
-        //if(threadIdx.x == 0 && blockIdx.x == 0 && k<10) printf("result[0].rnew = %g, a = %g\n",result[0].rnew);
-        k++;
-        if(threadIdx.x == 0 && blockIdx.x == 0 && k<20) printf("Iter = %d, Res = %g, b = %g, a = %g\n",k,result[0].rnew,b,a);
-    }
-    if(threadIdx.x == 0 && blockIdx.x == 0 ) printf("End Iter = %d, Res = %g, b = %g, a = %g\n",k,result[0].rnew,b,a);
-}
-__global__ void gpuConjugateGradient(int *I, int *J, float *val, float *x,  float *Ax, float *p, float *r, 
             DPS_Const *result,double *d_result)
 {
     cg::thread_block cta = cg::this_thread_block();
     cg::grid_group grid = cg::this_grid();
+    int TID = blockDim.x*(gridDim.x*blockIdx.y+blockIdx.x)+threadIdx.x;
     int k = 0;
     int max_iter = 10000;
     float a = 1.0;
@@ -980,14 +934,15 @@ __global__ void gpuConjugateGradient(int *I, int *J, float *val, float *x,  floa
     gpuSpMV(I, J, val, nnz, N, a, x, Ax, cta, grid); 
     gpuSaxpy(Ax, r, na, N, grid); 
     gpuCopyVector(r, p, N, grid);
+    //if(r[TID] !=0) printf("r[%d] = %g\n",TID,r[TID]);
     cg::sync(grid);
     gpuDotProduct(r, r, d_result, N, cta, grid); 
     cg::sync(grid);
     rsold = *d_result;
     if(threadIdx.x == 0 && blockIdx.x == 0){
-        printf("First:Ax[2] = %g [5]%g\n",r[2],r[5]);
         printf("First:result[0].rsold = %g\n",rsold);
     }
+    //return;
     while (rsold > result[0].tol2 && k <= max_iter){
         k++;
         gpuSpMV(I, J, val, nnz, N, a, p, Ax, cta, grid);
@@ -995,9 +950,12 @@ __global__ void gpuConjugateGradient(int *I, int *J, float *val, float *x,  floa
             *d_result = 0.0;  
         } 
         cg::sync(grid);
+        //if(Ax[TID] !=0) printf("Ax[%d] = %g\n",TID,Ax[TID]);
         gpuDotProduct(p, Ax, d_result, N, cta, grid);
         cg::sync(grid);
         Temp = *d_result;
+        //if(threadIdx.x == 0 && blockIdx.x == 0) printf("Temp = %g\n",Temp);
+        //return;
         alpha = (Temp)? rsold/Temp:0.0f;
         gpuSaxpy(p, x, alpha, N, grid);
         nalpha = -alpha;
@@ -1013,7 +971,7 @@ __global__ void gpuConjugateGradient(int *I, int *J, float *val, float *x,  floa
         gpuRSaxpy(r, p, beta, N, grid);
         rsold = rnew;
         rnew = 0.0;
-        if(threadIdx.x == 0 && blockIdx.x == 0 && k<20) printf("Iter = %d, temp = %g,  AL = %g, BE = %g Res = %g\n",k,Temp,alpha,beta,rsold);
+        //if(threadIdx.x == 0 && blockIdx.x == 0 && k<20) printf("Iter = %d, temp = %g,  AL = %g, BE = %g Res = %g\n",k,Temp,alpha,beta,rsold);
     }
     if(threadIdx.x == 0 && blockIdx.x == 0 ) printf("End Iter = %d, Res = %g, b = %g, a = %g\n",k,Temp,alpha,beta,rsold);
 }
