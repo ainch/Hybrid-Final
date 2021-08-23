@@ -76,8 +76,13 @@ __device__ void gpuDotProduct(float *vecA, float *vecB, double *result, int size
 __device__ void gpuCopyVector(float *srcA, float *destB, int size, const cg::grid_group &grid);
 __device__ void gpuScaleVector(float *vec, float alpha, int size, const cg::grid_group &grid);
 __global__ void gpuConjugateGradient(int *I, int *J, float *val, float *x,  float *Ax, float *p, float *r,DPS_Const *result,double *d_result);
-//
+// FOR Field method 4
 void Field_Method5_Initial();
+// namespace cg = cooperative_groups;
+__device__ void gpuProductVector(float *vecA, float *vecB, float *vecC, int size, const cg::thread_block &cta, const cg::grid_group &grid);
+__global__ void gpuPreConjugateGradient(int *I, int *J, float *val, float *M, float *x,  float *Ax, float *p, float *r, float *Z, 
+            DPS_Const *result,double *d_result);
+//
 void Field_Method6_Initial();
 void Set_MatrixPCG_cuda();
 void PCG_SOLVER_Laplace();
