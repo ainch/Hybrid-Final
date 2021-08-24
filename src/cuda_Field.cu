@@ -152,6 +152,37 @@ void Field_Method5_Initial(){
 }
 void Field_Method6_Initial(){
     printf(" Field Solver : [GPU] Preconditioned Conjugate Gradient\n"); 
+    printf(" Cuda Function : Multi GPU\n"); 
+    printf(" Laplace Equation\n"); 
+    printf(" Preconditioner[Jacovi]\n"); 
+    printf(" Matrix Size = %d X %d = %d\n", A_size, A_size, A_size*A_size);
+    // Data cpu > gpu
+    checkCudaErrors(cudaMallocManaged((void **)&man_I, sizeof(int) * (A_size + 1)));
+    checkCudaErrors(cudaMallocManaged((void **)&man_J, sizeof(int) * 5 * A_size));
+    checkCudaErrors(cudaMallocManaged((void **)&man_A, sizeof(float) * 5 * A_size));
+    checkCudaErrors(cudaMemcpy(man_A, A_val, 5 * A_size * sizeof(float), cudaMemcpyHostToDevice));
+	checkCudaErrors(cudaMemcpy(man_J, Aj, 5 * A_size * sizeof(int), cudaMemcpyHostToDevice));
+	checkCudaErrors(cudaMemcpy(man_I, Ai, (A_size + 1) * sizeof(int), cudaMemcpyHostToDevice));
+    checkCudaErrors(cudaMemAdvise(man_I, sizeof(int) * (A_size + 1), cudaMemAdviseSetReadMostly, 0));
+    checkCudaErrors(cudaMemAdvise(man_J, sizeof(int) * 5 * A_size, cudaMemAdviseSetReadMostly, 0));
+    checkCudaErrors(cudaMemAdvise(man_A, sizeof(float) * 5 * A_size, cudaMemAdviseSetReadMostly, 0));
+    // temp memory for ConjugateGradient
+    checkCudaErrors(cudaMallocManaged((void **)&man_R, A_size * sizeof(float)));
+    checkCudaErrors(cudaMallocManaged((void **)&man_P, A_size * sizeof(float)));
+    checkCudaErrors(cudaMallocManaged((void **)&man_AP, A_size * sizeof(float)));
+    checkCudaErrors(cudaMallocManaged((void **)&man_X, A_size * sizeof(float)));
+    checkCudaErrors(cudaMallocManaged((void **)&man_Z, A_size * sizeof(float)));
+    checkCudaErrors(cudaMemset((void *) man_Z, 0, A_size * sizeof(float)));
+    checkCudaErrors(cudaMemset((void *) man_P, 0, A_size * sizeof(float)));
+    checkCudaErrors(cudaMemset((void *) man_AP, 0, A_size * sizeof(float)));
+    checkCudaErrors(cudaMemset((void *) man_X, 0, A_size * sizeof(float)));
+    checkCudaErrors(cudaMemset((void *) man_R, 0, A_size * sizeof(float)));
+    checkCudaErrors(cudaMallocManaged((void **)&man_M, A_size * sizeof(float)));
+    checkCudaErrors(cudaMemcpy(man_M, MatM, A_size * sizeof(float), cudaMemcpyHostToDevice));
+    checkCudaErrors(cudaMemAdvise(man_M, A_size * sizeof(float), cudaMemAdviseSetReadMostly, 0));
+}
+void Field_Method7_Initial(){
+    printf(" Field Solver : [GPU] Preconditioned Conjugate Gradient\n"); 
     printf(" Laplace Equation\n"); 
     printf(" Preconditioner[ILU]\n"); 
     printf(" Matrix Size = %d X %d = %d\n", A_size, A_size, A_size*A_size);
@@ -462,7 +493,6 @@ void PCG_SOLVER_Laplace(){
         cudaMallocManaged((void **)&dot_result, sizeof(double));
         *dot_result = 0.0;
         //
-        checkCudaErrors(cudaMalloc((void**)&dot_result,sizeof(float)));
         void *kernelArgs[] = {
             (void*)&dev_Ai,
             (void*)&dev_Aj,
@@ -510,17 +540,183 @@ void PCG_SOLVER_Laplace(){
         }
         sprintf(Namebuf,"GPU_PCG_MultiBlock");
         Field_Laplace_Solution_Save(Namebuf,CPUsol);
+    }else if(Field_Solver_Flag == 6){// [GPU] [Jacovi] Preconditioned Conjugate Gradient + Multi GPU
+		Field_Method6_Initial(); // Initial Setting
+        //Make a Field constant set  
+        Host_PCG_const = (DPS_Const*)malloc(sizeof(DPS_Const));
+        checkCudaErrors(cudaMalloc((void**)&dev_PCG_const,sizeof(DPS_Const)));
+        Make_PCG_Const_Init<<<1,1>>>(dev_PCG_const,A_size,PCGtol);
+        checkCudaErrors(cudaMemcpy(Host_PCG_const, dev_PCG_const, sizeof(DPS_Const), cudaMemcpyDeviceToHost));
+        //checkCudaErrors(cudaMemcpy(Host_PCG_const, dev_PCG_const, sizeof(DPS_Const), cudaMemcpyDeviceToHost));
+
+        cudaDeviceProp deviceProp;
+        int num_of_gpus = 0;
+        int num_buf = device_num;
+        GPUn = 4; 
+        deviceN = VIMalloc(GPUn);
+        checkCudaErrors(cudaGetDeviceCount(&num_of_gpus));
+        if (num_of_gpus <= 1 || num_of_gpus < device_num + GPUn) {
+            printf("No. of GPU on node %d\n", num_of_gpus);
+            printf("Minimum Two or more GPUs are required to run this code\n");
+            exit(EXIT_WAIVED);
+        }
+        printf("Using GPU list : %d\n",GPUn);
+        for(i=0;i<GPUn;i++){
+            deviceN[i] = num_buf;
+            num_buf++;
+            cudaGetDeviceProperties(&deviceProp, deviceN[i]); 
+            printf("Name %d : %s \n",deviceN[i], deviceProp.name);
+            if (!deviceProp.managedMemory) {
+            // This sample requires being run on a device that supports Unified Memory
+                fprintf(stderr, "Unified Memory not supported on this device\n");
+                exit(EXIT_WAIVED);
+            }
+            // This sample requires being run on a device that supports Cooperative Kernel Launch
+            if (!deviceProp.cooperativeLaunch)
+            {
+                printf("\nSelected GPU (%d) does not support Cooperative Kernel Launch, Waiving the run\n", device_num);
+                exit(EXIT_WAIVED);
+            }
+        }
+        //
+        double *dot_result;
+        cudaMallocManaged((void **)&dot_result, sizeof(double));
+        checkCudaErrors(cudaMemset(dot_result, 0.0, sizeof(double)));
+        //
+        cudaStream_t *nStreams = (cudaStream_t *)malloc(GPUn * sizeof(cudaStream_t));
+        int NNZ = 5*A_size;
+        void *kernelArgs[] = {
+            (void*)&man_I,
+            (void*)&man_J,
+            (void*)&man_A,
+            (void*)&man_M,
+            (void*)&man_X,
+            (void*)&man_AP,
+            (void*)&man_P,
+            (void*)&man_R,
+            (void*)&man_Z,
+            (void*)&NNZ,
+            (void*)&A_size,
+            (void*)&PCGtol,
+            (void*)&dot_result,
+        };
+        int sMemSize = sizeof(double) * THREADS_PER_BLOCK;
+        int numBlocksPerSm = 0;
+        int numThreads = THREADS_PER_BLOCK;
+        num_buf = device_num;
+        checkCudaErrors(cudaSetDevice(num_buf));
+        checkCudaErrors(cudaGetDeviceProperties(&deviceProp, num_buf));                    
+        checkCudaErrors(cudaOccupancyMaxActiveBlocksPerMultiprocessor(
+            &numBlocksPerSm, multiGpuPreConjugateGradient, numThreads, sMemSize));
+        int numSms = deviceProp.multiProcessorCount;
+        dim3 dimGrid(numSms * numBlocksPerSm, 1, 1), dimBlock(THREADS_PER_BLOCK, 1, 1);
+        
+        int device_count = 0;
+        int totalThreadsPerGPU = numSms * numBlocksPerSm * THREADS_PER_BLOCK;
+        num_buf = device_num;
+        // Data Divide
+        for(device_count = 0;device_count<GPUn;device_count++){
+            num_buf = deviceN[device_count];
+            checkCudaErrors(cudaSetDevice(num_buf));
+            checkCudaErrors(cudaGetDeviceProperties(&deviceProp, num_buf));
+            checkCudaErrors(cudaStreamCreate(&nStreams[device_count]));
+            if (deviceProp.concurrentManagedAccess) {
+                int perGPUIter = A_size / (totalThreadsPerGPU * GPUn);
+                int offset_Ax = device_count * totalThreadsPerGPU;
+                int offset_r = device_count * totalThreadsPerGPU;
+                int offset_p = device_count * totalThreadsPerGPU;
+                int offset_x = device_count * totalThreadsPerGPU;
+                checkCudaErrors(cudaMemPrefetchAsync(man_I, sizeof(int) * (A_size+1), num_buf,nStreams[device_count]));
+                checkCudaErrors(cudaMemPrefetchAsync(man_A, sizeof(float) * 5*A_size, num_buf,nStreams[device_count]));
+                checkCudaErrors(cudaMemPrefetchAsync(man_J, sizeof(int) * 5*A_size, num_buf,nStreams[device_count]));
+                if (offset_Ax <= A_size) {
+                    for (i = 0; i < perGPUIter; i++) {
+                        cudaMemAdvise(man_AP + offset_Ax, sizeof(float) * totalThreadsPerGPU,cudaMemAdviseSetPreferredLocation, num_buf);
+                        cudaMemAdvise(man_R + offset_r, sizeof(float) * totalThreadsPerGPU,cudaMemAdviseSetPreferredLocation, num_buf);
+                        cudaMemAdvise(man_X + offset_x, sizeof(float) * totalThreadsPerGPU,cudaMemAdviseSetPreferredLocation, num_buf);
+                        cudaMemAdvise(man_P + offset_p, sizeof(float) * totalThreadsPerGPU,cudaMemAdviseSetPreferredLocation, num_buf);
+                        cudaMemAdvise(man_AP + offset_Ax, sizeof(float) * totalThreadsPerGPU,cudaMemAdviseSetAccessedBy, num_buf);
+                        cudaMemAdvise(man_R + offset_r, sizeof(float) * totalThreadsPerGPU,cudaMemAdviseSetAccessedBy, num_buf);
+                        cudaMemAdvise(man_P + offset_p, sizeof(float) * totalThreadsPerGPU,cudaMemAdviseSetAccessedBy, num_buf);
+                        cudaMemAdvise(man_X + offset_x, sizeof(float) * totalThreadsPerGPU,cudaMemAdviseSetAccessedBy, num_buf);
+                        offset_Ax += totalThreadsPerGPU * GPUn;
+                        offset_r += totalThreadsPerGPU * GPUn;
+                        offset_p += totalThreadsPerGPU * GPUn;
+                        offset_x += totalThreadsPerGPU * GPUn;
+                        if (offset_Ax >= A_size) {
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        printf("Total threads per GPU = %d numBlocksPerSm  = %d\n",numSms * numBlocksPerSm * THREADS_PER_BLOCK, numBlocksPerSm);
+        launchParamsList = (cudaLaunchParams *)malloc(GPUn * sizeof(cudaLaunchParams));
+        for (i = 0; i < GPUn; i++) {
+            launchParamsList[i].func = (void *)multiGpuPreConjugateGradient;
+            launchParamsList[i].gridDim = dimGrid;
+            launchParamsList[i].blockDim = dimBlock;
+            launchParamsList[i].sharedMem = sMemSize;
+            launchParamsList[i].stream = nStreams[i];
+            launchParamsList[i].args = kernelArgs;
+        }
+        for (k = 0; k < CondNUMR; k++) {
+            checkCudaErrors(cudaMemcpy(dev_PCG_const, Host_PCG_const,sizeof(DPS_Const), cudaMemcpyHostToDevice));
+            checkCudaErrors(cudaMemcpy(man_R, cond_b[k], A_size * sizeof(float),cudaMemcpyHostToDevice));
+            checkCudaErrors(cudaMemset((void *) man_X, 0.0, A_size * sizeof(float)));
+            checkCudaErrors(cudaMemset((void *) man_AP, 0.0, A_size * sizeof(float)));
+            checkCudaErrors(cudaMemset((void *) man_P, 0.0, A_size * sizeof(float)));
+            cudaEventCreate(&start); cudaEventCreate(&stop);
+	        cudaEventRecord(start,0);
+            checkCudaErrors(cudaLaunchCooperativeKernelMultiDevice(
+                launchParamsList, GPUn,
+                cudaCooperativeLaunchMultiDeviceNoPreSync |
+                cudaCooperativeLaunchMultiDeviceNoPostSync));
+            checkCudaErrors(cudaMemPrefetchAsync(man_X, sizeof(float) * A_size, cudaCpuDeviceId));
+            checkCudaErrors(cudaMemPrefetchAsync(dot_result, sizeof(double), cudaCpuDeviceId));
+            for(device_count = 0;device_count<GPUn;device_count++){
+                num_buf = deviceN[device_count];
+                checkCudaErrors(cudaSetDevice(num_buf));
+                checkCudaErrors(cudaStreamSynchronize(nStreams[device_count]));
+            }
+            cudaEventRecord( stop, 0 ); cudaEventSynchronize( stop );
+	        cudaEventElapsedTime( &gputime, start, stop );
+	        cudaEventDestroy( start );cudaEventDestroy( stop );
+            printf("Solution %d",k);
+            printf(" : Conductor %d = 1 V, Other CondUCTOR = 0 V\n",k);
+            printf(" time = %2.8f (ms)",gputime);
+            float r1 = *dot_result;
+            printf(", residual = %e \n", r1);
+
+            // Make a Solution
+            VFInit(CPUsol[k],0.0,Gsize);
+            for(j=ngy-1;j>=0;j--){
+                for(i=0;i<ngx;i++){
+                    TID = i*ngy+j;
+                    if((vec_G[TID].CondID-1)==k){
+                        CPUsol[k][TID] = 1.0;
+                    }
+                    if(vec_A_idx[TID]){
+                        CPUsol[k][TID] = man_X[vec_A_idx[TID]-1];
+                        //if(CPUsol[k][TID]!=0) printf("CHECK %g \n  ", CPUsol[k][TID]);
+                    }
+                }
+            }
+
+        }
+        sprintf(Namebuf,"GPU_PCG_MultiGPU");
+        Field_Laplace_Solution_Save(Namebuf,CPUsol);
     }else{
 
     }
-
+    exit(1);
     //Make a Field DATA set  
-    Host_PCG_DATA = (DPS_Data*)malloc(A_size*sizeof(DPS_Data));
-    checkCudaErrors(cudaMalloc((void**)&dev_PCG_DATA, A_size*sizeof(DPS_Data)));
-    Make_PCG_DATA_Init<<<A_size/4,4>>>(dev_PCG_DATA,A_size,dev_M);
+    //Host_PCG_DATA = (DPS_Data*)malloc(A_size*sizeof(DPS_Data));
+    //checkCudaErrors(cudaMalloc((void**)&dev_PCG_DATA, A_size*sizeof(DPS_Data)));
+    //Make_PCG_DATA_Init<<<A_size/4,4>>>(dev_PCG_DATA,A_size,dev_M);
     //checkCudaErrors(cudaMemcpy(Host_PCG_DATA, dev_PCG_DATA, A_size*sizeof(DPS_Data), cudaMemcpyDeviceToHost));
     // Laplace Solution
-    cudaMallocPitch(&Lap_PHI_Sol, &pitch, Gsize * sizeof(float), CondNUMR); // for Laplace Solution
+    //cudaMallocPitch(&Lap_PHI_Sol, &pitch, Gsize * sizeof(float), CondNUMR); // for Laplace Solution
     //cudaMalloc((void**) &Lap_TEMP_Sol, Gsize * sizeof(int));
     // cudaMemset((void *) array, 0, Gsize * sizeof(int));
     
@@ -532,11 +728,11 @@ void PCG_SOLVER_Laplace(){
         //printf("gridSize = %d\n",FIELD_GRID);
     // For test
 
-    if (matA       ) { checkCudaErrors(cusparseDestroySpMat(matA)); }
-    if (vecx       ) { checkCudaErrors(cusparseDestroyDnVec(vecx)); }
-    if (vecAP      ) { checkCudaErrors(cusparseDestroyDnVec(vecAP)); }
-    if (vecp       ) { checkCudaErrors(cusparseDestroyDnVec(vecp)); }
-    exit(1);
+    //if (matA       ) { checkCudaErrors(cusparseDestroySpMat(matA)); }
+    //if (vecx       ) { checkCudaErrors(cusparseDestroyDnVec(vecx)); }
+    //if (vecAP      ) { checkCudaErrors(cusparseDestroyDnVec(vecAP)); }
+    //if (vecp       ) { checkCudaErrors(cusparseDestroyDnVec(vecp)); }
+    
 
 }
 void Set_MatrixPCG_cuda(){
@@ -999,7 +1195,7 @@ __global__ void gpuConjugateGradient(int *I, int *J, float *val, float *x,  floa
 {
     cg::thread_block cta = cg::this_thread_block();
     cg::grid_group grid = cg::this_grid();
-    int TID = blockDim.x*(gridDim.x*blockIdx.y+blockIdx.x)+threadIdx.x;
+    //int TID = blockDim.x*(gridDim.x*blockIdx.y+blockIdx.x)+threadIdx.x;
     int k = 0;
     int max_iter = 10000;
     float a = 1.0;
@@ -1066,7 +1262,7 @@ __global__ void gpuPreConjugateGradient(int *I, int *J, float *val, float *M, fl
 {
     cg::thread_block cta = cg::this_thread_block();
     cg::grid_group grid = cg::this_grid();
-    int TID = blockDim.x*(gridDim.x*blockIdx.y+blockIdx.x)+threadIdx.x;
+    //int TID = blockDim.x*(gridDim.x*blockIdx.y+blockIdx.x)+threadIdx.x;
     int k = 0;
     int max_iter = 100000;
     float a = 1.0;
@@ -1123,4 +1319,160 @@ __global__ void gpuPreConjugateGradient(int *I, int *J, float *val, float *M, fl
         //if(threadIdx.x == 0 && blockIdx.x == 0 && k<20) printf("Iter = %d, temp = %g,  AL = %g, BE = %g Res = %g\n",k,Temp,alpha,beta,rsold);
     }
     if(threadIdx.x == 0 && blockIdx.x == 0 ) printf("End Iter = %d, Res = %g, b = %g, a = %g\n",k,Temp,alpha,beta,rsold);
+}
+__global__ void multiGpuPreConjugateGradient(int *I, int *J, float *val, float *M, float *x,  float *Ax, float *p, float *r, float *Z, 
+            int nnz, int N, float tol, double *d_result)
+{
+    cg::thread_block cta = cg::this_thread_block();
+    cg::grid_group grid = cg::this_grid();
+    cg::multi_grid_group multi_grid = cg::this_multi_grid();
+
+    //int TID = blockDim.x*(gridDim.x*blockIdx.y+blockIdx.x)+threadIdx.x;
+    int k = 0;
+    int max_iter = 100000;
+    float a = 1.0;
+    float na = -1.0;
+    float rsold,rnew,Temp;
+    float nalpha,alpha,beta;
+
+    rsold = 0.0; 
+    cg::sync(grid);
+    MultigpuSpMV(I, J, val, nnz, N, a, x, Ax, cta, multi_grid); 
+    cg::sync(grid);
+    MultigpuSaxpy(Ax, r, na, N, multi_grid); 
+    cg::sync(grid);
+    MultigpuProductVector(M, r, Z, N, cta, multi_grid);
+    cg::sync(grid);
+    MultigpuCopyVector(Z, p, N, multi_grid);
+    cg::sync(grid);
+    MultigpuDotProduct(r, Z, N, cta, multi_grid); 
+    cg::sync(grid);
+    if (grid.thread_rank() == 0) {
+        atomicAdd_system(d_result, grid_dot_result);
+        grid_dot_result = 0.0;
+    }
+    cg::sync(multi_grid);
+    rsold = *d_result;
+    //if (threadIdx.x == 0 && grid.thread_rank() == 0) printf("start : rsold1 = %g\n",rsold);
+    while (rsold > tol*tol && k <= max_iter){
+        k++;
+        cg::sync(multi_grid);
+        MultigpuSpMV(I, J, val, nnz, N, a, p, Ax, cta, multi_grid);
+        if (multi_grid.thread_rank() == 0) {
+            setDotResultToZero(d_result);
+        }   
+        cg::sync(multi_grid);
+        MultigpuDotProduct(p, Ax, N, cta, multi_grid);
+        cg::sync(grid);
+        if (grid.thread_rank() == 0) {
+            atomicAdd_system(d_result, grid_dot_result);
+            grid_dot_result = 0.0;
+        }
+        cg::sync(multi_grid);
+        Temp = *d_result;
+        //if (threadIdx.x == 0 && grid.thread_rank() == 0) printf("Iter = %d, Temp = %g,",k,Temp);
+        alpha = (Temp)? rsold/Temp:0.0f;
+        MultigpuSaxpy(p, x, alpha, N, multi_grid);
+        nalpha = -alpha;
+        MultigpuSaxpy(Ax, r, nalpha, N, multi_grid);
+        MultigpuProductVector(M, r, Z, N, cta, multi_grid);
+        cg::sync(multi_grid);
+        if (multi_grid.thread_rank() == 0) {
+            setDotResultToZero(d_result);
+        }   
+        cg::sync(multi_grid);
+        MultigpuDotProduct(r, Z, N, cta, multi_grid);
+        cg::sync(grid);
+        if (grid.thread_rank() == 0) {
+            atomicAdd_system(d_result, grid_dot_result);
+            grid_dot_result = 0.0;
+        }
+        cg::sync(multi_grid);
+        rnew = *d_result;
+        //if (threadIdx.x == 0 && grid.thread_rank() == 0) printf("rnew = %g\n",rnew);
+        beta = (rsold) ? rnew/rsold: 0.0f;
+        MultigpuRSaxpy(Z, p, beta, N, multi_grid);
+        rsold = rnew;
+        rnew = 0.0;
+    }
+    //if(threadIdx.x == 0 && blockIdx.x == 0 ) printf("End Iter = %d, Res = %g, b = %g, a = %g\n",k,Temp,alpha,beta,rsold);
+}
+__device__ void MultigpuSpMV(int *I, int *J, float *val, int nnz, int num_rows, float alpha, float *inputVecX, 
+                        float *outputVecY, cg::thread_block &cta, const cg::multi_grid_group &multi_grid) {
+    for (int i = multi_grid.thread_rank(); i < num_rows; i += multi_grid.size()) {
+        // i = 0 ~ A_size-1; 
+        int row_elem = I[i];
+        int next_row_elem = I[i+1];
+        int num_elems_this_row = next_row_elem - row_elem;
+        float output = 0.0;
+        for (int j=row_elem-1; j < next_row_elem-1; j++){
+            output +=  alpha*val[j] * inputVecX[J[j]-1];
+            //if(i==num_rows-1) printf("val[%d][%d] = %g, %g, %g\n",j,J[j]-1,val[j],inputVecX[J[j]-1],output);
+        }
+        //printf("output[%d] = %g\n",i,output);
+        outputVecY[i] = output;
+    }
+}
+__device__ void MultigpuSaxpy(float *x, float *y, float a, int size, const cg::multi_grid_group &multi_grid) {
+    for (int i = multi_grid.thread_rank(); i < size; i += multi_grid.size()) {  
+        y[i] = a*x[i] + y[i];
+    }
+}
+__device__ void MultigpuRSaxpy(float *x, float *y, float a, int size, const cg::multi_grid_group &multi_grid) {
+    for (int i = multi_grid.thread_rank(); i < size; i += multi_grid.size()) {  
+        y[i] = a*y[i] + x[i];
+    }
+}
+__device__ void MultigpuDotProduct(float *vecA, float *vecB, int size, const cg::thread_block &cta, const cg::multi_grid_group &multi_grid) {
+   __shared__ double tmp[THREADS_PER_BLOCK];
+    double temp_sum = 0.0;
+    for (int i = multi_grid.thread_rank(); i < size; i += multi_grid.size()) {
+        temp_sum += (double) (vecA[i] * vecB[i]);
+    }
+    tmp[cta.thread_rank()] = temp_sum;
+    cg::sync(cta);
+    cg::thread_block_tile<32> tile32 = cg::tiled_partition<32>(cta);
+    double beta  = temp_sum;
+    double temp;
+    for (int i = tile32.size() / 2; i > 0; i >>= 1) {
+        if (tile32.thread_rank() < i) {
+            temp       = tmp[cta.thread_rank() + i];
+            beta       += temp;
+            tmp[cta.thread_rank()] = beta;
+        }
+        cg::sync(tile32);
+    }
+    cg::sync(cta);
+    if (cta.thread_rank() == 0) {
+        beta  = 0.0;
+        for (int i = 0; i < cta.size(); i += tile32.size()) {
+            beta  += tmp[i];
+        }
+        atomicAdd(&grid_dot_result, beta);
+    }
+}
+__device__ void MultigpuCopyVector(float *srcA, float *destB, int size, const cg::multi_grid_group &multi_grid) {
+    for (int i = multi_grid.thread_rank(); i < size; i += multi_grid.size()) {
+        destB[i] = srcA[i];
+    }
+}
+__device__ void MultigpuScaleVector(float *vec, float alpha, int size, const cg::multi_grid_group &multi_grid) {
+    for (int i = multi_grid.thread_rank(); i < size; i += multi_grid.size()) {
+        vec[i] = alpha*vec[i];
+    }
+}
+__device__ void MultigpuProductVector(float *vecA, float *vecB, float *vecC, int size, const cg::thread_block &cta, const cg::multi_grid_group &multi_grid) {
+    for (int i = multi_grid.thread_rank(); i < size; i += multi_grid.size()) {
+        vecC[i] = (vecA[i] * vecB[i]);
+    }
+}
+__device__ void setDotResultToZero(double *dot_result) {
+  unsigned long long int *address_as_ull = (unsigned long long int *)dot_result;
+  unsigned long long int old = *address_as_ull, assumed;
+
+  do {
+    assumed = old;
+    old = atomicCAS_system(address_as_ull, assumed, 0);
+
+  } while (assumed != old);
 }

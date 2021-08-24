@@ -76,14 +76,34 @@ __device__ void gpuDotProduct(float *vecA, float *vecB, double *result, int size
 __device__ void gpuCopyVector(float *srcA, float *destB, int size, const cg::grid_group &grid);
 __device__ void gpuScaleVector(float *vec, float alpha, int size, const cg::grid_group &grid);
 __global__ void gpuConjugateGradient(int *I, int *J, float *val, float *x,  float *Ax, float *p, float *r,DPS_Const *result,double *d_result);
-// FOR Field method 4
+// FOR Field method 5
 void Field_Method5_Initial();
 // namespace cg = cooperative_groups;
 __device__ void gpuProductVector(float *vecA, float *vecB, float *vecC, int size, const cg::thread_block &cta, const cg::grid_group &grid);
 __global__ void gpuPreConjugateGradient(int *I, int *J, float *val, float *M, float *x,  float *Ax, float *p, float *r, float *Z, 
             DPS_Const *result,double *d_result);
-//
+// FOR Field method 6
 void Field_Method6_Initial();
+// namespace cg = cooperative_groups;
+cudaLaunchParams *launchParamsList;
+int GPUn,*deviceN;
+int *man_I,*man_J;
+float *man_A;
+float *man_R, *man_P, *man_AP, *man_Z, *man_M, *man_X;
+__device__ double grid_dot_result = 0.0;
+__device__ void setDotResultToZero(double *dot_result);
+__device__ void MultigpuProductVector(float *vecA, float *vecB, float *vecC, int size, const cg::thread_block &cta, const cg::multi_grid_group &multi_grid);
+__device__ void MultigpuScaleVector(float *vec, float alpha, int size, const cg::multi_grid_group &multi_grid);
+__device__ void MultigpuCopyVector(float *srcA, float *destB, int size, const cg::multi_grid_group &multi_grid);
+__device__ void MultigpuDotProduct(float *vecA, float *vecB, int size, const cg::thread_block &cta, const cg::multi_grid_group &multi_grid);
+__device__ void MultigpuRSaxpy(float *x, float *y, float a, int size, const cg::multi_grid_group &multi_grid);
+__device__ void MultigpuSaxpy(float *x, float *y, float a, int size, const cg::multi_grid_group &multi_grid);
+__device__ void MultigpuSpMV(int *I, int *J, float *val, int nnz, int num_rows, float alpha, float *inputVecX, 
+                        float *outputVecY, cg::thread_block &cta, const cg::multi_grid_group &multi_grid);
+__global__ void multiGpuPreConjugateGradient(int *I, int *J, float *val, float *M, float *x,  float *Ax, float *p, float *r, float *Z, 
+            int nnz, int N,float tol,double *d_result);
+//
+void Field_Method7_Initial();
 void Set_MatrixPCG_cuda();
 void PCG_SOLVER_Laplace();
 int PCG_LAP_Divide(int grid,int block);

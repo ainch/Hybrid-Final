@@ -1,6 +1,6 @@
 {
     "GPU_Device_Number": {
-        "GPUDevice": 10
+        "GPUDevice": 9
     },
     "Geometry": {
         "SystemSpec": {
@@ -63,7 +63,7 @@
     {
         "TimeStep_PIC": 5000,
         "TimeStep_Conti": 20,
-        "Field_Solver":4,
+        "Field_Solver":6,
         "PCGMarginOfError":1e-3,
         "HistoryMax":1000000,
         "HistoryDivide":2,
