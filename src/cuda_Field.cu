@@ -2,6 +2,38 @@
 // FOR Field method 4
 #define THREADS_PER_BLOCK 512   
 //
+void PCG_SOLVER_Laplace(){
+    // OUTPUT
+    // Lap_TEMP_Sol[Gsize] : Temperature Profile
+    // Lap_PHI_Sol[CondNUMR][Gsize] : Each of conductor Phi Profile, This is Device value
+    // Lap_SIG_Sol[CondNUMR][CondNUMR] : Each of conductor Sigma Profile for external circuit
+
+    //Make a Field DATA set  
+    //Host_PCG_DATA = (DPS_Data*)malloc(A_size*sizeof(DPS_Data));
+    //checkCudaErrors(cudaMalloc((void**)&dev_PCG_DATA, A_size*sizeof(DPS_Data)));
+    //Make_PCG_DATA_Init<<<A_size/4,4>>>(dev_PCG_DATA,A_size,dev_M);
+    //checkCudaErrors(cudaMemcpy(Host_PCG_DATA, dev_PCG_DATA, A_size*sizeof(DPS_Data), cudaMemcpyDeviceToHost));
+    // Laplace Solution
+    //cudaMallocPitch(&Lap_PHI_Sol, &pitch, Gsize * sizeof(float), CondNUMR); // for Laplace Solution
+    //cudaMalloc((void**) &Lap_TEMP_Sol, Gsize * sizeof(int));
+    // cudaMemset((void *) array, 0, Gsize * sizeof(int));
+    
+
+           // Find good grid and block size
+        //cudaOccupancyMaxPotentialBlockSize(&mingrid,&FIELD_BLOCK,(void*)cusparseSpMV,0,Gsize); 
+        //FIELD_GRID = (Gsize + FIELD_BLOCK - 1) / FIELD_BLOCK;
+        //printf("blockSize = %d\n",FIELD_BLOCK);
+        //printf("gridSize = %d\n",FIELD_GRID);
+    // For test
+
+    //if (matA       ) { checkCudaErrors(cusparseDestroySpMat(matA)); }
+    //if (vecx       ) { checkCudaErrors(cusparseDestroyDnVec(vecx)); }
+    //if (vecAP      ) { checkCudaErrors(cusparseDestroyDnVec(vecAP)); }
+    //if (vecp       ) { checkCudaErrors(cusparseDestroyDnVec(vecp)); }
+}
+void Set_MatrixPCG_cuda(){
+
+}
 void Field_Method0_Initial(){
     // CPU Conjugate Gradient
     printf(" Field Solver : [CPU] Conjugate Gradient\n"); 
@@ -200,16 +232,17 @@ void Field_Method7_Initial(){
 	checkCudaErrors(cudaMemcpy(dev_Ai, Ai, (A_size + 1) * sizeof(int), cudaMemcpyHostToDevice));
     checkCudaErrors(cudaMemcpy(dev_M, MatM, A_size * sizeof(int), cudaMemcpyHostToDevice));
 }
-void PCG_SOLVER_Laplace(){
+void PCG_Laplace_TEST(){
     // Solve Laplace Equation. 
     // INPUT
-    // Field_Solver_Flag 0 - [CPU] Conjugate Gradient 
-    // Field_Solver_Flag 1 - [CPU] Preconditioned Conjugate Gradient 
-    // Field_Solver_Flag 2 - [GPU] Conjugate Gradient 
-    // Field_Solver_Flag 3 - [GPU] Conjugate Gradient + Cuda Graphs launch
-    // Field_Solver_Flag 4 - [GPU] Conjugate Gradient + Multi Block
-    // Field_Solver_Flag 5 - [GPU] [Jacovi] Preconditioned Conjugate Gradient 
-    // Field_Solver_Flag 6 - [GPU] [ILU] Preconditioned Conjugate Gradient 
+    // Lap_Field_Solver_Flag 0 - [CPU] Conjugate Gradient 
+    // Lap_Field_Solver_Flag 1 - [CPU] Preconditioned Conjugate Gradient 
+    // Lap_Field_Solver_Flag 2 - [GPU] Conjugate Gradient 
+    // Lap_Field_Solver_Flag 3 - [GPU] Conjugate Gradient + Cuda Graphs launch
+    // Lap_Field_Solver_Flag 4 - [GPU] Conjugate Gradient + Multi Block
+    // Lap_Field_Solver_Flag 5 - [GPU] [Jacovi] Preconditioned Conjugate Gradient + Multi Block
+    // Lap_Field_Solver_Flag 6 - [GPU] [Jacovi] Preconditioned Conjugate Gradient + Multi GPU 
+    // Lap_Field_Solver_Flag 7 - [GPU] [ILU] Preconditioned Conjugate Gradient + Multi Block 
     // OUTPUT
     // Lap_TEMP_Sol[Gsize] : Temperature Profile
     // Lap_PHI_Sol[CondNUMR][Gsize] : Each of conductor Phi Profile, This is Device value
@@ -232,7 +265,7 @@ void PCG_SOLVER_Laplace(){
     cudaEvent_t start, stop;
     float gputime;
     //
-    if(Field_Solver_Flag == 0){// [CPU] Conjugate Gradient 
+    if(Lap_Field_Solver_Flag == 0){// [CPU] Conjugate Gradient 
         Field_Method0_Initial(); // Initial Setting
         for (k = 0; k < CondNUMR; k++) {
             VFCopy(B,cond_b[k],A_size);
@@ -261,8 +294,8 @@ void PCG_SOLVER_Laplace(){
             }
         }
         sprintf(Namebuf,"CPU_CG");
-        Field_Laplace_Solution_Save(Namebuf,CPUsol);
-    }else if(Field_Solver_Flag == 1){// [CPU] Preconditioned Conjugate Gradient 
+        if(Lap_Field_Solver_Save) Field_Laplace_Solution_Save(Namebuf,CPUsol);
+    }else if(Lap_Field_Solver_Flag == 1){// [CPU] Preconditioned Conjugate Gradient 
         Field_Method1_Initial(); // Initial Setting
         for (k = 0; k < CondNUMR; k++) {
             VFCopy(B,cond_b[k],A_size);
@@ -291,8 +324,8 @@ void PCG_SOLVER_Laplace(){
             }
         }
         sprintf(Namebuf,"CPU_PCG");
-        Field_Laplace_Solution_Save(Namebuf,CPUsol);
-    }else if(Field_Solver_Flag == 2){// [GPU] Conjugate Gradient 
+        if(Lap_Field_Solver_Save) Field_Laplace_Solution_Save(Namebuf,CPUsol);
+    }else if(Lap_Field_Solver_Flag == 2){// [GPU] Conjugate Gradient 
 		Field_Method2_Initial(); // Initial Setting 
         for (k = 0; k < CondNUMR; k++) {
             checkCudaErrors(cudaMemcpy(dev_R, cond_b[k], A_size * sizeof(float),cudaMemcpyHostToDevice));
@@ -322,8 +355,8 @@ void PCG_SOLVER_Laplace(){
             }
         }
         sprintf(Namebuf,"GPU_CG");
-        Field_Laplace_Solution_Save(Namebuf,CPUsol);
-    }else if(Field_Solver_Flag == 3){// [GPU] Conjugate Gradient + Cuda Graphs launch
+        if(Lap_Field_Solver_Save) Field_Laplace_Solution_Save(Namebuf,CPUsol);
+    }else if(Lap_Field_Solver_Flag == 3){// [GPU] Conjugate Gradient + Cuda Graphs launch
 		Field_Method3_Initial(); // Initial Setting
         // stream
         for (k = 0; k < CondNUMR; k++) {
@@ -370,8 +403,8 @@ void PCG_SOLVER_Laplace(){
             checkCudaErrors(cublasDestroy(cublasHandle));
         }
         sprintf(Namebuf,"GPU_CG_Graph");
-        Field_Laplace_Solution_Save(Namebuf,CPUsol);        
-    }else if(Field_Solver_Flag == 4){// [GPU] Conjugate Gradient + Multi Block
+        if(Lap_Field_Solver_Save) Field_Laplace_Solution_Save(Namebuf,CPUsol);        
+    }else if(Lap_Field_Solver_Flag == 4){// [GPU] Conjugate Gradient + Multi Block
         Field_Method4_Initial(); // Initial Setting
         //Make a Field constant set  
         Host_PCG_const = (DPS_Const*)malloc(sizeof(DPS_Const));
@@ -454,8 +487,8 @@ void PCG_SOLVER_Laplace(){
             }
         }
         sprintf(Namebuf,"GPU_CG_MultiBlock");
-        Field_Laplace_Solution_Save(Namebuf,CPUsol);
-    }else if(Field_Solver_Flag == 5){// [GPU] [Jacovi] Preconditioned Conjugate Gradient + Multi Block
+        if(Lap_Field_Solver_Save) Field_Laplace_Solution_Save(Namebuf,CPUsol);
+    }else if(Lap_Field_Solver_Flag == 5){// [GPU] [Jacovi] Preconditioned Conjugate Gradient + Multi Block
 		Field_Method5_Initial(); // Initial Setting
         //Make a Field constant set  
         Host_PCG_const = (DPS_Const*)malloc(sizeof(DPS_Const));
@@ -539,8 +572,8 @@ void PCG_SOLVER_Laplace(){
             }
         }
         sprintf(Namebuf,"GPU_PCG_MultiBlock");
-        Field_Laplace_Solution_Save(Namebuf,CPUsol);
-    }else if(Field_Solver_Flag == 6){// [GPU] [Jacovi] Preconditioned Conjugate Gradient + Multi GPU
+        if(Lap_Field_Solver_Save) Field_Laplace_Solution_Save(Namebuf,CPUsol);
+    }else if(Lap_Field_Solver_Flag == 6){// [GPU] [Jacovi] Preconditioned Conjugate Gradient + Multi GPU
 		Field_Method6_Initial(); // Initial Setting
         //Make a Field constant set  
         Host_PCG_const = (DPS_Const*)malloc(sizeof(DPS_Const));
@@ -552,7 +585,7 @@ void PCG_SOLVER_Laplace(){
         cudaDeviceProp deviceProp;
         int num_of_gpus = 0;
         int num_buf = device_num;
-        GPUn = 4; 
+        GPUn = 2; 
         deviceN = VIMalloc(GPUn);
         checkCudaErrors(cudaGetDeviceCount(&num_of_gpus));
         if (num_of_gpus <= 1 || num_of_gpus < device_num + GPUn) {
@@ -705,38 +738,13 @@ void PCG_SOLVER_Laplace(){
 
         }
         sprintf(Namebuf,"GPU_PCG_MultiGPU");
-        Field_Laplace_Solution_Save(Namebuf,CPUsol);
-    }else{
+        if(Lap_Field_Solver_Save) Field_Laplace_Solution_Save(Namebuf,CPUsol);
+    }else if(Lap_Field_Solver_Flag == 7){// [GPU] [ILU] Preconditioned Conjugate Gradient + Multi Block
 
+    }else if(Lap_Field_Solver_Flag >= 8){
+        printf("Empty Test Laplace Field Solver\n");
+        exit(1);
     }
-    exit(1);
-    //Make a Field DATA set  
-    //Host_PCG_DATA = (DPS_Data*)malloc(A_size*sizeof(DPS_Data));
-    //checkCudaErrors(cudaMalloc((void**)&dev_PCG_DATA, A_size*sizeof(DPS_Data)));
-    //Make_PCG_DATA_Init<<<A_size/4,4>>>(dev_PCG_DATA,A_size,dev_M);
-    //checkCudaErrors(cudaMemcpy(Host_PCG_DATA, dev_PCG_DATA, A_size*sizeof(DPS_Data), cudaMemcpyDeviceToHost));
-    // Laplace Solution
-    //cudaMallocPitch(&Lap_PHI_Sol, &pitch, Gsize * sizeof(float), CondNUMR); // for Laplace Solution
-    //cudaMalloc((void**) &Lap_TEMP_Sol, Gsize * sizeof(int));
-    // cudaMemset((void *) array, 0, Gsize * sizeof(int));
-    
-
-           // Find good grid and block size
-        //cudaOccupancyMaxPotentialBlockSize(&mingrid,&FIELD_BLOCK,(void*)cusparseSpMV,0,Gsize); 
-        //FIELD_GRID = (Gsize + FIELD_BLOCK - 1) / FIELD_BLOCK;
-        //printf("blockSize = %d\n",FIELD_BLOCK);
-        //printf("gridSize = %d\n",FIELD_GRID);
-    // For test
-
-    //if (matA       ) { checkCudaErrors(cusparseDestroySpMat(matA)); }
-    //if (vecx       ) { checkCudaErrors(cusparseDestroyDnVec(vecx)); }
-    //if (vecAP      ) { checkCudaErrors(cusparseDestroyDnVec(vecAP)); }
-    //if (vecp       ) { checkCudaErrors(cusparseDestroyDnVec(vecp)); }
-    
-
-}
-void Set_MatrixPCG_cuda(){
-
 }
 int CG_CPU(){
     int TID,i,Iter=0;
@@ -1251,15 +1259,13 @@ __global__ void gpuConjugateGradient(int *I, int *J, float *val, float *x,  floa
     }
     if(threadIdx.x == 0 && blockIdx.x == 0 ) printf("End Iter = %d, Res = %g, b = %g, a = %g\n",k,Temp,alpha,beta,rsold);
 }
-__device__ void gpuProductVector(float *vecA, float *vecB, float *vecC, int size, const cg::thread_block &cta, const cg::grid_group &grid)
-{
+__device__ void gpuProductVector(float *vecA, float *vecB, float *vecC, int size, const cg::thread_block &cta, const cg::grid_group &grid){
     for (int i=grid.thread_rank(); i < size; i+=grid.size()){
         vecC[i] = (vecA[i] * vecB[i]);
     }
 }
 __global__ void gpuPreConjugateGradient(int *I, int *J, float *val, float *M, float *x,  float *Ax, float *p, float *r, float *Z, 
-            DPS_Const *result,double *d_result)
-{
+            DPS_Const *result,double *d_result){
     cg::thread_block cta = cg::this_thread_block();
     cg::grid_group grid = cg::this_grid();
     //int TID = blockDim.x*(gridDim.x*blockIdx.y+blockIdx.x)+threadIdx.x;
@@ -1469,7 +1475,6 @@ __device__ void MultigpuProductVector(float *vecA, float *vecB, float *vecC, int
 __device__ void setDotResultToZero(double *dot_result) {
   unsigned long long int *address_as_ull = (unsigned long long int *)dot_result;
   unsigned long long int old = *address_as_ull, assumed;
-
   do {
     assumed = old;
     old = atomicCAS_system(address_as_ull, assumed, 0);

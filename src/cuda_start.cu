@@ -40,13 +40,13 @@ void info_Device()
 void start_cuda(){
 
 	/*** Field solver ***/
-	if(Field_Solver_Flag==0){
+	if(Lap_Field_Solver_Flag==0){
 		
-	}else if(Field_Solver_Flag==1){
+	}else if(Lap_Field_Solver_Flag==1){
 
-	}else if(Field_Solver_Flag==2){
+	}else if(Lap_Field_Solver_Flag==2){
 
-	}else if(Field_Solver_Flag==3){
+	}else if(Lap_Field_Solver_Flag==3){
 
 	}
 	//FieldSolver = PCG_SOLVER;

@@ -7,6 +7,7 @@ extern int CYCLE_NUM; // Minimum frequency number of cycle
 extern int ngx,ngy,Gsize;
 extern int nsp;
 extern Species *SP;// particle species
+extern int Lap_Field_Solver_Test,Lap_Field_Solver_Flag,Lap_Field_Solver_Save;
 extern void (*FieldSolver)();
 extern void (*MOVE)();
 extern void (*SORT_BOUNDARY)();
@@ -22,7 +23,9 @@ extern void Set_MatrixPCG_cuda();
 extern void Set_Particle_cuda();
 extern void Set_NullCollisionTime_cuda();
 extern void Set_DiagParameter_cuda();
+extern void PCG_Laplace_TEST();
 extern void PCG_SOLVER_Laplace();
+
 #ifndef __CUDA_MAIN_CUH__
 #define __CUDA_MAIN_CUH__
 float time_sum;

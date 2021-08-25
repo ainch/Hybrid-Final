@@ -690,7 +690,9 @@ void InputRead() {
    SubObject4 = json_object_get_object(MainObject,"SimulationMethod");   
    DT_PIC = IVnZC("TimeStep_PIC",(int)json_object_get_number(SubObject4,"TimeStep_PIC"));
    DT_CONTI = IVnZC("TimeStep_Conti",(int)json_object_get_number(SubObject4,"TimeStep_Conti"));
-   Field_Solver_Flag = (int)json_object_get_number(SubObject4,"Field_Solver");
+   Lap_Field_Solver_Test = (int)json_object_get_number(SubObject4,"Laplace_Test_Flag");
+   Lap_Field_Solver_Flag = (int)json_object_get_number(SubObject4,"Laplace_Field_Solver");
+   Lap_Field_Solver_Save = (int)json_object_get_number(SubObject4,"Laplace_Field_Tec_Save");
    PCGtol = FVnZC("PCGMarginOfError",(float)json_object_get_number(SubObject4,"PCGMarginOfError"));
    PCGtol2 = PCGtol*PCGtol;
    HISTMAX = IVnZC("HistoryMax",(int)json_object_get_number(SubObject4,"HistoryMax"));

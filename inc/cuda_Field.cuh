@@ -7,7 +7,7 @@ extern float PCGtol;
 extern float PCGtol2;
 extern HGA *vec_G;
 extern int CondNUMR;
-extern int Field_Solver_Flag;
+extern int Lap_Field_Solver_Test,Lap_Field_Solver_Flag,Lap_Field_Solver_Save;
 extern int FieldIter;
 extern int A_size;
 extern float *A_val,*MatTA;
@@ -44,6 +44,7 @@ DPS_Const *Host_PCG_const;
 DPS_Data *dev_PCG_DATA;
 DPS_Data *Host_PCG_DATA;
 //
+void PCG_Laplace_TEST();
 void Field_Method0_Initial();
 int CG_CPU();
 float *AX,*X,*B,*R0,*Z0,*P0,*AP,*PAP;

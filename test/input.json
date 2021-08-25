@@ -63,7 +63,9 @@
     {
         "TimeStep_PIC": 5000,
         "TimeStep_Conti": 20,
-        "Field_Solver":6,
+        "Laplace_Test_Flag":1,
+        "Laplace_Field_Solver":8,
+        "Laplace_Field_Tec_Save":1,
         "PCGMarginOfError":1e-3,
         "HistoryMax":1000000,
         "HistoryDivide":2,
