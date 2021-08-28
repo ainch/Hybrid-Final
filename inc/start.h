@@ -56,6 +56,7 @@ float dt;   // timestsep for PIC
 float dtc; // time step for continuity equation
 int CYCLE_NUM; // Minimum frequency number of cycle
 int Lap_Field_Solver_Test,Lap_Field_Solver_Flag,Lap_Field_Solver_Save;
+int Preconditioner_Flag;
 float PCGtol;
 float PCGtol2;
 int HISTMAX;

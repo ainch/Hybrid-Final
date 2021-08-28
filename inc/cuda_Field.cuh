@@ -8,6 +8,7 @@ extern float PCGtol2;
 extern HGA *vec_G;
 extern int CondNUMR;
 extern int Lap_Field_Solver_Test,Lap_Field_Solver_Flag,Lap_Field_Solver_Save;
+extern int Preconditioner_Flag;
 extern int FieldIter;
 extern int A_size;
 extern float *A_val,*MatTA;
@@ -23,15 +24,11 @@ extern "C" void VFCopy(float *V,float *C,int size);
 
 #ifndef __CUDA_FIELD_CUH__
 #define __CUDA_FIELD_CUH__
-cublasHandle_t cublasHandle;
-cublasStatus_t cublasStatus;
-cusparseHandle_t cusparseHandle;
-cusparseStatus_t cusparseStatus;
 cusparseSpMatDescr_t matA;
 cusparseDnVecDescr_t vecx;
 cusparseDnVecDescr_t vecp;
 cusparseDnVecDescr_t vecAP;
-cudaStream_t stream1, streamForGraph;
+
 cudaGraph_t initGraph;
 cudaGraphExec_t graphExec;
 float *Lap_TEMP_Sol; // Temperature Solution of Laplace Equation
@@ -48,10 +45,10 @@ void PCG_Laplace_TEST();
 void Field_Method0_Initial();
 int CG_CPU();
 float *AX,*X,*B,*R0,*Z0,*P0,*AP,*PAP;
-//
+// FOR Field method 1
 void Field_Method1_Initial();
 int PCG_CPU();
-//
+// FOR Field method 2
 void Field_Method2_Initial();
 int CG_GPU();
 float *dev_A;	
@@ -59,8 +56,13 @@ int *dev_Aj,*dev_Ai;
 int   *vec_A_idx;
 float *dev_M;
 float *dev_AP,*dev_X,*dev_b,*dev_R,*dev_Z,*dev_P;
-//
+// FOR Field method 3
 void Field_Method3_Initial();
+cublasHandle_t cublasHandle;
+cublasStatus_t cublasStatus;
+cusparseHandle_t cusparseHandle;
+cusparseStatus_t cusparseStatus;
+cudaStream_t stream1, streamForGraph;
 int CG_GPU_CudaGraphs();
 __global__ void initVectors(float *rhs, float *x, int N); 
 __global__ void r1_div_x(float *r1, float *r0, float *b);
@@ -105,6 +107,10 @@ __global__ void multiGpuPreConjugateGradient(int *I, int *J, float *val, float *
             int nnz, int N,float tol,double *d_result);
 //
 void Field_Method7_Initial();
+float *dev_Y;
+int *dev_Li,*dev_Lj,*dev_Ui,*dev_Uj;
+float *dev_L,*dev_U;
+//
 void Set_MatrixPCG_cuda();
 void PCG_SOLVER_Laplace();
 int PCG_LAP_Divide(int grid,int block);

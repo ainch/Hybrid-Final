@@ -693,6 +693,7 @@ void InputRead() {
    Lap_Field_Solver_Test = (int)json_object_get_number(SubObject4,"Laplace_Test_Flag");
    Lap_Field_Solver_Flag = (int)json_object_get_number(SubObject4,"Laplace_Field_Solver");
    Lap_Field_Solver_Save = (int)json_object_get_number(SubObject4,"Laplace_Field_Tec_Save");
+   Preconditioner_Flag = (int)json_object_get_number(SubObject4,"Preconditioner");
    PCGtol = FVnZC("PCGMarginOfError",(float)json_object_get_number(SubObject4,"PCGMarginOfError"));
    PCGtol2 = PCGtol*PCGtol;
    HISTMAX = IVnZC("HistoryMax",(int)json_object_get_number(SubObject4,"HistoryMax"));

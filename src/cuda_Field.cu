@@ -215,22 +215,30 @@ void Field_Method6_Initial(){
 }
 void Field_Method7_Initial(){
     printf(" Field Solver : [GPU] Preconditioned Conjugate Gradient\n"); 
+    printf(" Cuda Function : Multi Block\n"); 
     printf(" Laplace Equation\n"); 
-    printf(" Preconditioner[ILU]\n"); 
+    printf(" Preconditioner[IChol]\n"); 
     printf(" Matrix Size = %d X %d = %d\n", A_size, A_size, A_size*A_size);
+    // Data cpu > gpu
     checkCudaErrors(cudaMalloc((void**) &dev_A, 5 * A_size * sizeof(float)));
 	checkCudaErrors(cudaMalloc((void**) &dev_Aj, 5 * A_size * sizeof(int)));
 	checkCudaErrors(cudaMalloc((void**) &dev_Ai, (A_size + 1) * sizeof(int)));
 	checkCudaErrors(cudaMalloc((void**) &dev_b,  A_size * sizeof(float)));
 	checkCudaErrors(cudaMalloc((void**) &dev_X,  A_size * sizeof(float)));
+    checkCudaErrors(cudaMalloc((void**) &dev_AP,  A_size * sizeof(float)));
+    checkCudaErrors(cudaMalloc((void**) &dev_R,  A_size * sizeof(float)));
+    checkCudaErrors(cudaMalloc((void**) &dev_P,  A_size * sizeof(float)));
     checkCudaErrors(cudaMalloc((void**) &dev_M,  A_size * sizeof(float)));
-    // Initialize
-    checkCudaErrors(cudaMemset((void *) dev_X, 0, A_size * sizeof(float)));
-    //Copy
+    checkCudaErrors(cudaMalloc((void**) &dev_Z,  A_size * sizeof(float)));
+    checkCudaErrors(cudaMalloc((void**) &dev_Y,  A_size * sizeof(float)));
     checkCudaErrors(cudaMemcpy(dev_A, A_val, 5 * A_size * sizeof(float), cudaMemcpyHostToDevice));
 	checkCudaErrors(cudaMemcpy(dev_Aj, Aj, 5 * A_size * sizeof(int), cudaMemcpyHostToDevice));
 	checkCudaErrors(cudaMemcpy(dev_Ai, Ai, (A_size + 1) * sizeof(int), cudaMemcpyHostToDevice));
-    checkCudaErrors(cudaMemcpy(dev_M, MatM, A_size * sizeof(int), cudaMemcpyHostToDevice));
+    checkCudaErrors(cudaMemcpy(dev_M, MatM, A_size * sizeof(float), cudaMemcpyHostToDevice));
+    checkCudaErrors(cudaMemset((void *) dev_Z, 0, A_size * sizeof(float)));
+    checkCudaErrors(cudaMemset((void *) dev_P, 0, A_size * sizeof(float)));
+    checkCudaErrors(cudaMemset((void *) dev_AP, 0, A_size * sizeof(float)));
+    checkCudaErrors(cudaMemset((void *) dev_Y, 0, A_size * sizeof(float)));
 }
 void PCG_Laplace_TEST(){
     // Solve Laplace Equation. 
@@ -242,7 +250,7 @@ void PCG_Laplace_TEST(){
     // Lap_Field_Solver_Flag 4 - [GPU] Conjugate Gradient + Multi Block
     // Lap_Field_Solver_Flag 5 - [GPU] [Jacovi] Preconditioned Conjugate Gradient + Multi Block
     // Lap_Field_Solver_Flag 6 - [GPU] [Jacovi] Preconditioned Conjugate Gradient + Multi GPU 
-    // Lap_Field_Solver_Flag 7 - [GPU] [ILU] Preconditioned Conjugate Gradient + Multi Block 
+    // Lap_Field_Solver_Flag 7 - [GPU] [IChol or ILU] Preconditioned Conjugate Gradient + Multi Block 
     // OUTPUT
     // Lap_TEMP_Sol[Gsize] : Temperature Profile
     // Lap_PHI_Sol[CondNUMR][Gsize] : Each of conductor Phi Profile, This is Device value
@@ -571,7 +579,7 @@ void PCG_Laplace_TEST(){
                 }
             }
         }
-        sprintf(Namebuf,"GPU_PCG_MultiBlock");
+        sprintf(Namebuf,"GPU_PCG_Jacobi_MB");
         if(Lap_Field_Solver_Save) Field_Laplace_Solution_Save(Namebuf,CPUsol);
     }else if(Lap_Field_Solver_Flag == 6){// [GPU] [Jacovi] Preconditioned Conjugate Gradient + Multi GPU
 		Field_Method6_Initial(); // Initial Setting
@@ -739,9 +747,142 @@ void PCG_Laplace_TEST(){
         }
         sprintf(Namebuf,"GPU_PCG_MultiGPU");
         if(Lap_Field_Solver_Save) Field_Laplace_Solution_Save(Namebuf,CPUsol);
-    }else if(Lap_Field_Solver_Flag == 7){// [GPU] [ILU] Preconditioned Conjugate Gradient + Multi Block
+    }else if(Lap_Field_Solver_Flag == 7){// [GPU] [IChol] Preconditioned Conjugate Gradient + Multi Block
+		Field_Method7_Initial(); // Initial Setting
+        //Make a Field constant set  
+        Host_PCG_const = (DPS_Const*)malloc(sizeof(DPS_Const));
+        checkCudaErrors(cudaMalloc((void**)&dev_PCG_const,sizeof(DPS_Const)));
+        Make_PCG_Const_Init<<<1,1>>>(dev_PCG_const,A_size,PCGtol);
+        checkCudaErrors(cudaMemcpy(Host_PCG_const, dev_PCG_const, sizeof(DPS_Const), cudaMemcpyDeviceToHost));
+        //checkCudaErrors(cudaMemcpy(Host_PCG_const, dev_PCG_const, sizeof(DPS_Const), cudaMemcpyDeviceToHost));
 
-    }else if(Lap_Field_Solver_Flag >= 8){
+        cudaDeviceProp deviceProp;
+        int sMemSize = sizeof(double) * THREADS_PER_BLOCK;
+        int numBlocksPerSm = 0;
+        int numThreads = THREADS_PER_BLOCK;
+        checkCudaErrors(cudaGetDeviceProperties(&deviceProp, device_num));
+        if (!deviceProp.managedMemory) {
+            // This sample requires being run on a device that supports Unified Memory
+            fprintf(stderr, "Unified Memory not supported on this device\n");
+            exit(EXIT_WAIVED);
+        }
+        // This sample requires being run on a device that supports Cooperative Kernel Launch
+        if (!deviceProp.cooperativeLaunch)
+        {
+            printf("\nSelected GPU (%d) does not support Cooperative Kernel Launch, Waiving the run\n", device_num);
+            exit(EXIT_WAIVED);
+        }
+        // Statistics about the GPU device
+        printf("> GPU device has %d Multi-Processors, SM %d.%d compute capabilities\n",
+           deviceProp.multiProcessorCount, deviceProp.major, deviceProp.minor);
+        
+        checkCudaErrors(cudaOccupancyMaxActiveBlocksPerMultiprocessor(&numBlocksPerSm, gpuPreConjugateGradient, numThreads, sMemSize));
+        int numSms = deviceProp.multiProcessorCount;
+        dim3 dimGrid(numSms*numBlocksPerSm, 1, 1), dimBlock(THREADS_PER_BLOCK, 1, 1);
+        float nz = 5*A_size;
+        //
+        double *dot_result;
+        cudaMallocManaged((void **)&dot_result, sizeof(double));
+        *dot_result = 0.0;
+        // Make a Preconditioner matrix
+        checkCudaErrors(cudaMalloc((void**) &dev_L, 5 * A_size * sizeof(float)));
+	    checkCudaErrors(cudaMalloc((void**) &dev_Lj, 5 * A_size * sizeof(int)));
+	    checkCudaErrors(cudaMalloc((void**) &dev_Li, (A_size + 1) * sizeof(int)));
+        checkCudaErrors(cudaMemset((void *) dev_L, 0, 5 * A_size * sizeof(float)));
+        checkCudaErrors(cudaMemset((void *) dev_Lj, 0, 5 * A_size * sizeof(int)));
+        checkCudaErrors(cudaMemset((void *) dev_Li, 0, (A_size + 1) * sizeof(int)));
+        checkCudaErrors(cudaMalloc((void**) &dev_U, 5 * A_size * sizeof(float)));
+	    checkCudaErrors(cudaMalloc((void**) &dev_Uj, 5 * A_size * sizeof(int)));
+	    checkCudaErrors(cudaMalloc((void**) &dev_Ui, (A_size + 1) * sizeof(int)));
+        checkCudaErrors(cudaMemset((void *) dev_U, 0, 5 * A_size * sizeof(float)));
+        checkCudaErrors(cudaMemset((void *) dev_Uj, 0, 5 * A_size * sizeof(int)));
+        checkCudaErrors(cudaMemset((void *) dev_Ui, 0, (A_size + 1) * sizeof(int)));
+        if(Preconditioner_Flag==0){
+            // Incomplete Cholesky Preconditioner
+            printf("Make a preconditioner : [I Cholesky]\n");
+            float *L_val;
+            int *Li,Lj;
+            int row_elem,next_row_elem;
+            L_val = VFMalloc(5*A_size);VFInit(L_val,0.0,5*A_size);
+            Li = VIMalloc(A_size+1);VIInit(Li,0,A_size+1);
+            Lj = VIMalloc(5*A_size);VIInit(Lj,0,5*A_size);
+            k = 0;
+            for (i=0; i < A_size; i++){ //ROW
+                row_elem = Ai[i];
+                next_row_elem = Ai[i+1];
+                for (j=row_elem-1; j < next_row_elem-1; j++){ // Column
+                    if(A_val[j] != 0){
+                        if(j=i){
+                            L_val[k] = sqrt(A_val[j]);
+                            k++;
+                        }else if(j<i){
+                            L_val[k] = sqrt(A_val[j]); // start
+                            k++;
+                        }
+                    }
+                }
+            }
+ 
+	        exit(1);
+        }else if(Preconditioner_Flag==1){
+            // Incomplete LU Preconditioner
+            printf("Make a preconditioner : [I LU]\n");
+
+        }else{
+            //Jacovi
+
+        }
+        printf("Complete!!\n");
+        //
+        void *kernelArgs[] = {
+            (void*)&dev_Ai,
+            (void*)&dev_Aj,
+            (void*)&dev_A,
+            (void*)&dev_M,
+            (void*)&dev_X,
+            (void*)&dev_AP,
+            (void*)&dev_P,
+            (void*)&dev_R,
+            (void*)&dev_Z,
+            (void*)&dev_PCG_const,
+            (void*)&dot_result,
+        };
+        for (k = 0; k < CondNUMR; k++) {
+            checkCudaErrors(cudaMemcpy(dev_PCG_const, Host_PCG_const,sizeof(DPS_Const), cudaMemcpyHostToDevice));
+            checkCudaErrors(cudaMemcpy(dev_b, cond_b[k], A_size * sizeof(float),cudaMemcpyHostToDevice));
+            checkCudaErrors(cudaMemcpy(dev_R, dev_b, A_size * sizeof(float),cudaMemcpyDeviceToDevice));
+            checkCudaErrors(cudaMemset((void *) dev_X, 0, A_size * sizeof(float)));
+            checkCudaErrors(cudaMemset((void *) dev_AP, 0, A_size * sizeof(float)));
+            checkCudaErrors(cudaMemset((void *) dev_P, 0, A_size * sizeof(float)));
+            cudaEventCreate(&start); cudaEventCreate(&stop);
+	        cudaEventRecord( start, 0 );
+            checkCudaErrors(cudaLaunchCooperativeKernel((void *)gpuPreConjugateGradient, dimGrid, dimBlock, kernelArgs, sMemSize, NULL));
+            checkCudaErrors(cudaDeviceSynchronize());
+            cudaEventRecord( stop, 0 ); cudaEventSynchronize( stop );
+	        cudaEventElapsedTime( &gputime, start, stop );
+	        cudaEventDestroy( start );cudaEventDestroy( stop );
+            printf("Solution %d",k);
+            printf(" : Conductor %d = 1 V, Other CondUCTOR = 0 V\n",k);
+            printf(" time = %2.8f (ms)\n",gputime);
+            // Make a Solution
+            VFInit(CPUsol[k],0.0,Gsize);
+            checkCudaErrors(cudaMemcpy(buf, dev_X, A_size * sizeof(float),cudaMemcpyDeviceToHost));
+            for(j=ngy-1;j>=0;j--){
+                for(i=0;i<ngx;i++){
+                    TID = i*ngy+j;
+                    if((vec_G[TID].CondID-1)==k){
+                        CPUsol[k][TID] = 1.0;
+                    }
+                    if(vec_A_idx[TID]){
+                        CPUsol[k][TID] = buf[vec_A_idx[TID]-1];
+                    }
+                }
+            }
+        }
+        sprintf(Namebuf,"GPU_PCG_IChol_MB");
+        if(Lap_Field_Solver_Save) Field_Laplace_Solution_Save(Namebuf,CPUsol);
+    
+    }else if(Lap_Field_Solver_Flag >= 9){
         printf("Empty Test Laplace Field Solver\n");
         exit(1);
     }
