@@ -800,17 +800,26 @@ void PCG_Laplace_TEST(){
         if(Preconditioner_Flag==0){
             // Incomplete Cholesky Preconditioner
             printf("Make a preconditioner : [I Cholesky]\n");
+            //
+            
+            //
+            int n = A_size;
             float *L_val;
-            int *Li,Lj;
+            int *Li,*Lj;
             int row_elem,next_row_elem;
             L_val = VFMalloc(5*A_size);VFInit(L_val,0.0,5*A_size);
             Li = VIMalloc(A_size+1);VIInit(Li,0,A_size+1);
             Lj = VIMalloc(5*A_size);VIInit(Lj,0,5*A_size);
             k = 0;
+            VFCopy(L_val,A_val,5*A_size);
             for (i=0; i < A_size; i++){ //ROW
+                printf("i = %d, Ai[i] = %d\n",i,Ai[i]);
                 row_elem = Ai[i];
                 next_row_elem = Ai[i+1];
                 for (j=row_elem-1; j < next_row_elem-1; j++){ // Column
+                    //if(i<n && Aj[j]-1 <n)
+                    //At[i][Aj[j]-1] = A_val[j];
+                    /*
                     if(A_val[j] != 0){
                         if(j=i){
                             L_val[k] = sqrt(A_val[j]);
@@ -820,14 +829,86 @@ void PCG_Laplace_TEST(){
                             k++;
                         }
                     }
+                    */
                 }
             }
- 
 	        exit(1);
         }else if(Preconditioner_Flag==1){
             // Incomplete LU Preconditioner
             printf("Make a preconditioner : [I LU]\n");
-
+            // Cuda Handle setting
+            void *buffer = NULL;
+            cublasHandle = 0;
+            cublasStatus = cublasCreate(&cublasHandle);
+            checkCudaErrors(cublasStatus);
+            cusparseHandle = 0;
+            checkCudaErrors(cusparseCreate(&cusparseHandle));
+            /* Description of the A matrix*/
+            cusparseMatDescr_t descr = 0;
+            cusparseStatus = cusparseCreateMatDescr(&descr);    
+            cusparseSetMatType(descr, CUSPARSE_MATRIX_TYPE_GENERAL);
+	        cusparseSetMatFillMode(descr, CUSPARSE_FILL_MODE_LOWER);
+	        cusparseSetMatIndexBase(descr, CUSPARSE_INDEX_BASE_ONE);
+	        cusparseSetMatDiagType(descr, CUSPARSE_DIAG_TYPE_NON_UNIT);
+            /* create the analysis info object for the A matrix */
+            cusparseSolveAnalysisInfo_t infoA = 0;
+            cusparseStatus = cusparseCreateSolveAnalysisInfo(&infoA);
+            checkCudaErrors(cusparseStatus);
+            /*
+            cusparseStatus = cusparseScsrsv_analysis(cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE,
+                                             A_size, 5*A_size, descr, dev_A, dev_Ai, dev_Aj, infoA);
+            checkCudaErrors(cusparseStatus);
+            cudaMemcpy(dev_L, dev_A, 5*A_size*sizeof(float), cudaMemcpyDeviceToDevice);
+            cusparseStatus = cusparseScsrilu0(cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE, A_size, descr, dev_L, dev_Ai, dev_Aj, infoA);
+            checkCudaErrors(cusparseStatus);
+            */
+            int stmp = 0;
+            size_t bufferSize = 0;
+            checkCudaErrors(cudaMemcpy(dev_L, dev_A, 5*A_size*sizeof(float), cudaMemcpyDeviceToDevice));
+            /* Create ILU(0) info object */
+            csrilu02Info_t infoILU = NULL;
+            checkCudaErrors(cusparseCreateCsrilu02Info(&infoILU));
+            checkCudaErrors(cusparseScsrilu02_bufferSize(
+                cusparseHandle, A_size, 5*A_size, descr, dev_L, dev_Ai, dev_Aj, infoILU, &stmp));
+            bufferSize = stmp;
+            checkCudaErrors(cudaMalloc(&buffer, bufferSize));
+            /* Perform analysis for ILU(0) */
+            checkCudaErrors(cusparseScsrilu02_analysis(
+                cusparseHandle, A_size, 5*A_size, descr, dev_L, dev_Ai, dev_Aj, infoILU,
+                CUSPARSE_SOLVE_POLICY_USE_LEVEL, buffer));
+            /* Copy A data to ILU(0) vals as input*/
+            //checkCudaErrors(cudaMemcpy(dev_L, dev_A, 5*A_size*sizeof(float), cudaMemcpyDeviceToDevice));
+            /* generate the ILU(0) factors */
+            checkCudaErrors(cusparseScsrilu02(
+                cusparseHandle,  A_size, 5*A_size, descr,dev_L, dev_Ai, dev_Aj, infoILU,
+                CUSPARSE_SOLVE_POLICY_USE_LEVEL, buffer));
+            int n = 10;
+            float *L_val;
+            int *Li,*Lj;
+            int row_elem,next_row_elem;
+            L_val = VFMalloc(5*A_size);VFInit(L_val,0.0,5*A_size);
+            Li = VIMalloc(A_size+1);VIInit(Li,0,A_size+1);
+            Lj = VIMalloc(5*A_size);VIInit(Lj,0,5*A_size);
+            k = 0;
+            cudaMemcpy(L_val, dev_L, 5*A_size*sizeof(float), cudaMemcpyDeviceToHost);
+            float **At;
+            At = MFMalloc(n,n);
+            MFInit(At,0.0,n,n);
+            for (i=0; i < A_size; i++){ //ROW
+                //printf("i = %d, Ai[i] = %d\n",i,Ai[i]);
+                row_elem = Ai[i];
+                next_row_elem = Ai[i+1];
+                for (j=row_elem-1; j < next_row_elem-1; j++){ // Column
+                    if(i<n && Aj[j]-1 <n)
+                        At[i][Aj[j]-1] = L_val[j];
+                }
+            }
+            for(i=0;i<n;i++){
+                for(j=0;j<n;j++){
+                    printf("%4.4g",At[i][j]);
+                }printf("\n");
+            }    printf("\n");
+            exit(1);
         }else{
             //Jacovi
 
