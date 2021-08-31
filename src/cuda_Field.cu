@@ -219,6 +219,12 @@ void Field_Method7_Initial(){
     printf(" Laplace Equation\n"); 
     printf(" Preconditioner[IChol]\n"); 
     printf(" Matrix Size = %d X %d = %d\n", A_size, A_size, A_size*A_size);
+    // Cuda Handle setting
+    cublasHandle = 0;
+    cublasStatus = cublasCreate(&cublasHandle);
+    checkCudaErrors(cublasStatus);
+    cusparseHandle = 0;
+    checkCudaErrors(cusparseCreate(&cusparseHandle));
     // Data cpu > gpu
     checkCudaErrors(cudaMalloc((void**) &dev_A, 5 * A_size * sizeof(float)));
 	checkCudaErrors(cudaMalloc((void**) &dev_Aj, 5 * A_size * sizeof(int)));
@@ -748,6 +754,10 @@ void PCG_Laplace_TEST(){
         sprintf(Namebuf,"GPU_PCG_MultiGPU");
         if(Lap_Field_Solver_Save) Field_Laplace_Solution_Save(Namebuf,CPUsol);
     }else if(Lap_Field_Solver_Flag == 7){// [GPU] [IChol] Preconditioned Conjugate Gradient + Multi Block
+        void *buffer = NULL;
+        int stmp = 0;
+        size_t bufferSize = 0;
+
 		Field_Method7_Initial(); // Initial Setting
         //Make a Field constant set  
         Host_PCG_const = (DPS_Const*)malloc(sizeof(DPS_Const));
@@ -786,103 +796,141 @@ void PCG_Laplace_TEST(){
         *dot_result = 0.0;
         // Make a Preconditioner matrix
         checkCudaErrors(cudaMalloc((void**) &dev_L, 5 * A_size * sizeof(float)));
-	    checkCudaErrors(cudaMalloc((void**) &dev_Lj, 5 * A_size * sizeof(int)));
-	    checkCudaErrors(cudaMalloc((void**) &dev_Li, (A_size + 1) * sizeof(int)));
         checkCudaErrors(cudaMemset((void *) dev_L, 0, 5 * A_size * sizeof(float)));
-        checkCudaErrors(cudaMemset((void *) dev_Lj, 0, 5 * A_size * sizeof(int)));
-        checkCudaErrors(cudaMemset((void *) dev_Li, 0, (A_size + 1) * sizeof(int)));
         checkCudaErrors(cudaMalloc((void**) &dev_U, 5 * A_size * sizeof(float)));
-	    checkCudaErrors(cudaMalloc((void**) &dev_Uj, 5 * A_size * sizeof(int)));
-	    checkCudaErrors(cudaMalloc((void**) &dev_Ui, (A_size + 1) * sizeof(int)));
         checkCudaErrors(cudaMemset((void *) dev_U, 0, 5 * A_size * sizeof(float)));
-        checkCudaErrors(cudaMemset((void *) dev_Uj, 0, 5 * A_size * sizeof(int)));
-        checkCudaErrors(cudaMemset((void *) dev_Ui, 0, (A_size + 1) * sizeof(int)));
         if(Preconditioner_Flag==0){
             // Incomplete Cholesky Preconditioner
             printf("Make a preconditioner : [I Cholesky]\n");
+            /* Create L factor descriptor */
+            cusparseMatDescr_t descrL = NULL;
+            cusparseStatus = cusparseCreateMatDescr(&descrL);    
+            cusparseSetMatType(descrL, CUSPARSE_MATRIX_TYPE_GENERAL);
+	        cusparseSetMatFillMode(descrL, CUSPARSE_FILL_MODE_LOWER);
+	        cusparseSetMatIndexBase(descrL, CUSPARSE_INDEX_BASE_ONE);
+	        cusparseSetMatDiagType(descrL, CUSPARSE_DIAG_TYPE_NON_UNIT);
+            /* Create IC(0) info object */
+            csric02Info_t infoIC = NULL;
+            checkCudaErrors(cusparseCreateCsric02Info(&infoIC));
+            /* Allocate bufferSize */
+            checkCudaErrors(cusparseScsric02_bufferSize(cusparseHandle, A_size, 5*A_size, descrL, dev_A, dev_Ai, dev_Aj, infoIC, &stmp));
+            bufferSize = stmp;
+            checkCudaErrors(cudaMalloc(&buffer, bufferSize));
+            /* Perform analysis for IC(0) */
+            checkCudaErrors(cusparseScsric02_analysis(
+                cusparseHandle, A_size, 5*A_size, descrL, dev_A, dev_Ai, dev_Aj, infoIC,
+                CUSPARSE_SOLVE_POLICY_USE_LEVEL, buffer));
+            /* Copy A data to IC(0) vals as input*/
+            checkCudaErrors(cudaMemcpy(dev_L, dev_A, 5*A_size*sizeof(float), cudaMemcpyDeviceToDevice));
+            /* generate the IC(0) factors */
+            checkCudaErrors(cusparseScsric02(
+                cusparseHandle,  A_size, 5*A_size, descrL,dev_L, dev_Ai, dev_Aj, infoIC,
+                CUSPARSE_SOLVE_POLICY_USE_LEVEL, buffer));
             //
-            
-            //
-            int n = A_size;
-            float *L_val;
+            float *L_val,*LT_val;
             int *Li,*Lj;
-            int row_elem,next_row_elem;
             L_val = VFMalloc(5*A_size);VFInit(L_val,0.0,5*A_size);
+            LT_val = VFMalloc(5*A_size);VFInit(LT_val,0.0,5*A_size);
             Li = VIMalloc(A_size+1);VIInit(Li,0,A_size+1);
             Lj = VIMalloc(5*A_size);VIInit(Lj,0,5*A_size);
+
             k = 0;
-            VFCopy(L_val,A_val,5*A_size);
+            cudaMemcpy(L_val, dev_L, 5*A_size*sizeof(float), cudaMemcpyDeviceToHost);
+            csr_transpose(1,A_size+1,5*A_size,Ai,Aj,L_val,Li,Lj,LT_val);
+            cudaMemcpy(dev_L, L_val, 5*A_size*sizeof(float), cudaMemcpyHostToDevice);
+            cudaMemcpy(dev_U, LT_val, 5*A_size*sizeof(float), cudaMemcpyHostToDevice);
+            /*
+            int n = 10;
+            int row_elem,next_row_elem;
+            float **At,**At2,**At3;
+            At = MFMalloc(n,n);
+            MFInit(At,0.0,n,n);
+            At2 = MFMalloc(n,n);
+            MFInit(At2,0.0,n,n);
+            At3 = MFMalloc(n,n);
+            MFInit(At3,0.0,n,n);
             for (i=0; i < A_size; i++){ //ROW
-                printf("i = %d, Ai[i] = %d\n",i,Ai[i]);
+                //printf("i = %d, Ai[i] = %d\n",i,Ai[i]);
                 row_elem = Ai[i];
                 next_row_elem = Ai[i+1];
                 for (j=row_elem-1; j < next_row_elem-1; j++){ // Column
-                    //if(i<n && Aj[j]-1 <n)
-                    //At[i][Aj[j]-1] = A_val[j];
-                    /*
-                    if(A_val[j] != 0){
-                        if(j=i){
-                            L_val[k] = sqrt(A_val[j]);
-                            k++;
-                        }else if(j<i){
-                            L_val[k] = sqrt(A_val[j]); // start
-                            k++;
-                        }
-                    }
-                    */
+                    if(i<n && Aj[j]-1 <n)
+                        At[i][Aj[j]-1] = L_val[j];
                 }
             }
-	        exit(1);
+            for (i=0; i < A_size; i++){ //ROW
+                //printf("i = %d, Ai[i] = %d\n",i,Ai[i]);
+                row_elem = LTi[i];
+                next_row_elem = LTi[i+1];
+                for (j=row_elem-1; j < next_row_elem-1; j++){ // Column
+                    if(i<n && LTj[j]-1 <n)
+                        At2[i][LTj[j]-1] = LT_val[j];
+                }
+            }
+            for(i=0;i<n;i++){
+                for(j=0;j<n;j++){
+                    if(j>i) At[i][j] = 0;
+                    printf("%4.2g",At[i][j]);
+                }printf("\n");
+            }printf("\n");
+            for(i=0;i<n;i++){
+                for(j=0;j<n;j++){
+                    if(j<i) At2[i][j] = 0;
+                    printf("%4.2g",At2[i][j]);
+                }printf("\n");
+            }printf("\n");
+            for(j=0;j<n;j++){
+                for(i=0;i<n;i++){
+                    for(k=0;k<n;k++){
+                        At3[i][j] += At[i][k] * At2[k][j];
+                    }
+                }
+            }
+            for(i=0;i<n;i++){
+                for(j=0;j<n;j++){
+                    printf("%4.2g",At3[i][j]);
+                }printf("\n");
+            }printf("\n");
+            */
         }else if(Preconditioner_Flag==1){
             // Incomplete LU Preconditioner
             printf("Make a preconditioner : [I LU]\n");
-            // Cuda Handle setting
-            void *buffer = NULL;
-            cublasHandle = 0;
-            cublasStatus = cublasCreate(&cublasHandle);
-            checkCudaErrors(cublasStatus);
-            cusparseHandle = 0;
-            checkCudaErrors(cusparseCreate(&cusparseHandle));
-            /* Description of the A matrix*/
-            cusparseMatDescr_t descr = 0;
-            cusparseStatus = cusparseCreateMatDescr(&descr);    
-            cusparseSetMatType(descr, CUSPARSE_MATRIX_TYPE_GENERAL);
-	        cusparseSetMatFillMode(descr, CUSPARSE_FILL_MODE_LOWER);
-	        cusparseSetMatIndexBase(descr, CUSPARSE_INDEX_BASE_ONE);
-	        cusparseSetMatDiagType(descr, CUSPARSE_DIAG_TYPE_NON_UNIT);
-            /* create the analysis info object for the A matrix */
-            cusparseSolveAnalysisInfo_t infoA = 0;
-            cusparseStatus = cusparseCreateSolveAnalysisInfo(&infoA);
-            checkCudaErrors(cusparseStatus);
-            /*
-            cusparseStatus = cusparseScsrsv_analysis(cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE,
-                                             A_size, 5*A_size, descr, dev_A, dev_Ai, dev_Aj, infoA);
-            checkCudaErrors(cusparseStatus);
-            cudaMemcpy(dev_L, dev_A, 5*A_size*sizeof(float), cudaMemcpyDeviceToDevice);
-            cusparseStatus = cusparseScsrilu0(cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE, A_size, descr, dev_L, dev_Ai, dev_Aj, infoA);
-            checkCudaErrors(cusparseStatus);
-            */
-            int stmp = 0;
-            size_t bufferSize = 0;
-            checkCudaErrors(cudaMemcpy(dev_L, dev_A, 5*A_size*sizeof(float), cudaMemcpyDeviceToDevice));
+            /* Create L factor descriptor */
+            cusparseMatDescr_t descrL = NULL;
+            cusparseStatus = cusparseCreateMatDescr(&descrL);    
+            cusparseSetMatType(descrL, CUSPARSE_MATRIX_TYPE_GENERAL);
+	        cusparseSetMatFillMode(descrL, CUSPARSE_FILL_MODE_LOWER);
+	        cusparseSetMatIndexBase(descrL, CUSPARSE_INDEX_BASE_ONE);
+	        cusparseSetMatDiagType(descrL, CUSPARSE_DIAG_TYPE_NON_UNIT);
+            /* Create U factor descriptor */
+            cusparseMatDescr_t descrU = NULL;
+            checkCudaErrors(cusparseCreateMatDescr(&descrU));
+            checkCudaErrors(cusparseSetMatType(descrU, CUSPARSE_MATRIX_TYPE_GENERAL));
+            checkCudaErrors(cusparseSetMatFillMode(descrU, CUSPARSE_FILL_MODE_UPPER));
+            checkCudaErrors(cusparseSetMatIndexBase(descrU, CUSPARSE_INDEX_BASE_ONE));
+            checkCudaErrors(cusparseSetMatDiagType(descrU, CUSPARSE_DIAG_TYPE_NON_UNIT));
+
+            //checkCudaErrors(cudaMemcpy(dev_L, dev_A, 5*A_size*sizeof(float), cudaMemcpyDeviceToDevice));
             /* Create ILU(0) info object */
             csrilu02Info_t infoILU = NULL;
             checkCudaErrors(cusparseCreateCsrilu02Info(&infoILU));
-            checkCudaErrors(cusparseScsrilu02_bufferSize(
-                cusparseHandle, A_size, 5*A_size, descr, dev_L, dev_Ai, dev_Aj, infoILU, &stmp));
+            /* Allocate bufferSize */
+            checkCudaErrors(cusparseScsrilu02_bufferSize(cusparseHandle, A_size, 5*A_size, descrL, dev_A, dev_Ai, dev_Aj, infoILU, &stmp));
             bufferSize = stmp;
             checkCudaErrors(cudaMalloc(&buffer, bufferSize));
             /* Perform analysis for ILU(0) */
             checkCudaErrors(cusparseScsrilu02_analysis(
-                cusparseHandle, A_size, 5*A_size, descr, dev_L, dev_Ai, dev_Aj, infoILU,
+                cusparseHandle, A_size, 5*A_size, descrL, dev_A, dev_Ai, dev_Aj, infoILU,
                 CUSPARSE_SOLVE_POLICY_USE_LEVEL, buffer));
             /* Copy A data to ILU(0) vals as input*/
-            //checkCudaErrors(cudaMemcpy(dev_L, dev_A, 5*A_size*sizeof(float), cudaMemcpyDeviceToDevice));
+            checkCudaErrors(cudaMemcpy(dev_L, dev_A, 5*A_size*sizeof(float), cudaMemcpyDeviceToDevice));
             /* generate the ILU(0) factors */
             checkCudaErrors(cusparseScsrilu02(
-                cusparseHandle,  A_size, 5*A_size, descr,dev_L, dev_Ai, dev_Aj, infoILU,
+                cusparseHandle,  A_size, 5*A_size, descrL,dev_L, dev_Ai, dev_Aj, infoILU,
                 CUSPARSE_SOLVE_POLICY_USE_LEVEL, buffer));
-            int n = 10;
+
+
+            int n = A_size;
             float *L_val;
             int *Li,*Lj;
             int row_elem,next_row_elem;
@@ -905,9 +953,11 @@ void PCG_Laplace_TEST(){
             }
             for(i=0;i<n;i++){
                 for(j=0;j<n;j++){
-                    printf("%4.4g",At[i][j]);
+                    //if(j>i) At[i][j] = 0;
+                    printf("%4.2g",At[i][j]);
                 }printf("\n");
             }    printf("\n");
+            
             exit(1);
         }else{
             //Jacovi
@@ -1488,6 +1538,7 @@ __device__ void gpuProductVector(float *vecA, float *vecB, float *vecC, int size
 }
 __global__ void gpuPreConjugateGradient(int *I, int *J, float *val, float *M, float *x,  float *Ax, float *p, float *r, float *Z, 
             DPS_Const *result,double *d_result){
+    //Jacovi diagonal preconditioner version
     cg::thread_block cta = cg::this_thread_block();
     cg::grid_group grid = cg::this_grid();
     //int TID = blockDim.x*(gridDim.x*blockIdx.y+blockIdx.x)+threadIdx.x;
@@ -1702,4 +1753,194 @@ __device__ void setDotResultToZero(double *dot_result) {
     old = atomicCAS_system(address_as_ull, assumed, 0);
 
   } while (assumed != old);
+}
+void csr_transpose(const int base,const int nrow_A,const int ncol_A, const int arowptr[], const int acol[], const float aval[],  
+                int atrowptr[], int atcol[], float atval[]){
+// csr base-one transpose.
+// base-zero should be checked.
+if(base == 0){
+    printf("Base-zero transpose is not worked\n");
+    exit(1);
+}
+/*
+ * --------------------------------------------------------
+ * At = tranpose(A) where A in sparse compressed row format
+ * --------------------------------------------------------
+ */
+const int nrow_At = ncol_A;
+int nnz_row_At[nrow_At];
+{
+    int iat = 0;
+    for(iat=0; iat < nrow_At; iat++) {
+        nnz_row_At[iat] = 0;
+    };
+}
+/*
+ * --------------------------------------
+ * first pass to count number of nonzeros
+ * per row in At = transpose(A)
+ * --------------------------------------
+ */
+{ 
+    int ia = 0;
+    for(ia=0; ia < nrow_A-1; ia++ ) {
+        int istart = arowptr[ia];
+        int iend = arowptr[ia+1];
+        int k = 0;
+        for(k=istart-base; k < iend-base; k++) {
+            int ja = acol[k];
+            int iat = ja-base;
+            nnz_row_At[iat] += 1;
+        };
+    };
+}
+/*
+ * ---------------------------------------
+ * prefix sum to setup row pointers for At
+ * ---------------------------------------
+ */
+{
+    int iat = 0;
+    atrowptr[0] = base;
+    for(iat=0; iat < nrow_At; iat++) {
+        atrowptr[iat+1] = atrowptr[iat] + nnz_row_At[iat];
+    };
+    for(iat=0; iat < nrow_At; iat++) {
+        nnz_row_At[iat] = 0;
+    };
+}
+/*
+ * ----------------------
+ * second pass to fill At
+ * ----------------------
+ */
+{
+    int ia = 0;
+    for(ia=0; ia < nrow_A-1; ia++) {
+        int istart = arowptr[ia];
+        int iend = arowptr[ia+1];
+        int k = 0;
+        for(k=istart-base; k < iend-base; k++) {
+            int ja = acol[k]-1;
+            float aij = aval[k];
+
+            int iat = ja;
+            int jat = ia+base;
+
+            int ipos = atrowptr[iat] + nnz_row_At[iat];
+            atcol[ipos-base] = jat;
+            atval[ipos-base] = aij;
+            nnz_row_At[iat] += 1;
+        };
+    };
+}
+}
+__device__ void gpuSpMV_for_Lower(int *I, int *J, float *val, int nnz, int num_rows, float *inputVecX, 
+                        float *outputVecY, cg::thread_block &cta, const cg::grid_group &grid){
+    for (int i=grid.thread_rank(); i < num_rows; i+= grid.size())    {
+        // i = 0 ~ A_size-1; 
+        //printf("val[%d][]\n",i);
+        //for(i=Ai[TID]-Ai[0];i<Ai[TID+1]-Ai[0];i++){
+        //    AX[TID] += A_val[i]*X[Aj[i]-Ai[0]];
+        //}
+        int row_elem = I[i];
+        int next_row_elem = I[i+1];
+        int num_elems_this_row = next_row_elem - row_elem;
+        float output = 0.0;
+        for (int j=row_elem-1; j < next_row_elem-1; j++){
+            //if(i==0) printf("val[%d][]\n",j);
+            // I or J or val arrays - can be put in shared memory 
+            // as the access is random and reused in next calls of gpuSpMV function.
+            if(j<=i) output +=  val[j] * inputVecX[J[j]-1];
+            //if(i==0) printf("val[%d][%d] = %g, %g, %g\n",j,J[j]-1,val[j],inputVecX[J[j]-1],output);
+        }
+        outputVecY[i] = output;
+    }
+}
+__device__ void gpuSpMV_for_Upper(int *I, int *J, float *val, int nnz, int num_rows, float *inputVecX, 
+                        float *outputVecY, cg::thread_block &cta, const cg::grid_group &grid){
+    for (int i=grid.thread_rank(); i < num_rows; i+= grid.size())    {
+        // i = 0 ~ A_size-1; 
+        //printf("val[%d][]\n",i);
+        //for(i=Ai[TID]-Ai[0];i<Ai[TID+1]-Ai[0];i++){
+        //    AX[TID] += A_val[i]*X[Aj[i]-Ai[0]];
+        //}
+        int row_elem = I[i];
+        int next_row_elem = I[i+1];
+        int num_elems_this_row = next_row_elem - row_elem;
+        float output = 0.0;
+        for (int j=row_elem-1; j < next_row_elem-1; j++){
+            //if(i==0) printf("val[%d][]\n",j);
+            // I or J or val arrays - can be put in shared memory 
+            // as the access is random and reused in next calls of gpuSpMV function.
+            if(j>=i) output +=  val[j] * inputVecX[J[j]-1];
+            //if(i==0) printf("val[%d][%d] = %g, %g, %g\n",j,J[j]-1,val[j],inputVecX[J[j]-1],output);
+        }
+        outputVecY[i] = output;
+    }
+}
+__global__ void gpuPreConjugateGradient2(int *I, int *J, float *val, float *L,float *U, float *x,  float *Ax, float *p, float *r, float *Z, float *Y, 
+            DPS_Const *result,double *d_result){
+    //Jacovi diagonal preconditioner version
+    cg::thread_block cta = cg::this_thread_block();
+    cg::grid_group grid = cg::this_grid();
+    //int TID = blockDim.x*(gridDim.x*blockIdx.y+blockIdx.x)+threadIdx.x;
+    int k = 0;
+    int max_iter = 100000;
+    float a = 1.0;
+    float na = -1.0;
+    int nnz = 5 * result[0].A_size;
+    int N = result[0].A_size;
+    float rsold,rnew,Temp;
+    float nalpha,alpha,beta;
+
+    rsold = 0.0;
+    if (threadIdx.x == 0 && blockIdx.x == 0){
+        *d_result = 0.0;  
+    } 
+    gpuSpMV(I, J, val, nnz, N, a, x, Ax, cta, grid);  // Ax = A * x
+    gpuSaxpy(Ax, r, na, N, grid);  // r0 = b - A*x
+    gpuSpMV_for_Lower(I, J, L, nnz, N, r, Y, cta, grid); // Solve L*y0 = r0
+    gpuSpMV_for_Upper(I, J, U, nnz, N, Y, Z, cta, grid);  // Solve L^T*z0 = y0
+    gpuCopyVector(Z, p, N, grid); // p0 = z0
+    //if(r[TID] !=0) printf("r[%d] = %g\n",TID,r[TID]); 
+    cg::sync(grid);
+    gpuDotProduct(r, Z, d_result, N, cta, grid); // rsold =  r0 * z0
+    cg::sync(grid);
+    rsold = *d_result;
+    //if(threadIdx.x == 0 && blockIdx.x == 0) printf("First:result[0].rsold = %g\n",rsold);
+    //return;
+    while (rsold > result[0].tol2 && k <= max_iter){
+        k++;
+        gpuSpMV(I, J, val, nnz, N, a, p, Ax, cta, grid);
+        if (threadIdx.x == 0 && blockIdx.x == 0){
+            *d_result = 0.0;  
+        } 
+        cg::sync(grid);
+        //if(Ax[TID] !=0) printf("Ax[%d] = %g\n",TID,Ax[TID]);
+        gpuDotProduct(p, Ax, d_result, N, cta, grid);
+        cg::sync(grid);
+        Temp = *d_result;
+        //if(threadIdx.x == 0 && blockIdx.x == 0) printf("Temp = %g\n",Temp);
+        //return;
+        alpha = (Temp)? rsold/Temp:0.0f;
+        gpuSaxpy(p, x, alpha, N, grid);
+        nalpha = -alpha;
+        gpuSaxpy(Ax, r, nalpha, N, grid);
+        gpuSpMV_for_Lower(I, J, L, nnz, N, r, Y, cta, grid); // Solve L*y0 = r0
+        gpuSpMV_for_Upper(I, J, U, nnz, N, Y, Z, cta, grid);  // Solve L^T*z0 = y0
+        if (threadIdx.x == 0 && blockIdx.x == 0){
+            *d_result = 0.0;  
+        } 
+        cg::sync(grid);
+        gpuDotProduct(r, Z, d_result, N, cta, grid);
+        cg::sync(grid);
+        rnew = *d_result;
+        beta = (rsold) ? rnew/rsold: 0.0f;
+        gpuRSaxpy(Z, p, beta, N, grid);
+        rsold = rnew;
+        rnew = 0.0;
+        //if(threadIdx.x == 0 && blockIdx.x == 0 && k<20) printf("Iter = %d, temp = %g,  AL = %g, BE = %g Res = %g\n",k,Temp,alpha,beta,rsold);
+    }
+    if(threadIdx.x == 0 && blockIdx.x == 0 ) printf("End Iter = %d, Res = %g, b = %g, a = %g\n",k,Temp,alpha,beta,rsold);
 }

@@ -108,8 +108,15 @@ __global__ void multiGpuPreConjugateGradient(int *I, int *J, float *val, float *
 //
 void Field_Method7_Initial();
 float *dev_Y;
-int *dev_Li,*dev_Lj,*dev_Ui,*dev_Uj;
 float *dev_L,*dev_U;
+__device__ void gpuSpMV_for_Lower(int *I, int *J, float *val, int nnz, int num_rows, float *inputVecX, 
+                        float *outputVecY, cg::thread_block &cta, const cg::grid_group &grid);
+__device__ void gpuSpMV_for_Upper(int *I, int *J, float *val, int nnz, int num_rows, float *inputVecX, 
+                        float *outputVecY, cg::thread_block &cta, const cg::grid_group &grid);
+void csr_transpose(const int base, const int nrow_A,const int ncol_A, const int arowptr[], const int acol[], const float aval[],  
+                int atrowptr[], int atcol[], float atval[]);
+__global__ void gpuPreConjugateGradient2(int *I, int *J, float *val, float *L,float *U, float *x,  float *Ax, float *p, float *r, float *Z, float *Y, 
+            DPS_Const *result,double *d_result);
 //
 void Set_MatrixPCG_cuda();
 void PCG_SOLVER_Laplace();
