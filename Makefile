@@ -30,6 +30,7 @@ C_OBJS = $(OBJ_DIR)/main.o \
 CU_OBJS = $(OBJ_DIR)/cuda_main.o \
           $(OBJ_DIR)/cuda_start.o \
           $(OBJ_DIR)/cuda_Init.o \
+          $(OBJ_DIR)/cuda_Field_SpeedTest.o  \
           $(OBJ_DIR)/cuda_Field.o 
 #          $(OBJ_DIR)/cuda_run.o \
 #          $(OBJ_DIR)/cuda_move.o \
@@ -53,6 +54,7 @@ CU_H_FILES = inc/xypic.cuh \
              inc/cuda_main.cuh \
              inc/cuda_start.cuh \
              inc/cuda_Init.cuh \
+             inc/cuda_Field_SpeedTest.cuh \
              inc/cuda_Field.cuh \
              inc/helper_cuda.h \
              inc/main.h \
