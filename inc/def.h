@@ -12,6 +12,7 @@
 #define NperTORR   8.3221e20
 #define AMU		1.66053e-27
 #define NVTS    3.3
+#define THREADS_PER_BLOCK 512   
 #endif
 #ifndef __Simulation__
 #define __Simulation__

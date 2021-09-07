@@ -1,4 +1,5 @@
 #include "cuda_Init.cuh"
+#define THREADS_PER_BLOCK 512   
 
 void Set_NullCollisionTime_cuda(){
     
@@ -12,23 +13,25 @@ void Set_Particle_cuda(){
 void Set_Device_Parameter(){
     int grid,block;
     int mingrid;
-    
-    int   *vec_cond_Garray;
-    int   *vec_boundary_Garray;
-    int   *vec_face_Garray;
-    float *vec_area_Garray;
-    float *vec_eps_Carray;
-    float *dev_Sigma;
-    int   *dev_face_Garray;
-    float *dev_area_Garray;
-    float *dev_eps_Carray;
+    int numBlocksPerSm;
+    int numThreads;
+    int numSms;
+    cudaDeviceProp deviceProp;
+
     // Find good grid and block size
     cudaOccupancyMaxPotentialBlockSize(&mingrid,&block,(void*)SetSeed,0,Gsize); 
     grid = (Gsize + block - 1) / block;
-    
-
     cudaMalloc((void**) &devStates, Gsize * sizeof(curandState));
     SetSeed<<<grid,block>>>(devStates,seed,Gsize); // Each thread gets same seed
+    
+    // Field Solver 
+    sMemSize = sizeof(double) * THREADS_PER_BLOCK;
+    numBlocksPerSm = 0;
+    numThreads = THREADS_PER_BLOCK;
+    checkCudaErrors(cudaOccupancyMaxActiveBlocksPerMultiprocessor(&numBlocksPerSm, PCG, numThreads, sMemSize));
+    numSms = prop.multiProcessorCount;
+    FIELD_GRID = dim3(numSms*numBlocksPerSm, 1, 1);
+    FIELD_BLOCK = dim3(THREADS_PER_BLOCK, 1, 1);
 
     // Example : Find good grid and block size
     int Search_Occupancy_Flag = 0;

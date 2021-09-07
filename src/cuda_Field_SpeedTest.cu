@@ -269,12 +269,6 @@ void PCG_Laplace_TEST(){
     float **CPUsol;
     buf = VFMalloc(A_size);
     CPUsol = MFMalloc(CondNUMR,Gsize);
-    vec_A_idx = (int *) malloc(ngx * ngy * sizeof(int));
-    for (i = 0; i < ngx; i++) {
-		for (j = 0; j < ngy; j++) {
-			vec_A_idx[j + i * ngy] = A_idx[i][j];
-		} 
-	}
     // SPEED TEST
     cudaEvent_t start, stop;
     float gputime;
@@ -1161,6 +1155,7 @@ void PCG_Laplace_TEST(){
         printf("Empty Test Laplace Field Solver\n");
         exit(1);
     }
+    exit(1);
 }
 int CG_CPU(){
     int TID,i,Iter=0;
@@ -1522,26 +1517,6 @@ __global__ void a_minus(float *a, float *na) {
   if (gid == 0) {
     na[0] = -(a[0]);
   }
-}
-__global__ void SaveAT2D(float *A, size_t pitch, int height, float *PHI, int n){
-    // High save and load for Matrix type variable 
-	int TID=blockDim.x*(gridDim.x*blockIdx.y+blockIdx.x)+threadIdx.x;
-
-	if(TID>=n) return;
-
-	float *row=(float *)((char *)A+height*pitch);
-
-	row[TID]=PHI[TID];
-}
-__global__ void LoadAT2D(float *A, size_t pitch, int height, float *PHI, int n){
-    // High save and load for Matrix type variable
-	int TID=blockDim.x*(gridDim.x*blockIdx.y+blockIdx.x)+threadIdx.x;
-
-	if(TID>=n) return;
-
-	float *row=(float *)((char *)A+height*pitch);
-
-	PHI[TID]=row[TID];
 }
 __device__ void gpuSpMV(int *I, int *J, float *val, int nnz, int num_rows, float alpha, float *inputVecX, 
                         float *outputVecY, cg::thread_block &cta, const cg::grid_group &grid){

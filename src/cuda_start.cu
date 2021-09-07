@@ -3,7 +3,6 @@
 void info_Device()
 {
 	int count,i;
-	cudaDeviceProp prop;
 	// Determine the number of CUDA capable GPUs
 	checkCudaErrors(cudaGetDeviceCount(&count));
 	if(count<1){
@@ -36,6 +35,17 @@ void info_Device()
 	printf("Max thread dimensions: (%d, %d, %d) \n",prop.maxThreadsDim[0], prop.maxThreadsDim[1], prop.maxThreadsDim[2]);
 	printf("Max grid dimensions: (%d, %d, %d) \n",prop.maxGridSize[0], prop.maxGridSize[1], prop.maxGridSize[2]);
 	printf("---------------------------------------------------\n");	
+	checkCudaErrors(cudaGetDeviceProperties(&prop, device_num));
+    if (!prop.managedMemory){
+        // This sample requires being run on a device that supports Unified Memory
+        fprintf(stderr, "Unified Memory not supported on this device\n");
+        exit(EXIT_WAIVED);
+    }
+    // This sample requires being run on a device that supports Cooperative Kernel Launch
+    if (!prop.cooperativeLaunch){
+        printf("\nSelected GPU (%d) does not support Cooperative Kernel Launch, Waiving the run\n", device_num);
+        exit(EXIT_WAIVED);
+    }
 }
 void start_cuda(){
 

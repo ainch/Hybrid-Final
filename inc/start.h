@@ -56,7 +56,6 @@ float dt;   // timestsep for PIC
 float dtc; // time step for continuity equation
 int CYCLE_NUM; // Minimum frequency number of cycle
 int Lap_Field_Solver_Test,Lap_Field_Solver_Flag,Lap_Field_Solver_Save;
-int Preconditioner_Flag;
 float PCGtol;
 float PCGtol2;
 int HISTMAX;
@@ -75,7 +74,7 @@ CollF *Coll_Flag;
 //
 int FieldIter;
 int A_size;
-float *A_val,*MatTA;
+float *A_val,*TA_val;
 int *Ai,*Aj;
 int **A_idx;
 float *MatM,**cond_b,*temp_b;

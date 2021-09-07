@@ -690,10 +690,10 @@ void InputRead() {
    SubObject4 = json_object_get_object(MainObject,"SimulationMethod");   
    DT_PIC = IVnZC("TimeStep_PIC",(int)json_object_get_number(SubObject4,"TimeStep_PIC"));
    DT_CONTI = IVnZC("TimeStep_Conti",(int)json_object_get_number(SubObject4,"TimeStep_Conti"));
-   Lap_Field_Solver_Test = (int)json_object_get_number(SubObject4,"Laplace_Test_Flag");
-   Lap_Field_Solver_Flag = (int)json_object_get_number(SubObject4,"Laplace_Field_Solver");
-   Lap_Field_Solver_Save = (int)json_object_get_number(SubObject4,"Laplace_Field_Tec_Save");
-   Preconditioner_Flag = (int)json_object_get_number(SubObject4,"Preconditioner");
+   SubObject5 = json_object_get_object(SubObject4,"FieldTest");  
+   Lap_Field_Solver_Test = (int)json_object_get_number(SubObject5,"Laplace_Test_Flag");
+   Lap_Field_Solver_Flag = (int)json_object_get_number(SubObject5,"Laplace_Field_Solver");
+   Lap_Field_Solver_Save = (int)json_object_get_number(SubObject5,"Laplace_Field_Tec_Save");
    PCGtol = FVnZC("PCGMarginOfError",(float)json_object_get_number(SubObject4,"PCGMarginOfError"));
    PCGtol2 = PCGtol*PCGtol;
    HISTMAX = IVnZC("HistoryMax",(int)json_object_get_number(SubObject4,"HistoryMax"));
@@ -1765,7 +1765,7 @@ void FieldSolverSetting(){
 	}
    A_size--;
    A_val = VFMalloc(5 * A_size);
-   MatTA = VFMalloc(5 * A_size);
+   TA_val = VFMalloc(5 * A_size);
    Ai = VIMalloc(A_size + 1);
 	Aj = VIMalloc(5 * A_size);
    MatM = VFMalloc(A_size); // Preconditioner
@@ -1774,7 +1774,7 @@ void FieldSolverSetting(){
    //phi_dw = MatrixMalloc(CondNUMR, ngx); 
 	//phi_u = MatrixMalloc(CondNUMR, ngx);
    VFInit(A_val,0.0,5*A_size);
-   VFInit(MatTA,0.0,5*A_size);
+   VFInit(TA_val,0.0,5*A_size);
    VIInit(Ai,0.0,A_size+1);
    VIInit(Aj,0.0,5*A_size);
    VFInit(MatM,0.0,A_size);
@@ -1783,7 +1783,7 @@ void FieldSolverSetting(){
    //MFInit(phi_dw,0.0,CondNUMR,A_size);
    //MFInit(phi_u,0.0,CondNUMR,A_size);
    //
-   CG_Matrix_Setting(A_val, Ai, Aj, cond_b, MatM, MatTA, temp_b);
+   CG_Matrix_Setting(A_val, Ai, Aj, cond_b, MatM, TA_val, temp_b);
    //
    if(PRINT_Flag && A_size<100){
       printf("A_size=%d\n",A_size);
@@ -1799,7 +1799,7 @@ void FieldSolverSetting(){
       }printf("\n");
       printf("TA_val\n");
       for(i=0;i<5*A_size;i++){
-         printf(" %g",MatTA[i]);
+         printf(" %g",TA_val[i]);
       }printf("\n");
       printf("Aj\n");
       for(i=0;i<5*A_size;i++){

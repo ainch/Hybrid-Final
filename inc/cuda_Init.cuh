@@ -4,11 +4,16 @@ extern long int seed;
 extern int ngx,ngy;
 extern int Gsize;
 extern int device_num;
+extern cudaDeviceProp prop;
+extern __global__ void PCG(int *I, int *J, float *val, float *x, float *M, float *Ax, float *p, float *r, float *Z, 
+            int N, int nnz, float tol2, int *Iter, double *d_result);
 #ifndef __CUDA_INIT_CUH__
 #define __CUDA_INIT_CUH__
 curandState *devStates;
-int FIELD_GRID, REDUCTION_GRID, EFIELD_GRID, MOVE_GRID, SORT_GRID, MCC_GRID,DEPOSIT_GRID;
-int FIELD_BLOCK, REDUCTION_BLOCK, EFIELD_BLOCK, MOVE_BLOCK, SORT_BLOCK,MCC_BLOCK, DEPOSIT_BLOCK;
+int REDUCTION_GRID, EFIELD_GRID, MOVE_GRID, SORT_GRID, MCC_GRID,DEPOSIT_GRID;
+int REDUCTION_BLOCK, EFIELD_BLOCK, MOVE_BLOCK, SORT_BLOCK,MCC_BLOCK, DEPOSIT_BLOCK;
+int sMemSize;
+dim3 FIELD_GRID,FIELD_BLOCK;
 
 void Set_Device_Parameter();
 void Set_Particle_cuda();

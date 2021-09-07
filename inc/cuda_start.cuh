@@ -13,6 +13,7 @@ extern void (*CONTIEQ)();
 extern void (*DIAG)();
 #ifndef __CUDA_START_CUH__
 #define __CUDA_START_CUH__
+cudaDeviceProp prop;
 void info_Device(); 	// Select GPU
 void start_cuda();		// Select Module
 #endif

@@ -8,15 +8,19 @@ extern float PCGtol2;
 extern HGA *vec_G;
 extern int CondNUMR;
 extern int Lap_Field_Solver_Test,Lap_Field_Solver_Flag,Lap_Field_Solver_Save;
-extern int Preconditioner_Flag;
 extern int FieldIter;
 extern int A_size;
-extern float *A_val,*MatTA;
+extern float *A_val,*TA_val;
 extern int *Ai,*Aj;
 extern int **A_idx;
 extern float *MatM,**cond_b,*temp_b;
 extern float **phi_dw,**phi_u;
 extern int FIELD_GRID, FIELD_BLOCK;
+extern float *dev_A;	
+extern int *dev_Aj,*dev_Ai;
+extern int   *vec_A_idx;
+extern float *dev_M;
+extern float *dev_AP,*dev_X,*dev_b,*dev_R,*dev_Z,*dev_P;
 extern "C" void Field_Laplace_Solution_Save(char *Filename,float **Sol);
 extern "C" float *VFMalloc(int size);
 extern "C" void VFInit(float *V,float C,int size);
@@ -31,9 +35,7 @@ cusparseDnVecDescr_t vecAP;
 
 cudaGraph_t initGraph;
 cudaGraphExec_t graphExec;
-float *Lap_TEMP_Sol; // Temperature Solution of Laplace Equation
-float **Lap_PHI_Sol; // Each of conductor Phi Solution of Laplace Equation, This is Device value
-float **Lap_SIG_Sol; // Each of conductor Sigma Solution of Laplace Equation for external circuit
+
 size_t pitch;
 // ORIGIN GPU PCG parameter
 DPS_Const *dev_PCG_const;
@@ -51,11 +53,7 @@ int PCG_CPU();
 // FOR Field method 2
 void Field_Method2_Initial();
 int CG_GPU();
-float *dev_A;	
-int *dev_Aj,*dev_Ai;
-int   *vec_A_idx;
-float *dev_M;
-float *dev_AP,*dev_X,*dev_b,*dev_R,*dev_Z,*dev_P;
+
 // FOR Field method 3
 void Field_Method3_Initial();
 cublasHandle_t cublasHandle;
@@ -117,6 +115,4 @@ int PCG_LAP_Divide(int grid,int block);
 __global__ void Make_PCG_DATA_Init(DPS_Data *p, int size,float *MatrixM);
 __global__ void Make_PCG_Const_Init(DPS_Const *p,int Asize, float tol);
 __global__ void PCG_LAP(float *A,int *Ai,int *Aj, DPS_Const *PCG_C, DPS_Data *PCG_D,float *X,float *b);
-__global__ void SaveAT2D(float *A, size_t pitch, int height, float *PHI, int n);
-__global__ void LoadAT2D(float *A, size_t pitch, int height, float *PHI, int n);
 #endif
