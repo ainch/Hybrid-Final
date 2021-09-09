@@ -20,7 +20,8 @@ extern float *MatM,**cond_b,*temp_b;
 extern float *Host_G_buf, *Host_C_buf;
 extern int sMemSize;
 extern dim3 FIELD_GRID,FIELD_BLOCK;
-
+extern int MainGas;
+extern BackG *BG;	// background species
 extern "C" void Field_Laplace_Solution_Save(char *Filename,float **Sol);
 extern "C" float *VFMalloc(int size);
 extern "C" void VFInit(float *V,float C,int size);
@@ -62,6 +63,8 @@ __global__ void PCG(int *I, int *J, float *val, float *x, float *M, float *Ax, f
 __global__ void PCG_Deposit_Lap(int Gsize, int *IDX, GGA *vecG, int k, float *X, float *PHI);
 __global__ void PCG_Deposit_Temp(int Gsize, int *IDX, float *X, GGA *vecG);
 __global__ void Cond_Sigma_Lap(int ngx, int ngy, float dx, float dy, float zlength, GGA *vecG, GCA *vecC, float *Phi, float *Sigma);
+__global__ void Calculate_1GasPara(int Gsize, float mass, float press, GGA *vecG);
+__global__ void Calculate_2GasPara(int Gsize, float mass1, float press1, float mass2, float press2, GGA *vecG);
 __global__ void SaveAT2D(float *A, size_t pitch, int height, float *PHI, int n);
 __global__ void LoadAT2D(float *A, size_t pitch, int height, float *PHI, int n);
 #endif

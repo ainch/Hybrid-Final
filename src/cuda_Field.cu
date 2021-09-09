@@ -2,46 +2,16 @@
 //
 void PCG_SOLVER_Laplace(){
     int i,j,k,TID;
-    dim3 grid(ngx * ngy / 1024 + 1, 1);
-	dim3 block(1024);
+    int blockSize,gridSize;
     cudaEvent_t start, stop; // SPEED TEST
     float gputime; // SPEED TEST
-    // 
-    int blockSize,gridSize;
-    int blockSize2,gridSize2;
     cudaOccupancyMaxPotentialBlockSize(&gridSize,&blockSize,(void*)PCG_Deposit_Lap,0,Gsize); 
     gridSize = (Gsize + blockSize - 1) / blockSize;
-    cudaOccupancyMaxPotentialBlockSize(&gridSize2,&blockSize2,(void*)Cond_Sigma_Lap,0,Gsize); 
-    gridSize2 = (Gsize + blockSize2 - 1) / blockSize2;
-    cudaOccupancyMaxPotentialBlockSize(&gridSize2,&blockSize2,(void*)SaveAT2D,0,Gsize); 
-    gridSize2 = (Gsize + blockSize2 - 1) / blockSize2;
-    printf("g = %d, b = %d\n",gridSize,blockSize);
-    printf("g2 = %d, b2 = %d\n",gridSize2,blockSize2);
-    printf("g3 = %d, b3 = %d\n",FIELD_GRID,FIELD_BLOCK);
-    //
-    // OUTPUT
-    // Lap_TEMP_Sol[Gsize] : Temperature Profile
-    // Lap_PHI_Sol[CondNUMR][Gsize] : Each of conductor Phi Profile, This is Device value
-    // Lap_SIG_Sol[CondNUMR][CondNUMR] : Each of conductor Sigma Profile for external circuit
     void *kernelArgs[] = {
-        (void*)&dev_Ai,
-        (void*)&dev_Aj,
-        (void*)&dev_A,
-        (void*)&dev_X,
-        (void*)&dev_M,
-        (void*)&dev_AP,
-        (void*)&dev_P,
-        (void*)&dev_R,
-        (void*)&dev_Z,
-        (void*)&N,
-        (void*)&nz,
-        (void*)&PCGtol2,
-        (void*)&FIter,
-        (void*)&dot_result,
+        (void*)&dev_Ai, (void*)&dev_Aj, (void*)&dev_A,  (void*)&dev_X,  (void*)&dev_M,
+        (void*)&dev_AP, (void*)&dev_P,  (void*)&dev_R,  (void*)&dev_Z,  (void*)&N,
+        (void*)&nz,     (void*)&PCGtol2,    (void*)&FIter,  (void*)&dot_result,
     };
-    char Namebuf[256];
-    float **CPUsol;
-    CPUsol = MFMalloc(CondNUMR,Gsize);
     for (k = 0; k < CondNUMR; k++) {
         printf(" Laplace Solution %d",k);
         checkCudaErrors(cudaMemcpy(dev_R, cond_b[k], N * sizeof(float),cudaMemcpyHostToDevice));
@@ -65,12 +35,12 @@ void PCG_SOLVER_Laplace(){
         checkCudaErrors(cudaMemcpy(Host_G_buf, dev_phi_buf, Gsize * sizeof(float),cudaMemcpyDeviceToHost));
 		for (j = 0; j < Gsize; j++) {
 			if (vec_G[j].CondID){
-                Lap_SIG_Sol[k][vec_G[j].CondID - 1] += Host_G_buf[j] * vec_G[j].Area;
+                Lap_SIG_Sol[k][vec_G[j].CondID - 1] += Host_G_buf[j] * vec_G[j].Area; // Each of conductor Sigma Profile for external circuit
             } 
 		}
         for (j = 0; j < CondNUMR; j++)
 			printf(" - Lap_SIG_Sol[%d][%d]= %g\n", k, j, Lap_SIG_Sol[k][j]);
-        SaveAT2D<<<gridSize,blockSize>>>(Lap_PHI_Sol, pitch, i, dev_phi, Gsize);
+        SaveAT2D<<<gridSize,blockSize>>>(Lap_PHI_Sol, pitch, i, dev_phi, Gsize); // Each of conductor Phi Profile, This is Device value
     }
     printf("/***********Calculate temperature distribution**********/\n");
     checkCudaErrors(cudaMemcpy(dev_R, dev_Tb, N * sizeof(float),cudaMemcpyDeviceToDevice));
@@ -79,22 +49,9 @@ void PCG_SOLVER_Laplace(){
 	printf(" - Iter = %d, rsold^2 = %g\n",*FIter,*dot_result);
 	printf("/*******************************************************/\n");
     PCG_Deposit_Temp<<<gridSize,blockSize>>>(Gsize, dev_A_idx, dev_X, dev_GvecSet);
-
-    
+    if(MainGas == ARGON || MainGas == OXYGEN) Calculate_1GasPara<<<gridSize,blockSize>>>(Gsize, BG[0].mass, BG[0].Pres, dev_GvecSet); 
+    else if(MainGas == ARO2) Calculate_2GasPara<<<gridSize,blockSize>>>(Gsize, BG[0].mass, BG[0].Pres, BG[1].mass, BG[1].Pres, dev_GvecSet);
     checkCudaErrors(cudaMemcpy(vec_G, dev_GvecSet, Gsize * sizeof(GGA), cudaMemcpyDeviceToHost));
-    for(i=0;i<Gsize;i++){
-        CPUsol[0][i] = vec_G[i].Temp;
-        CPUsol[1][i] = vec_G[i].BackDens;
-    }
-    sprintf(Namebuf,"Test");
-    Field_Laplace_Solution_Save(Namebuf,CPUsol);
-
-    // Laplace Solution
-    //cudaMallocPitch(&Lap_PHI_Sol, &pitch, Gsize * sizeof(float), CondNUMR); // for Laplace Solution
-    //cudaMalloc((void**) &Lap_TEMP_Sol, Gsize * sizeof(int));
-    // cudaMemset((void *) array, 0, Gsize * sizeof(int));
-
-    exit(1);
 }
 void Set_MatrixPCG_cuda(){
     int i,j;
@@ -349,6 +306,20 @@ __global__ void PCG_Deposit_Temp(int Gsize, int *IDX, float *X, GGA *vecG)
 
 	if(TID>=Gsize) return;
 	else if(IDX[TID]) vecG[TID].Temp = X[IDX[TID]-1];
+}
+__global__ void Calculate_1GasPara(int Gsize, float mass, float press, GGA *vecG){
+	int TID=blockDim.x*(gridDim.x*blockIdx.y+blockIdx.x)+threadIdx.x;
+	if(TID>=Gsize) return;
+    vecG[TID].BackDen1 = NperTORR*press/(vecG[TID].Temp*8.6142e-5+DBL_MIN);
+	vecG[TID].BackVel1 = sqrt(vecG[TID].Temp*1.38e-23/mass);
+}
+__global__ void Calculate_2GasPara(int Gsize, float mass1, float press1, float mass2, float press2, GGA *vecG){
+	int TID=blockDim.x*(gridDim.x*blockIdx.y+blockIdx.x)+threadIdx.x;
+	if(TID>=Gsize) return;
+    vecG[TID].BackDen1 = NperTORR*press1/(vecG[TID].Temp*8.6142e-5+DBL_MIN);
+	vecG[TID].BackVel1 = sqrt(vecG[TID].Temp*1.38e-23/mass1);
+    vecG[TID].BackDen2 = NperTORR*press2/(vecG[TID].Temp*8.6142e-5+DBL_MIN);
+	vecG[TID].BackVel2 = sqrt(vecG[TID].Temp*1.38e-23/mass2);
 }
 __global__ void SaveAT2D(float *A, size_t pitch, int height, float *PHI, int n){
     // High save and load for Matrix type variable 

@@ -1331,10 +1331,12 @@ void Geometry_setting() {
       vec_G[i].Boundary = (int) 0;
       vec_G[i].CondID = (int) 0;
       vec_G[i].Temp = (float) 0.0;
-      vec_G[i].BackDens = (float) 0.0;
-      vec_G[i].BackVels = (float) 0.0;
       vec_G[i].Face = NO_FACE;
       vec_G[i].Area = (float) dy*zlength;
+      vec_G[i].BackDen1 = (float) 0.0;
+      vec_G[i].BackVel1 = (float) 0.0;
+      vec_G[i].BackDen2 = (float) 0.0;
+      vec_G[i].BackVel2 = (float) 0.0;
    }
    vec_C = (GCA *) malloc(Csize * sizeof(GCA));
    for(i=0;i<Csize;i++){

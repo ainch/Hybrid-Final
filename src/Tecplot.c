@@ -520,7 +520,7 @@ void Main_Variable_printorSave(){
     fprintf(fp, "\"Boundary\",\n");
     fprintf(fp, "\"CondID\",\n");
     fprintf(fp, "\"Temp\",\n");
-    fprintf(fp, "\"BackDens\",\n");
+    fprintf(fp, "\"BackDen1\",\n");
     fprintf(fp, "\"face\",\n");
     fprintf(fp, "\"area\",\n");
 	fprintf(fp, "ZONE I = %d, J = %d, F=BLOCK,\n", ngx, ngy);
@@ -550,7 +550,7 @@ void Main_Variable_printorSave(){
     );kk++;if(kk==nbar){fprintf(fp, "\n\t");kk=0;}}kk=0;fprintf(fp, "\n");}
     kk = 0;for(j=0;j<ngy;j++){fprintf(fp, "\t");for(i=0;i<ngx;i++){
     fprintf(fp, "%.3e\t",
-			vec_G[i*ngy+j].BackDens
+			vec_G[i*ngy+j].BackDen1
     );kk++;if(kk==nbar){fprintf(fp, "\n\t");kk=0;}}kk=0;fprintf(fp, "\n");}
     kk = 0;for(j=0;j<ngy;j++){fprintf(fp, "\t");for(i=0;i<ngx;i++){
     fprintf(fp, "%d\t",
