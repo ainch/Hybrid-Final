@@ -8,7 +8,7 @@ extern float xlength,ylength,zlength;
 extern Species *SP;// particle species
 extern int NP_LIMIT; //Each of particle limit
 extern HCP *PtD;
-extern HCA *vec_C;
+extern GCA *vec_C;
 extern float **MFMalloc(int sizeX,int sizeY);
 extern void MFInit(float **M,float C,int sizeX,int sizeY);
 

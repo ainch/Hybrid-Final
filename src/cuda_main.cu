@@ -179,6 +179,7 @@ __global__ void MakeVectorForMoveKernel(int ngx,int ngy,point *p)
     int i = blockIdx.x * blockDim.x + threadIdx.x;
     p[i].a = (float)ngx;
     p[i].b = (float)ngy;
+	printf("point.a: %g, point.b: %g\n",p[i].a,p[i].b);
 }
 int test(void)
 {
@@ -202,7 +203,7 @@ int test(void)
     printf("testKernel results:\n");
     for(int i = 0; i < numPoints; ++i)
     {
-        printf("point.a: %g, point.b: %g\n",cpuPointArray[i].a,cpuPointArray[i].b);
+        //printf("point.a: %g, point.b: %g\n",cpuPointArray[i].a,cpuPointArray[i].b);
     }
         // deallocate memory
     free(cpuPointArray);

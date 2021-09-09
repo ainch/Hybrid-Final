@@ -257,10 +257,6 @@ void PCG_Laplace_TEST(){
     // Lap_Field_Solver_Flag 6 - [GPU] [Jacovi] Preconditioned Conjugate Gradient + Multi GPU 
     // Lap_Field_Solver_Flag 7 - [GPU] [IChol] Preconditioned Conjugate Gradient 
     // Lap_Field_Solver_Flag 8 - [GPU] [ILU] Preconditioned Conjugate Gradient 
-    // OUTPUT
-    // Lap_TEMP_Sol[Gsize] : Temperature Profile
-    // Lap_PHI_Sol[CondNUMR][Gsize] : Each of conductor Phi Profile, This is Device value
-    // Lap_SIG_Sol[CondNUMR][CondNUMR] : Each of conductor Sigma Profile for external circuit
     int i,j,k,TID; 
     int mingrid;
     int IIter;

@@ -1326,19 +1326,21 @@ void Geometry_setting() {
    y_Garray=VFMalloc(ngy);
    for(i=0;i<ngy;i++) y_Garray[i]=i*dy;
    //
-   vec_G = (HGA *) malloc(Gsize * sizeof(HGA));
+   vec_G = (GGA *) malloc(Gsize * sizeof(GGA));
    for(i=0;i<Gsize;i++){
       vec_G[i].Boundary = (int) 0;
       vec_G[i].CondID = (int) 0;
       vec_G[i].Temp = (float) 0.0;
       vec_G[i].BackDens = (float) 0.0;
-      vec_G[i].face = NO_FACE;
-      vec_G[i].area = (float) dy*zlength;
+      vec_G[i].BackVels = (float) 0.0;
+      vec_G[i].Face = NO_FACE;
+      vec_G[i].Area = (float) dy*zlength;
    }
-   vec_C = (HCA *) malloc(Csize * sizeof(HCA));
+   vec_C = (GCA *) malloc(Csize * sizeof(GCA));
    for(i=0;i<Csize;i++){
       vec_C[i].PlasmaRegion = (int) 1;
       vec_C[i].eps_r = (float) 1.0;
+      vec_C[i].eps = (float) 0.0;
    }
    //Make Boundary 
    for(j=0;j<ngy;j++){
@@ -1376,7 +1378,7 @@ void Geometry_setting() {
          for (j=CondY0[k];j<=CondY1[k];j++){
             ID = i*ngy + j;
             vec_G[ID].CondID = CondM_ID[k];
-            if(vec_G[ID].Boundary == 0 || vec_G[ID].Boundary == DIELECTRIC){
+            if(vec_G[ID].Boundary == 0 || vec_G[ID].Boundary == DIELECTRIC || vec_G[ID].Boundary == NEUMANN){
                vec_G[ID].Boundary = CONDUCTOR;
                vec_G[ID].Temp = CondTEMP[k];
             }
@@ -1403,63 +1405,63 @@ void Geometry_setting() {
          P4 = vec_C[CID-ncy-1].eps_r;
          if(vec_G[ID].Boundary == DIELECTRIC){
             if((P2==1.0 && P1==1.0 && P4==1.0) || (P2!=0.0 && P1!=0.0 && P4!=0.0 && P3==0.0)) {             
-               vec_G[ID].face=UL_CORN;
-               vec_G[ID].area= Face_To_Area(UL_CORN);
+               vec_G[ID].Face=UL_CORN;
+               vec_G[ID].Area= Face_To_Area(UL_CORN);
             }else if((P2==1.0 && P1==1.0 && P3==1.0) || (P2!=0.0 && P1!=0.0 && P3!=0.0 && P4==0.0)) {            
-               vec_G[ID].face=UR_CORN;
-               vec_G[ID].area= Face_To_Area(UR_CORN);
+               vec_G[ID].Face=UR_CORN;
+               vec_G[ID].Area= Face_To_Area(UR_CORN);
             }else if((P2==1.0 && P1==1.0 && P4!=1.0 && P3!=1.0) || (P2!=0.0 && P1!=0.0 && P4==0.0 && P3==0.0)) {
-               vec_G[ID].face=UP;
-               vec_G[ID].area= Face_To_Area(UP);
+               vec_G[ID].Face=UP;
+               vec_G[ID].Area= Face_To_Area(UP);
             }else if((P4==1.0 && P3==1.0 && P2==1.0) || (P2!=0.0 && P4!=0.0 && P3!=0.0 && P1==0.0)) {             
-               vec_G[ID].face=LL_CORN;
-               vec_G[ID].area= Face_To_Area(LL_CORN);
+               vec_G[ID].Face=LL_CORN;
+               vec_G[ID].Area= Face_To_Area(LL_CORN);
             }else if((P4==1.0 && P3==1.0 && P1==1.0) || (P1!=0.0 && P4!=0.0 && P3!=0.0 && P2==0.0)) {            
-               vec_G[ID].face=LR_CORN;
-               vec_G[ID].area= Face_To_Area(LR_CORN);
+               vec_G[ID].Face=LR_CORN;
+               vec_G[ID].Area= Face_To_Area(LR_CORN);
             }else if((P4==1.0 && P3==1.0 && P1!=1.0 && P2!=1.0) || (P4!=0.0 && P3!=0.0 && P1==0.0 && P2==0.0)) {             
-               vec_G[ID].face=DOWN;
-               vec_G[ID].area= Face_To_Area(DOWN);
+               vec_G[ID].Face=DOWN;
+               vec_G[ID].Area= Face_To_Area(DOWN);
             }else if((P4==1.0 && P2==1.0 && P1!=1.0 && P3!=1.0) || (P4!=0.0 && P2!=0.0 && P1==0.0 && P3==0.0)) {              
-               vec_G[ID].face=LEFT;
-               vec_G[ID].area= Face_To_Area(LEFT);
+               vec_G[ID].Face=LEFT;
+               vec_G[ID].Area= Face_To_Area(LEFT);
             }else if((P4!=1.0 && P2!=1.0 && P1==1.0 && P3==1.0) || (P4==0.0 && P2==0.0 && P1!=0.0 && P3!=0.0)) {              
-               vec_G[ID].face=RIGHT;
-               vec_G[ID].area= Face_To_Area(RIGHT);
+               vec_G[ID].Face=RIGHT;
+               vec_G[ID].Area= Face_To_Area(RIGHT);
             }  
          }
          if(vec_G[ID].Boundary == CONDUCTOR){
             if((P2==1.0 && P1==1.0 && P4==1.0)||(P2!=0.0 && P1!=0.0 && P4!=0.0 && P3==0.0)) {
-               vec_G[ID].face=UL_CORN;
-               vec_G[ID].area= 0.5*(dx+dy)*zlength;
+               vec_G[ID].Face=UL_CORN;
+               vec_G[ID].Area= 0.5*(dx+dy)*zlength;
             }
             else if((P2==1.0 && P1==1.0 && P3==1.0)||(P2!=0.0 && P1!=0.0 && P3!=0.0 && P4==0.0)) {
-               vec_G[ID].face=UR_CORN;
-               vec_G[ID].area= 0.5*(dx+dy)*zlength;
+               vec_G[ID].Face=UR_CORN;
+               vec_G[ID].Area= 0.5*(dx+dy)*zlength;
             }
             else if((P2==1.0 && P1==1.0 && P4!=1.0 && P3!=1.0)||(P2!=0.0 && P1!=0.0 && P4==0.0 && P3==0.0)) {
-               vec_G[ID].face=UP;
-               vec_G[ID].area= dx*zlength;
+               vec_G[ID].Face=UP;
+               vec_G[ID].Area= dx*zlength;
             }
             else if((P4==1.0 && P3==1.0 && P2==1.0)||(P2!=0.0 && P4!=0.0 && P3!=0.0 && P1==0.0)) {
-               vec_G[ID].face=LL_CORN;
-               vec_G[ID].area= 0.5*(dx+dy)*zlength;
+               vec_G[ID].Face=LL_CORN;
+               vec_G[ID].Area= 0.5*(dx+dy)*zlength;
             }
             else if((P4==1.0 && P3==1.0 && P1==1.0)||(P1!=0.0 && P4!=0.0 && P3!=0.0 && P2==0.0)) {
-               vec_G[ID].face=LR_CORN;
-               vec_G[ID].area= 0.5*(dx+dy)*zlength;
+               vec_G[ID].Face=LR_CORN;
+               vec_G[ID].Area= 0.5*(dx+dy)*zlength;
             }
             else if((P4==1.0 && P3==1.0 && P1!=1.0 && P2!=1.0)||(P4!=0.0 && P3!=0.0 && P1==0.0 && P2==0.0)) {
-               vec_G[ID].face=DOWN;
-               vec_G[ID].area= dx*zlength;
+               vec_G[ID].Face=DOWN;
+               vec_G[ID].Area= dx*zlength;
             }
             else if((P4==1.0 && P2==1.0 && P1!=1.0 && P3!=1.0)||(P4!=0.0 && P2!=0.0 && P1==0.0 && P3==0.0)) {
-               vec_G[ID].face=LEFT;
-               vec_G[ID].area= dy*zlength;
+               vec_G[ID].Face=LEFT;
+               vec_G[ID].Area= dy*zlength;
             }
             else if((P4!=1.0 && P2!=1.0 && P1==1.0 && P3==1.0)||(P4==0.0 && P2==0.0 && P1!=0.0 && P3!=0.0)) {
-               vec_G[ID].face=RIGHT;
-               vec_G[ID].area= dy*zlength;
+               vec_G[ID].Face=RIGHT;
+               vec_G[ID].Area= dy*zlength;
             }
          }
       }
@@ -1467,150 +1469,150 @@ void Geometry_setting() {
    for(j=1;j<ncy;j++) {
       ID = j;
       if(vec_G[ID].Boundary==DIRICHLET) {
-         vec_G[ID].face=RIGHT;
-         vec_G[ID].area=dy*zlength;
+         vec_G[ID].Face=RIGHT;
+         vec_G[ID].Area=dy*zlength;
          if(vec_G[ID+1].CondID==0 && vec_G[ID-1].CondID!=0 && vec_G[ID].CondID!=0) {
-            vec_G[ID].face=UP;
-            vec_G[ID].area=dx*zlength;
+            vec_G[ID].Face=UP;
+            vec_G[ID].Area=dx*zlength;
          }else if(vec_G[ID+1].CondID!=0 && vec_G[ID-1].CondID==0 && vec_G[ID].CondID!=0) {
-            vec_G[ID].face=DOWN;
-            vec_G[ID].area=dx*zlength;
+            vec_G[ID].Face=DOWN;
+            vec_G[ID].Area=dx*zlength;
          }else if(vec_G[ID+1].CondID!=0 && vec_G[ID-1].CondID!=0 && vec_G[ID].CondID!=0) {
-            vec_G[ID].face=NO_FACE;
-            vec_G[ID].area=dy*zlength;
+            vec_G[ID].Face=NO_FACE;
+            vec_G[ID].Area=dy*zlength;
          }else if(vec_G[ID+1].CondID==0 && vec_G[ID-1].CondID==0 && vec_G[ID].CondID!=0) {
-            vec_G[ID].face=NO_FACE;
-            vec_G[ID].area=dy*zlength;
+            vec_G[ID].Face=NO_FACE;
+            vec_G[ID].Area=dy*zlength;
          }
       }else if(vec_G[ID].Boundary==NEUMANN) {
-         vec_G[ID].face=NO_FACE;
-         vec_G[ID].area=dy*zlength;
+         vec_G[ID].Face=NO_FACE;
+         vec_G[ID].Area=dy*zlength;
          if(vec_G[ID+1].CondID==0 && vec_G[ID-1].CondID!=0 && vec_G[ID].CondID!=0) {
-            vec_G[ID].face=UP;
-            vec_G[ID].area=dx*zlength;
+            vec_G[ID].Face=UP;
+            vec_G[ID].Area=dx*zlength;
          }else if(vec_G[ID+1].CondID!=0 && vec_G[ID-1].CondID==0 && vec_G[ID].CondID!=0) {
-            vec_G[ID].face=DOWN;
-            vec_G[ID].area=dx*zlength;
+            vec_G[ID].Face=DOWN;
+            vec_G[ID].Area=dx*zlength;
          }else if(vec_G[ID+1].CondID!=0 && vec_G[ID-1].CondID!=0 && vec_G[ID].CondID==0) {
-            vec_G[ID].face=RIGHT;
-            vec_G[ID].area=dy*zlength;
+            vec_G[ID].Face=RIGHT;
+            vec_G[ID].Area=dy*zlength;
          }
       }
       ID = ncx*ngy+j;
       if(vec_G[ID].Boundary==DIRICHLET) {
-         vec_G[ID].face=LEFT;
-         vec_G[ID].area=dy*zlength;
+         vec_G[ID].Face=LEFT;
+         vec_G[ID].Area=dy*zlength;
          if(vec_G[ID+1].CondID==0 && vec_G[ID-1].CondID!=0 && vec_G[ID-ngy].CondID!=0) {
-            vec_G[ID].face=UP;
-            vec_G[ID].area=dx*zlength;
+            vec_G[ID].Face=UP;
+            vec_G[ID].Area=dx*zlength;
          }else if(vec_G[ID+1].CondID!=0 && vec_G[ID-1].CondID==0 && vec_G[ID-ngy].CondID!=0) {
-            vec_G[ID].face=DOWN;
-            vec_G[ID].area=dx*zlength;
+            vec_G[ID].Face=DOWN;
+            vec_G[ID].Area=dx*zlength;
          }else if(vec_G[ID+1].CondID!=0 && vec_G[ID-1].CondID!=0 && vec_G[ID-ngy].CondID!=0) {
-            vec_G[ID].face=NO_FACE;
-            vec_G[ID].area=dy*zlength;
+            vec_G[ID].Face=NO_FACE;
+            vec_G[ID].Area=dy*zlength;
          }else if(vec_G[ID+1].CondID==0 && vec_G[ID-1].CondID==0 && vec_G[ID-ngy].CondID!=0) {
-            vec_G[ID].face=NO_FACE;
-            vec_G[ID].area=dy*zlength;
+            vec_G[ID].Face=NO_FACE;
+            vec_G[ID].Area=dy*zlength;
          }
       }else if(vec_G[ID].Boundary==NEUMANN) {
-         vec_G[ID].face=NO_FACE;
-         vec_G[ID].area=dy*zlength;
+         vec_G[ID].Face=NO_FACE;
+         vec_G[ID].Area=dy*zlength;
          if(vec_G[ID+1].CondID==0 && vec_G[ID-1].CondID!=0 && vec_G[ID-ngy].CondID!=0) {
-            vec_G[ID].face=UP;
-            vec_G[ID].area=dx*zlength;
+            vec_G[ID].Face=UP;
+            vec_G[ID].Area=dx*zlength;
          }else if(vec_G[ID+1].CondID!=0 && vec_G[ID-1].CondID==0 && vec_G[ID-ngy].CondID!=0) {
-            vec_G[ID].face=DOWN;
-            vec_G[ID].area=dx*zlength;
+            vec_G[ID].Face=DOWN;
+            vec_G[ID].Area=dx*zlength;
          }else if(vec_G[ID+1].CondID!=0 && vec_G[ID-1].CondID!=0 && vec_G[ID-ngy].CondID==0) {
-            vec_G[ID].face=LEFT;
-            vec_G[ID].area=dy*zlength;
+            vec_G[ID].Face=LEFT;
+            vec_G[ID].Area=dy*zlength;
          }
       }
    }
    for(i=1;i<ncx;i++) {
       ID = i*ngy;
       if(vec_G[ID].Boundary==DIRICHLET) {
-         vec_G[ID].face=UP;
-         vec_G[ID].area=dx*zlength;
+         vec_G[ID].Face=UP;
+         vec_G[ID].Area=dx*zlength;
          if(vec_G[ID+ngy].CondID==0 && vec_G[ID-ngy].CondID!=0 && vec_G[ID].CondID!=0) {
-            vec_G[ID].face=RIGHT;
-            vec_G[ID].area=dy*zlength;
+            vec_G[ID].Face=RIGHT;
+            vec_G[ID].Area=dy*zlength;
          }else if(vec_G[ID+ngy].CondID!=0 && vec_G[ID-ngy].CondID==0 && vec_G[ID].CondID!=0) {
-            vec_G[ID].face=LEFT;
-            vec_G[ID].area=dy*zlength;
+            vec_G[ID].Face=LEFT;
+            vec_G[ID].Area=dy*zlength;
          }else if(vec_G[ID+ngy].CondID!=0 && vec_G[ID-ngy].CondID!=0 && vec_G[ID].CondID!=0) {
-            vec_G[ID].face=NO_FACE;
-            vec_G[ID].area=dy*zlength;
+            vec_G[ID].Face=NO_FACE;
+            vec_G[ID].Area=dy*zlength;
          }else if(vec_G[ID+ngy].CondID==0 && vec_G[ID-ngy].CondID==0 && vec_G[ID].CondID!=0) {
-            vec_G[ID].face=NO_FACE;
-            vec_G[ID].area=dy*zlength;
+            vec_G[ID].Face=NO_FACE;
+            vec_G[ID].Area=dy*zlength;
          }
       }else if(vec_G[ID].Boundary==NEUMANN) {
-         vec_G[ID].face=NO_FACE;
-         vec_G[ID].area=dy*zlength;
+         vec_G[ID].Face=NO_FACE;
+         vec_G[ID].Area=dy*zlength;
          if(vec_G[ID+ngy].CondID==0 && vec_G[ID-ngy].CondID!=0 && vec_G[ID].CondID!=0) {
-            vec_G[ID].face=RIGHT;
-            vec_G[ID].area=dy*zlength;
+            vec_G[ID].Face=RIGHT;
+            vec_G[ID].Area=dy*zlength;
          }else if(vec_G[ID+ngy].CondID!=0 && vec_G[ID-ngy].CondID==0 && vec_G[ID].CondID!=0) {
-            vec_G[ID].face=LEFT;
-            vec_G[ID].area=dy*zlength;
+            vec_G[ID].Face=LEFT;
+            vec_G[ID].Area=dy*zlength;
          }else if(vec_G[ID+ngy].CondID!=0 && vec_G[ID-ngy].CondID!=0 && vec_G[ID].CondID==0) {
-            vec_G[ID].face=UP;
-            vec_G[ID].area=dx*zlength;
+            vec_G[ID].Face=UP;
+            vec_G[ID].Area=dx*zlength;
          }
       }
       ID = i*ngy+ncy;
       if(vec_G[ID].Boundary==DIRICHLET) {
-         vec_G[ID].face=DOWN;
-         vec_G[ID].area=dx*zlength;
+         vec_G[ID].Face=DOWN;
+         vec_G[ID].Area=dx*zlength;
          if(vec_G[ID+ngy].CondID==0 && vec_G[ID-ngy].CondID!=0 && vec_G[ID-1].CondID!=0) {
-            vec_G[ID].face=RIGHT;
-            vec_G[ID].area=dy*zlength;
+            vec_G[ID].Face=RIGHT;
+            vec_G[ID].Area=dy*zlength;
          }else if(vec_G[ID+ngy].CondID!=0 && vec_G[ID-ngy].CondID==0 && vec_G[ID-1].CondID!=0) {
-            vec_G[ID].face=LEFT;
-            vec_G[ID].area=dy*zlength;
+            vec_G[ID].Face=LEFT;
+            vec_G[ID].Area=dy*zlength;
          }else if(vec_G[ID+ngy].CondID!=0 && vec_G[ID-ngy].CondID!=0 && vec_G[ID-1].CondID!=0) {
-            vec_G[ID].face=NO_FACE;
-            vec_G[ID].area=dy*zlength;
+            vec_G[ID].Face=NO_FACE;
+            vec_G[ID].Area=dy*zlength;
          }else if(vec_G[ID+ngy].CondID==0 && vec_G[ID-ngy].CondID==0 && vec_G[ID-1].CondID!=0) {
-            vec_G[ID].face=NO_FACE;
-            vec_G[ID].area=dy*zlength;
+            vec_G[ID].Face=NO_FACE;
+            vec_G[ID].Area=dy*zlength;
          }
       }else if(vec_G[ID].Boundary==NEUMANN) {
-         vec_G[ID].face=NO_FACE;
-         vec_G[ID].area=dy*zlength;
+         vec_G[ID].Face=NO_FACE;
+         vec_G[ID].Area=dy*zlength;
          if(vec_G[ID+ngy].CondID==0 && vec_G[ID-ngy].CondID!=0 && vec_G[ID-1].CondID!=0) {
-            vec_G[ID].face=RIGHT;
-            vec_G[ID].area=dy*zlength;
+            vec_G[ID].Face=RIGHT;
+            vec_G[ID].Area=dy*zlength;
          }else if(vec_G[ID+ngy].CondID!=0 && vec_G[ID-ngy].CondID==0 && vec_G[ID-1].CondID!=0) {
-            vec_G[ID].face=LEFT;
-            vec_G[ID].area=dy*zlength;
+            vec_G[ID].Face=LEFT;
+            vec_G[ID].Area=dy*zlength;
          }else if(vec_G[ID+ngy].CondID!=0 && vec_G[ID-ngy].CondID!=0 && vec_G[ID-1].CondID==0) {
-            vec_G[ID].face=DOWN;
-            vec_G[ID].area=dx*zlength;
+            vec_G[ID].Face=DOWN;
+            vec_G[ID].Area=dx*zlength;
          }
       }
    }
    ID = 0;
    if(vec_G[ID].Boundary==DIRICHLET  && vec_G[ID+1].CondID==0) {
-      vec_G[ID].face=UR_CORN;
-      vec_G[ID].area= 0.5*(dx+dy)*zlength;
+      vec_G[ID].Face=UR_CORN;
+      vec_G[ID].Area= 0.5*(dx+dy)*zlength;
    }
    ID = ncx*ngy;
    if(vec_G[ID].Boundary==DIRICHLET  && vec_G[ID+1].CondID==0) {
-      vec_G[ID].face=UL_CORN;
-      vec_G[ID].area= 0.5*(dx+dy)*zlength;
+      vec_G[ID].Face=UL_CORN;
+      vec_G[ID].Area= 0.5*(dx+dy)*zlength;
    }
    ID = ncy;
    if(vec_G[ID].Boundary==DIRICHLET  && vec_G[ID+1].CondID==0) {
-      vec_G[ID].face=LR_CORN;
-      vec_G[ID].area= 0.5*(dx+dy)*zlength;
+      vec_G[ID].Face=LR_CORN;
+      vec_G[ID].Area= 0.5*(dx+dy)*zlength;
    }
    ID = ncx*ngy+ncy;
    if(vec_G[ID].Boundary==DIRICHLET  && vec_G[ID+1].CondID==0) {
-      vec_G[ID].face=LL_CORN;
-      vec_G[ID].area= 0.5*(dx+dy)*zlength;
+      vec_G[ID].Face=LL_CORN;
+      vec_G[ID].Area= 0.5*(dx+dy)*zlength;
    }
    // Set Structure for GPU
     // make a Set Structure Index
@@ -1710,18 +1712,18 @@ void Geometry_setting() {
             printf(" %3g",vec_G[ID].Temp);
          }printf("\n");
       }printf("\n");
-      printf("vec_G[ID].face\n");
+      printf("vec_G[ID].Face\n");
       for(j=ngy-1;j>=0;j--){
          for(i=0;i<ngx;i++){
             ID = i*ngy+j;
-            printf(" %d",vec_G[ID].face);
+            printf(" %d",vec_G[ID].Face);
          }printf("\n");
       }printf("\n");
-      printf("vec_G[ID].area\n");
+      printf("vec_G[ID].Area\n");
       for(j=ngy-1;j>=0;j--){
          for(i=0;i<ngx;i++){
             ID = i*ngy+j;
-            printf(" %g",vec_G[ID].area);
+            printf(" %g",vec_G[ID].Area);
          }printf("\n");
       }printf("\n");
       printf("vec_C[CID].PlasmaRegion\n");
@@ -1771,8 +1773,6 @@ void FieldSolverSetting(){
    MatM = VFMalloc(A_size); // Preconditioner
    cond_b = MFMalloc(CondNUMR, A_size); // for Laplace solution
    temp_b = VFMalloc(A_size);           // for Laplace solution
-   //phi_dw = MatrixMalloc(CondNUMR, ngx); 
-	//phi_u = MatrixMalloc(CondNUMR, ngx);
    VFInit(A_val,0.0,5*A_size);
    VFInit(TA_val,0.0,5*A_size);
    VIInit(Ai,0.0,A_size+1);
@@ -1780,8 +1780,6 @@ void FieldSolverSetting(){
    VFInit(MatM,0.0,A_size);
    MFInit(cond_b,0.0,CondNUMR,A_size);
    VFInit(temp_b,0.0,A_size);
-   //MFInit(phi_dw,0.0,CondNUMR,A_size);
-   //MFInit(phi_u,0.0,CondNUMR,A_size);
    //
    CG_Matrix_Setting(A_val, Ai, Aj, cond_b, MatM, TA_val, temp_b);
    //

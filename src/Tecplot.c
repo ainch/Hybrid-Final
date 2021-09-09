@@ -554,11 +554,11 @@ void Main_Variable_printorSave(){
     );kk++;if(kk==nbar){fprintf(fp, "\n\t");kk=0;}}kk=0;fprintf(fp, "\n");}
     kk = 0;for(j=0;j<ngy;j++){fprintf(fp, "\t");for(i=0;i<ngx;i++){
     fprintf(fp, "%d\t",
-			vec_G[i*ngy+j].face
+			vec_G[i*ngy+j].Face
     );kk++;if(kk==nbar){fprintf(fp, "\n\t");kk=0;}}kk=0;fprintf(fp, "\n");}
     kk = 0;for(j=0;j<ngy;j++){fprintf(fp, "\t");for(i=0;i<ngx;i++){
     fprintf(fp, "%.3e\t",
-			vec_G[i*ngy+j].area
+			vec_G[i*ngy+j].Area
     );kk++;if(kk==nbar){fprintf(fp, "\n\t");kk=0;}}kk=0;fprintf(fp, "\n");}
 	// GEOMETRY
     fprintf(fp, "GEOMETRY\n");

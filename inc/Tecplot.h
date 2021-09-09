@@ -10,7 +10,7 @@ extern int CondNUM,CondNUMR;
 extern int*CondM_ID, *CondX0,*CondX1,*CondY0,*CondY1;
 extern int DielNUM,DielNUMR;
 extern int *DielM_ID, *DielX0, *DielX1, *DielY0, *DielY1;
-extern HGA *vec_G;
+extern GGA *vec_G;
 extern int MainGas; // Gas type 0:argon, 1:oxygen, 2:argon/oxygen
 extern float LOGX_MIN,LOGX_MAX;
 extern float dLOGX,idLOGX;

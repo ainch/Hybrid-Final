@@ -63,7 +63,7 @@ typedef struct TEST
 {
     float a, b;
 } point;
-typedef struct __Global_PCG_Const_Set{
+typedef struct __Global_PCG_Const_Set{ // for cuda_Field_SpeedTest
 	int A_size;
 	int Iter;
 	float tol;
@@ -74,31 +74,29 @@ typedef struct __Global_PCG_Const_Set{
 	float alpha;
 	float beta;
 }DPS_Const;
-typedef struct __Global_PCG_DATA_Set{
+typedef struct __Global_PCG_DATA_Set{ // for cuda_Field_SpeedTest
 	float R;
 	float Z;
 	float P;
     float AP;
     float M;
 }DPS_Data;
-typedef struct __Host_Gsize_Array{
-	int Boundary;  //Boundary Condition Constant 0~4
+typedef struct __Global_Gsize_Array{
+	int Boundary;   //Boundary Condition Constant 0~4
 	int CondID;		// Conductor ID , NO Conductor is zero
+	int Face;
+	float Area;
 	float Temp;
-	float BackDens;
-    int face;
-    float area;
-}HGA;
-typedef struct __Host_Csize_Array{
+	float BackDen1;
+	float BackVel1;
+	float BackDen2;
+	float BackVel2; 
+}GGA;
+typedef struct __Global_Csize_Array{
     int PlasmaRegion;
     float eps_r;
-}HCA;
-typedef struct __Device_Gsize_Array{
-
-}dev_GA;
-typedef struct __Device_Csize_Array{
-
-}dev_CA;
+	float eps;
+}GCA;
 typedef struct _Host_Charged_Particle
 { // Bufer in CPU
 	float *den;

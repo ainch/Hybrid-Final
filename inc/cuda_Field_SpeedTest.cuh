@@ -5,7 +5,7 @@ extern int ngx,ngy,Gsize;
 extern int A_size;
 extern float PCGtol;
 extern float PCGtol2;
-extern HGA *vec_G;
+extern GGA *vec_G;
 extern int CondNUMR;
 extern int Lap_Field_Solver_Test,Lap_Field_Solver_Flag,Lap_Field_Solver_Save;
 extern int FieldIter;
@@ -14,7 +14,6 @@ extern float *A_val,*TA_val;
 extern int *Ai,*Aj;
 extern int **A_idx;
 extern float *MatM,**cond_b,*temp_b;
-extern float **phi_dw,**phi_u;
 extern int FIELD_GRID, FIELD_BLOCK;
 extern float *dev_A;	
 extern int *dev_Aj,*dev_Ai;
@@ -36,7 +35,6 @@ cusparseDnVecDescr_t vecAP;
 cudaGraph_t initGraph;
 cudaGraphExec_t graphExec;
 
-size_t pitch;
 // ORIGIN GPU PCG parameter
 DPS_Const *dev_PCG_const;
 DPS_Const *Host_PCG_const;

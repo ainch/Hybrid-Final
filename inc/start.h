@@ -38,8 +38,8 @@ float Min_FREQ, Max_FREQ;
 int DielNUM,DielNUMR;
 int *DielM_ID, *DielX0, *DielX1, *DielY0, *DielY1;
 float *DielEPS;
-HGA *vec_G;
-HCA *vec_C;
+GGA *vec_G;
+GCA *vec_C;
 int **StructureIndex;
 int *vec_StructureIndex;
 //
@@ -78,7 +78,6 @@ float *A_val,*TA_val;
 int *Ai,*Aj;
 int **A_idx;
 float *MatM,**cond_b,*temp_b;
-float **phi_dw,**phi_u;
 //
 int TecplotS_CX_Flag;
 int TecplotS_Gsize_Flag;
