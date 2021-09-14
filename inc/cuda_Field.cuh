@@ -22,10 +22,7 @@ extern int sMemSize;
 extern dim3 FIELD_GRID,FIELD_BLOCK;
 extern int MainGas;
 extern BackG *BG;	// background species
-extern "C" void Field_Laplace_Solution_Save(char *Filename,float **Sol);
-extern "C" float *VFMalloc(int size);
-extern "C" void VFInit(float *V,float C,int size);
-extern "C" void VFCopy(float *V,float *C,int size);
+
 
 #ifndef __CUDA_FIELD_CUH__
 #define __CUDA_FIELD_CUH__

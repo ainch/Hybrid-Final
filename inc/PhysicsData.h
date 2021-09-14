@@ -18,7 +18,6 @@ int N_LOGX;
 ArCollD *Ar_Data;
 O2CollD *O2_Data;
 ArO2CollD *ArO2_Data;
-
 void CrossSection(int* Cxnum, int* CXsize, float *CXx, float *CXy);
 float ArSigmaEl(float energy);
 float ArSigmaEx(float energy);

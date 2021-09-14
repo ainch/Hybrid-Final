@@ -1,19 +1,13 @@
 #include "cuda_Init.cuh"
 #define THREADS_PER_BLOCK 512   
 
-void Set_NullCollisionTime_cuda(){
-    
-}
-void Set_DiagParameter_cuda(){
 
+void Set_DiagParameter_cuda(){
     // Host BUF VECTOR
     Host_G_buf = VFMalloc(Gsize);
     Host_C_buf = VFMalloc(Csize);
     VFInit(Host_G_buf,0.0,Gsize);
     VFInit(Host_C_buf,0.0,Csize);
-}
-void Set_Particle_cuda(){
-    
 }
 void Set_Device_Parameter(){
     int grid,block;
@@ -21,8 +15,6 @@ void Set_Device_Parameter(){
     int numBlocksPerSm;
     int numThreads;
     int numSms;
-    cudaDeviceProp deviceProp;
-
     // Find good grid and block size
     cudaOccupancyMaxPotentialBlockSize(&mingrid,&block,(void*)SetSeed,0,Gsize); 
     grid = (Gsize + block - 1) / block;

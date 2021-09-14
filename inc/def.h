@@ -97,11 +97,8 @@ typedef struct __Global_Csize_Array{
     float eps_r;
 	float eps;
 }GCA;
-typedef struct _Host_Charged_Particle
-{ // Bufer in CPU
-	float *den;
-	int *MaxPtNumInCell;// SIZE(Gsize)
-	int *PtNumInCell; 	// SIZE(Gsize)
+typedef struct __Host_Charged_Particle
+{ // for save and dump load
 	int *CellID;// SIZE(NP_LIM)
     float *x;   // SIZE(NP_LIM)
     float *y;  	// SIZE(NP_LIM)
@@ -109,17 +106,26 @@ typedef struct _Host_Charged_Particle
 	float *vy;  // SIZE(NP_LIM)
 	float *vz;  // SIZE(NP_LIM)
 }HCP;
-typedef struct _Device_Charged_Particle
+typedef struct __Global_Charged_Particle
 {
-	//SIZE = MAXNP
+	//SIZE = MAXNP * nsp
 	int CellID;
     float x;  
     float y;
     float vx;
 	float vy;
 	float vz;
-}dev_CP;
-typedef struct tag_species
+}GCP;
+typedef struct __Global_Particle_Gsize_Data
+{
+	//SIZE = Gsize * nsp
+	int PtNumInCell;
+    int MaxPtNumInCell;  
+    float den;
+	float ave_den;
+	float sigma;
+}GPG;
+typedef struct __Global_Info_Particle
 {
 	//Constant
 	char name[10];
@@ -132,6 +138,8 @@ typedef struct tag_species
 	float np2c;					// np2c
 	int Ratio;
 	int MAXNP;					// maximum np
+	int St_num;					// Start Address Number 
+	int End_num;				// End Address Number
 	float mass;
 	float q;
 	float q_density;
@@ -156,16 +164,24 @@ typedef struct BackGround{
 	float Pres;				    // Pressure
 	float Temp;				// Temperature
 	float mass;
+	float InitDens;
 } BackG;
-typedef struct _Collision_Flag
+typedef struct __Global_MCC_sigmav
 {
+	// Size[] = Ar:3, O2:20, ArO2=25
+	float val; // value
+}MCC_sigmav;
+typedef struct __Global_Collision_Flag
+{
+	// Size[TnRct], TnRct = Total Number of Reaction
     float Flag; // CX = Flag * CX
 	float mofM; // target/projectile
 	float Th_e; //Threshold energy
 	float RR; // Reaction RATE
 } CollF;
-typedef struct _Argon_Collision_Data
+typedef struct __Global_Argon_Collision_Data
 {
+	// Size[N_LOGX], N_LOGX = Number of data
     float xe;  // log10(xee)
 	float xee; // pow(10,xe)
 	float cx_0; //"0.e+Ar>e+Ar"
@@ -176,7 +192,7 @@ typedef struct _Argon_Collision_Data
 	float cx_5; //"5.Ar+Ar^>Ar^+Ar"
 	float cx_6; //"6.Ar+Ar^>Ar+Ar^"
 } ArCollD;
-typedef struct _Oxygen_Collision_Data
+typedef struct __Global_Oxygen_Collision_Data
 {
     float xe;  // log10(xee)
 	float xee; // pow(10,xe)
@@ -239,7 +255,7 @@ typedef struct _Oxygen_Collision_Data
     float cx_56; //"56.O^+O2A>O2^+OP");
     float cx_57; //"57.O^+O2B>O2^+OP");
 } O2CollD;
-typedef struct _ArO2_Collision_Data
+typedef struct __Global_ArO2_Collision_Data
 {
     float xe;  // log10(xee)
 	float xee; // pow(10,xe)

@@ -17,8 +17,7 @@ int sMemSize;
 dim3 FIELD_GRID,FIELD_BLOCK;
 float *Host_G_buf, *Host_C_buf;
 void Set_Device_Parameter();
-void Set_Particle_cuda();
-void Set_NullCollisionTime_cuda();
+
 void Set_DiagParameter_cuda();
 __global__ void SetSeed(curandState *state,long int seed,int num);
 __global__ void MyKernel(int *array, int arrayCount);

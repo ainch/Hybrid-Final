@@ -8,10 +8,10 @@ extern "C" void main_cuda()
     info_Device();
     start_cuda();
     Set_Device_Parameter();
-    Set_MatrixPCG_cuda();
     Set_Particle_cuda();
     Set_NullCollisionTime_cuda();
 	Set_DiagParameter_cuda();
+	Set_MatrixPCG_cuda();
 	if(Lap_Field_Solver_Test) PCG_Laplace_TEST();
     PCG_SOLVER_Laplace();
     test();

@@ -325,6 +325,7 @@ void InputRead() {
       BG[0].Pres = Total_Pressure;
       BG[0].Temp = (float)json_object_get_number(BufObject2,"Temp(eV)");
       BG[0].mass = 39.950 * AMU;
+      BG[0].InitDens = NperTORR * BG[0].Pres	/ (BG[0].Temp + DBL_MIN);
       printf("\tAr Ratio = 100 %\n");
       BufObject = json_object_get_object(SubObject3,"NeutralSpecies");
       FG[0].Loadtype = (int)json_object_get_number(BufObject,"Loadtype");
@@ -409,6 +410,7 @@ void InputRead() {
       BG[0].Pres = Total_Pressure;
       BG[0].Temp = (float)json_object_get_number(BufObject2,"Temp(eV)");
       BG[0].mass = 32.0000 * AMU;
+      BG[0].InitDens = NperTORR * BG[0].Pres	/ (BG[0].Temp + DBL_MIN);
       printf("\tO2 Ratio = 100 %\n");
       BufObject = json_object_get_object(SubObject3,"NeutralSpecies");
       FG[0].Loadtype = (int)json_object_get_number(BufObject,"Loadtype");
@@ -538,6 +540,8 @@ void InputRead() {
       BG[1].Pres = Total_Pressure*BG[1].Ratio;
       printf("\tAr Ratio = %3.3g, (%0.3g %)\n",(1-fbuf2)/(1-fbuf2),(1-fbuf2)*100);
       printf("\tO2 Ratio = %0.3g, (%0.3g %)\n",fbuf2/(1-fbuf2),(fbuf2)*100);
+      BG[0].InitDens = NperTORR * BG[0].Pres	/ (BG[0].Temp + DBL_MIN);
+      BG[1].InitDens = NperTORR * BG[1].Pres	/ (BG[1].Temp + DBL_MIN);
       fbuf1 = 0.0;
       fbuf2 = 0.0;
       BufObject = json_object_get_object(SubObject3,"NeutralSpecies");
@@ -1288,6 +1292,8 @@ void Source_setting(){
    dt = 1.0 / Max_FREQ / (float)DT_PIC;
    dtc = dt * (float)DT_CONTI;
    CYCLE_NUM = Max_FREQ / Min_FREQ * DT_PIC;
+   DT_MCC = 0;
+   dt_mcc = 0.0;
    printf("\tPIC TimeStep = %g (s)\n",dt);
    printf("\tContinuity TimeStep = %g (s)\n",dtc);
    printf("\tMinimum Freq Cycle step # = %d (#)\n",CYCLE_NUM);
@@ -1822,10 +1828,15 @@ void FieldSolverSetting(){
    }
 }
 void GasSetting(){
-   int isp;
+   int i,isp;
    printf("Gas and Particle Setting\n");
    PtD = (HCP *) malloc(nsp * sizeof(HCP));
-   printf("\tParicle Load Type : %d\n",SP[0].Loadtype);
+   Host_G_sp = (GPG *) malloc(Gsize * nsp * sizeof(GPG));
+   if(SP[0].Loadtype == 0)       printf("\tParicle Load Type : UNIFORM\n");
+   else if(SP[0].Loadtype == 1)  printf("\tParicle Load Type : EXPONETIAL\n");
+   else if(SP[0].Loadtype == 2)  printf("\tParicle Load Type : COSINE\n");
+   else if(SP[0].Loadtype == 3)  printf("\tParicle Load Type : NP_RAIO\n");
+   else if(SP[0].Loadtype == 4)  printf("\tParicle Load Type : SMARTLOAD\n");
    printf("\tLoad : X0 = %g, X1 = %g, Y0 = %g, Y1 = %g\n",SP[0].x_center, SP[0].x_fall, SP[0].y_center,SP[0].y_fall);
    for(isp=0;isp<nsp;isp++){
       SP[isp].q_density = SP[isp].q * SP[isp].np2c;
@@ -1833,19 +1844,34 @@ void GasSetting(){
 	   SP[isp].qm = SP[isp].q / SP[isp].mass;
 	   SP[isp].Escale = 0.5 * SP[isp].mass / CQ;
 	   SP[isp].Ascale = SP[isp].qm * dt;
+      if(isp ==0){
+         SP[isp].St_num = 0;
+         SP[isp].End_num = SP[isp].St_num + SP[isp].MAXNP - 1;
+      }else{
+         SP[isp].St_num = SP[isp-1].End_num + 1;
+         SP[isp].End_num = SP[isp].St_num + SP[isp].MAXNP - 1;
+      }
+      PtD[isp].CellID = VIMalloc(NP_LIMIT);
       PtD[isp].x = VFMalloc(NP_LIMIT);
       PtD[isp].y = VFMalloc(NP_LIMIT);
       PtD[isp].vx = VFMalloc(NP_LIMIT);
       PtD[isp].vy = VFMalloc(NP_LIMIT);
       PtD[isp].vz = VFMalloc(NP_LIMIT); 
-      PtD[isp].den = VFMalloc(Gsize);
+      VIInit(PtD[isp].CellID,0,NP_LIMIT);
       VFInit(PtD[isp].x,0,NP_LIMIT);
       VFInit(PtD[isp].y,0,NP_LIMIT);
       VFInit(PtD[isp].vx,0,NP_LIMIT);
       VFInit(PtD[isp].vy,0,NP_LIMIT);
       VFInit(PtD[isp].vz,0,NP_LIMIT);
-      VFInit(PtD[isp].den,0,Gsize);
-      SetParticleLoad(isp, SP[isp].InitDens, SP[0].Loadtype,SP[0].x_center, SP[0].x_fall, SP[0].y_center,SP[0].y_fall,SP[isp].vti);
+      if(DumpFlag==0) SetParticleLoad(isp, SP[isp].InitDens, SP[0].Loadtype,SP[0].x_center, SP[0].x_fall, SP[0].y_center,SP[0].y_fall,SP[isp].vti);
+      // Initialize GPG 
+      for(i=0;i<Gsize;i++){
+         Host_G_sp[isp*Gsize+i].den = 0.0;
+         Host_G_sp[isp*Gsize+i].ave_den = 0.0;
+         Host_G_sp[isp*Gsize+i].sigma = 0.0;
+         Host_G_sp[isp*Gsize+i].PtNumInCell = 0;
+         Host_G_sp[isp*Gsize+i].MaxPtNumInCell = (int) SP[isp].MAXNP / Gsize;
+      }
    }
 }
 void DumpRead(int argc, char *argv[]) {

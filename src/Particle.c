@@ -9,12 +9,12 @@ void SetParticleLoad(int isp, float Ninit, int load_type, float x_left,float x_r
 
 	n_per_cell = (int) (Ninit * dx * dy * zlength / SP[isp].np2c);
 	SP[isp].np = 0;
-    		y0 = y_top / dy;
-		y1 = y_bottom / dy - 1;
-		ylen = y1 - y0 + 1;
-		x0 = x_left / dx;
-		x1 = x_right / dx - 1;
-		xlen = x1 - x0 + 1;
+    y0 = y_top / dy;
+	y1 = y_bottom / dy - 1;
+	ylen = y1 - y0 + 1;
+	x0 = x_left / dx;
+	x1 = x_right / dx - 1;
+	xlen = x1 - x0 + 1;
 	///// Loading the velocities and positions depending on\
 	///// the given flag.  This Loader can load particles\
 	///// using a quiet start method, uniform, or randomly
@@ -34,6 +34,7 @@ void SetParticleLoad(int isp, float Ninit, int load_type, float x_left,float x_r
 						maxwellv(&PtD[isp].vx[index], &PtD[isp].vy[index],&PtD[isp].vz[index], vti);
 						PtD[isp].x[index] = (float) i + frand();
 						PtD[isp].y[index] = (float) j + frand();
+						PtD[isp].CellID[index] = i * ngy + j;
 						index++;
 					}
 				}
@@ -75,6 +76,7 @@ void SetParticleLoad(int isp, float Ninit, int load_type, float x_left,float x_r
 						maxwellv(&PtD[isp].vx[index], &PtD[isp].vy[index],&PtD[isp].vz[index], vti);
 						PtD[isp].x[index] = (float) i + frand();
 						PtD[isp].y[index] = (float) j + frand();
+						PtD[isp].CellID[index] = i * ngy + j;
 						index++;
 					}
 				}
@@ -117,6 +119,7 @@ void SetParticleLoad(int isp, float Ninit, int load_type, float x_left,float x_r
 						maxwellv(&PtD[isp].vx[index], &PtD[isp].vy[index],&PtD[isp].vz[index], vti);
 						PtD[isp].x[index] = (float) i + frand();
 						PtD[isp].y[index] = (float) j + frand();
+						PtD[isp].CellID[index] = i * ngy + j;
 						index++;
 					}
 				}
@@ -144,6 +147,7 @@ void SetParticleLoad(int isp, float Ninit, int load_type, float x_left,float x_r
 						maxwellv(&PtD[isp].vx[index], &PtD[isp].vy[index],&PtD[isp].vz[index], vti);
 						PtD[isp].x[index] = (float) i + frand();
 						PtD[isp].y[index] = (float) j + frand();
+						PtD[isp].CellID[index] = i * ngy + j;
 						index++;
 					}
 				}

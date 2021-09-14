@@ -1,16 +1,30 @@
 #include "cuda_Field.cuh"
 //
 void PCG_SOLVER_Laplace(){
-    int i,j,k,TID;
-    int blockSize,gridSize;
+    int i,j,k;
     cudaEvent_t start, stop; // SPEED TEST
     float gputime; // SPEED TEST
+    float *CPU;
+    CPU = VFMalloc(0);
+    // 
+    int blockSize,gridSize;
     cudaOccupancyMaxPotentialBlockSize(&gridSize,&blockSize,(void*)PCG_Deposit_Lap,0,Gsize); 
     gridSize = (Gsize + blockSize - 1) / blockSize;
     void *kernelArgs[] = {
-        (void*)&dev_Ai, (void*)&dev_Aj, (void*)&dev_A,  (void*)&dev_X,  (void*)&dev_M,
-        (void*)&dev_AP, (void*)&dev_P,  (void*)&dev_R,  (void*)&dev_Z,  (void*)&N,
-        (void*)&nz,     (void*)&PCGtol2,    (void*)&FIter,  (void*)&dot_result,
+        (void*)&dev_Ai,
+        (void*)&dev_Aj,
+        (void*)&dev_A,
+        (void*)&dev_X,
+        (void*)&dev_M,
+        (void*)&dev_AP,
+        (void*)&dev_P,
+        (void*)&dev_R,
+        (void*)&dev_Z,
+        (void*)&N,
+        (void*)&nz,
+        (void*)&PCGtol2,
+        (void*)&FIter,
+        (void*)&dot_result,
     };
     for (k = 0; k < CondNUMR; k++) {
         printf(" Laplace Solution %d",k);
@@ -23,7 +37,7 @@ void PCG_SOLVER_Laplace(){
         cudaEventRecord( stop, 0 ); cudaEventSynchronize( stop );
 	    cudaEventElapsedTime( &gputime, start, stop );
 	    cudaEventDestroy( start );cudaEventDestroy( stop );
-        printf(" : Conductor %d = 1 V, Other CondUCTOR = 0 V\n",k);
+        printf(" : Conductor %d = 1 V, Other CondUCTOR = 0 V\n",k+1);
         printf(" - Iter = %d, time = %2.3f (ms), rsold^2 = %g\n",*FIter,gputime,*dot_result);
         //
         checkCudaErrors(cudaMemset((void *) dev_phi, 0.0, Gsize * sizeof(float)));
@@ -34,13 +48,10 @@ void PCG_SOLVER_Laplace(){
         VFInit(Host_G_buf,0.0,Gsize);
         checkCudaErrors(cudaMemcpy(Host_G_buf, dev_phi_buf, Gsize * sizeof(float),cudaMemcpyDeviceToHost));
 		for (j = 0; j < Gsize; j++) {
-			if (vec_G[j].CondID){
-                Lap_SIG_Sol[k][vec_G[j].CondID - 1] += Host_G_buf[j] * vec_G[j].Area; // Each of conductor Sigma Profile for external circuit
-            } 
+			if (vec_G[j].CondID) Lap_SIG_Sol[k][vec_G[j].CondID - 1] += Host_G_buf[j] * vec_G[j].Area;
 		}
-        for (j = 0; j < CondNUMR; j++)
-			printf(" - Lap_SIG_Sol[%d][%d]= %g\n", k, j, Lap_SIG_Sol[k][j]);
-        SaveAT2D<<<gridSize,blockSize>>>(Lap_PHI_Sol, pitch, i, dev_phi, Gsize); // Each of conductor Phi Profile, This is Device value
+        for (j = 0; j < CondNUMR; j++) printf(" - Lap_SIG_Sol[%d][%d]= %g\n", k, j, Lap_SIG_Sol[k][j]);
+        SaveAT2D<<<gridSize,blockSize>>>(Lap_PHI_Sol, pitch, i, dev_phi, Gsize);
     }
     printf("/***********Calculate temperature distribution**********/\n");
     checkCudaErrors(cudaMemcpy(dev_R, dev_Tb, N * sizeof(float),cudaMemcpyDeviceToDevice));
@@ -52,6 +63,7 @@ void PCG_SOLVER_Laplace(){
     if(MainGas == ARGON || MainGas == OXYGEN) Calculate_1GasPara<<<gridSize,blockSize>>>(Gsize, BG[0].mass, BG[0].Pres, dev_GvecSet); 
     else if(MainGas == ARO2) Calculate_2GasPara<<<gridSize,blockSize>>>(Gsize, BG[0].mass, BG[0].Pres, BG[1].mass, BG[1].Pres, dev_GvecSet);
     checkCudaErrors(cudaMemcpy(vec_G, dev_GvecSet, Gsize * sizeof(GGA), cudaMemcpyDeviceToHost));
+    exit(1);
 }
 void Set_MatrixPCG_cuda(){
     int i,j;
@@ -238,7 +250,7 @@ __global__ void PCG(int *I, int *J, float *val, float *x, float *M, float *Ax, f
         rnew = 0.0;
         //if(threadIdx.x == 0 && blockIdx.x == 0 && k<20) printf("Iter = %d, temp = %g,  AL = %g, BE = %g Res = %g\n",k,Temp,alpha,beta,rsold);
     }
-    //if(threadIdx.x == 0 && blockIdx.x == 0 ) printf("End Iter = %d, Res = %g, b = %g, a = %g\n",k,Temp,alpha,beta,rsold);
+    //if(threadIdx.x == 0 && blockIdx.x == 0 ) printf("End Iter = %d, Res = %g, b = %g, a = %g\n",*Iter,Temp,alpha,beta,rsold);
 }
 __global__ void Cond_Sigma_Lap(int ngx, int ngy, float dx, float dy, float zlength, GGA *vecG, GCA *vecC, float *Phi, float *Sigma)
 {

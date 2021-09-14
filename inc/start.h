@@ -48,12 +48,16 @@ int nsp, nfsp, nBG;
 Species *SP;// particle species
 Fluid *FG;	// fluid species
 BackG *BG;	// background species
+HCP *PtD;
+GPG *Host_G_sp;
 float Total_Pressure;
 //
-int DT_PIC;
-int DT_CONTI;
+int DT_PIC;  // Number of 1 cycle step
+int DT_CONTI; // How many times PIC dt?
 float dt;   // timestsep for PIC
 float dtc; // time step for continuity equation
+int DT_MCC; // mcc count for each step
+float dt_mcc; // timestsep for MCC Module
 int CYCLE_NUM; // Minimum frequency number of cycle
 int Lap_Field_Solver_Test,Lap_Field_Solver_Flag,Lap_Field_Solver_Save;
 float PCGtol;
@@ -83,8 +87,6 @@ int TecplotS_CX_Flag;
 int TecplotS_Gsize_Flag;
 int TecplotS_Particle_Flag;
 int TecplotS_Particle_Num;
-//
-HCP *PtD;
 //
 void InputRead();
 void Source_setting();

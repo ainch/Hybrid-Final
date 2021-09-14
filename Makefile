@@ -31,7 +31,9 @@ CU_OBJS = $(OBJ_DIR)/cuda_main.o \
           $(OBJ_DIR)/cuda_start.o \
           $(OBJ_DIR)/cuda_Init.o \
           $(OBJ_DIR)/cuda_Field_SpeedTest.o  \
-          $(OBJ_DIR)/cuda_Field.o 
+          $(OBJ_DIR)/cuda_Field.o \
+          $(OBJ_DIR)/cuda_Particle.o \
+          $(OBJ_DIR)/cuda_mcc.o 
 #          $(OBJ_DIR)/cuda_run.o \
 #          $(OBJ_DIR)/cuda_move.o \
 #          $(OBJ_DIR)/cuda_rand.o \
@@ -56,6 +58,8 @@ CU_H_FILES = inc/xypic.cuh \
              inc/cuda_Init.cuh \
              inc/cuda_Field_SpeedTest.cuh \
              inc/cuda_Field.cuh \
+             inc/cuda_Particle.cuh \
+             inc/cuda_mcc.cuh \
              inc/helper_cuda.h \
              inc/main.h \
              inc/interop.cuh \

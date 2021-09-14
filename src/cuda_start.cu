@@ -2,7 +2,8 @@
 
 void info_Device()
 {
-	int count,i;
+	int count,i,isp;
+	int NeedMemory = 0;
 	// Determine the number of CUDA capable GPUs
 	checkCudaErrors(cudaGetDeviceCount(&count));
 	if(count<1){
@@ -46,6 +47,18 @@ void info_Device()
         printf("\nSelected GPU (%d) does not support Cooperative Kernel Launch, Waiving the run\n", device_num);
         exit(EXIT_WAIVED);
     }
+	// Aprroximation
+    for(isp=0;isp<nsp;isp++){
+        NeedMemory += 6 * SP[isp].MAXNP*sizeof(float)/1024/1024;
+    }
+	NeedMemory += 1.1 * Gsize * sizeof(float);
+	if(prop.totalGlobalMem/1024/1024<NeedMemory){
+		printf("Error : Insufficient GPU memory.\n");
+		printf(" GPU Global: %u Mbytes\n", prop.totalGlobalMem/1024/1024);
+		printf(" Need Memory: %u Mbytes (Approx.)\n", NeedMemory);
+		printf(" You should reduce MaxNP.\n");
+		exit(1);
+	}
 }
 void start_cuda(){
 
