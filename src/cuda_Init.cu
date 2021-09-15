@@ -20,7 +20,8 @@ void Set_Device_Parameter(){
     grid = (Gsize + block - 1) / block;
     cudaMalloc((void**) &devStates, Gsize * sizeof(curandState));
     SetSeed<<<grid,block>>>(devStates,seed,Gsize); // Each thread gets same seed
-    
+    //
+    printf(" Find good grids and blocks. \n");
     // Field Solver 
     sMemSize = sizeof(double) * THREADS_PER_BLOCK;
     numBlocksPerSm = 0;
@@ -29,6 +30,14 @@ void Set_Device_Parameter(){
     numSms = prop.multiProcessorCount;
     FIELD_GRID = dim3(numSms*numBlocksPerSm, 1, 1);
     FIELD_BLOCK = dim3(THREADS_PER_BLOCK, 1, 1);
+    printf(" - Field Solver : [%d][%d]\n",numSms*numBlocksPerSm,THREADS_PER_BLOCK);
+    printf("   Cooperative_groups = [%d]\n",numSms*numBlocksPerSm*THREADS_PER_BLOCK);
+    // Deposit 
+    cudaOccupancyMaxPotentialBlockSize(&mingrid,&block,(void*)DepositAtom,0,Gsize*nsp); 
+    grid = (Gsize*nsp + block - 1) / block;
+    printf(" - Deposit module : [%d][%d]\n",grid,block);
+    DEPOSIT_GRID = dim3(grid, 1, 1);
+    DEPOSIT_BLOCK = dim3(block, 1, 1);
 
     // Example : Find good grid and block size
     int Search_Occupancy_Flag = 0;
@@ -68,7 +77,7 @@ void Set_Device_Parameter(){
 }
 __global__ void SetSeed(curandState *state,long int seed,int num)
 {
-		int TID=blockDim.x*blockIdx.x+threadIdx.x;
+		int TID = blockDim.x * blockIdx.x + threadIdx.x;
 		if(TID>num) return;
     /* Each thread gets same seed, a different sequence number, no offset */
     curand_init(seed, TID, 0, &state[TID]);

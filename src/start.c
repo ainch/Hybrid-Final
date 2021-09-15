@@ -17,7 +17,7 @@ float FVnZC(char A[50],float Value){ // float Value non Zero CHECK
    return Value;
 }
 void InputRead() {
-   int i,j;
+   int i,j,isp;
    int buf;
    int IDn, IDchk[100], IDchk1, IDchk2;
    float fbuf1,fbuf2;
@@ -380,6 +380,7 @@ void InputRead() {
          printf("\t\"Loadtype\" is error in ChargeSpecies.\n"); 
          exit(1);
       }
+      for(isp=0;isp<nsp;isp++) SP[isp].spnum = nsp;
       BufObject2 = json_object_get_object(BufObject,"Electron");
       strcpy(SP[0].name,"Electron");
       SP[0].S_ID = (int)json_object_get_number(BufObject2,"S_ID");
@@ -479,6 +480,7 @@ void InputRead() {
          printf("\t\"Loadtype\" is error in ChargeSpecies.\n"); 
          exit(1);
       }
+      for(isp=0;isp<nsp;isp++) SP[isp].spnum = nsp;
       BufObject2 = json_object_get_object(BufObject,"Electron");
       strcpy(SP[0].name,"Electron");
       SP[0].S_ID = (int)json_object_get_number(BufObject2,"S_ID");
@@ -635,6 +637,7 @@ void InputRead() {
          printf("\t\"Loadtype\" is error in ChargeSpecies.\n"); 
          exit(1);
       }
+      for(isp=0;isp<nsp;isp++) SP[isp].spnum = nsp;
       BufObject2 = json_object_get_object(BufObject,"Electron");
       strcpy(SP[0].name,"Electron");
       SP[0].S_ID = (int)json_object_get_number(BufObject2,"S_ID");

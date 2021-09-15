@@ -58,18 +58,9 @@ void Set_NullCollisionTime_cuda(){
 		}
 		// Null Method Information
 		fprintf(stderr,"--------------<Null Collision Information>-------------\n");
-		fprintf(stderr, " Argon Density = %g\n",BG[0].InitDens);
-		fprintf(stderr, " Metastable Argon Density = %g\n",FG[0].InitDens);
-		fprintf(stderr, " Calculate Result\n");
-		fprintf(stderr, " - Electron sigma*v, Collision Probability\n");
-		fprintf(stderr, "   SigmaV Ar - %g, Ar* - %g\n",Host_SigmaV[0].val,Host_SigmaV[1].val);
-		fprintf(stderr, "   Prob Ar - %g, Ar* - %g\n",Ttarget[0],Ttarget[1]);
-		fprintf(stderr, " - Ar ion \n");
-		fprintf(stderr, "   SigV Ar - %g\n",Host_SigmaV[2].val);
-		fprintf(stderr, "   Prob Ar - %g\n",Ttarget[2]);
-		fprintf(stderr, " - Total Collision probability\n");
-		fprintf(stderr, "   Electon - %2.5f \n",ColProb[0]);
-		fprintf(stderr, "   Ar ion  - %2.5f \n",ColProb[1]);
+		fprintf(stderr, " - Total Collision probability per Time step\n");
+		fprintf(stderr, "   Electon - %2.4f %\n",ColProb[0] * 100);
+		fprintf(stderr, "   Ar ion  - %2.4f %\n",ColProb[1] * 100);
 		fprintf(stderr, " - Number of Electron MCC Cycle\n");
 		fprintf(stderr, "   Cycle : %d, dt_mcc : %g \n",DT_MCC, dt_mcc);
 		fprintf(stderr,"-------------------------------------------------------\n");
@@ -167,19 +158,11 @@ void Set_NullCollisionTime_cuda(){
 		}
 		// Null Method Information
 		fprintf(stderr,"--------------<Null Collision Information>-------------\n");
-		fprintf(stderr, " O2  Density = %g\n",BG[0].InitDens);
-		fprintf(stderr, " O2A Density = %g\n",FG[0].InitDens);
-		fprintf(stderr, " O2B Density = %g\n",FG[1].InitDens);
-		fprintf(stderr, " OP  Density = %g\n",FG[2].InitDens);
-		fprintf(stderr, " OD  Density = %g\n",FG[3].InitDens);
-		fprintf(stderr, " O-  Density = %g\n",SP[3].InitDens);
-		fprintf(stderr, " O2+ Density = %g\n",SP[1].InitDens);
-		fprintf(stderr, " O+  Density = %g\n",SP[2].InitDens);
-		fprintf(stderr, " - Total Collision probability\n");
-		fprintf(stderr, "   Electon - %2.5f \n",ColProb[0]);
-		fprintf(stderr, "   O- ion  - %2.5f \n",ColProb[1]);
-		fprintf(stderr, "   O2+ion  - %2.5f \n",ColProb[2]);
-		fprintf(stderr, "   O+ ion  - %2.5f \n",ColProb[3]);
+		fprintf(stderr, " - Total Collision probability per Time step\n");
+		fprintf(stderr, "   Electon - %2.4f %\n",ColProb[0] * 100);
+		fprintf(stderr, "   O- ion  - %2.4f %\n",ColProb[1] * 100);
+		fprintf(stderr, "   O2+ion  - %2.4f %\n",ColProb[2] * 100);
+		fprintf(stderr, "   O+ ion  - %2.4f %\n",ColProb[3] * 100);
 		fprintf(stderr, " - Number of Electron MCC Cycle\n");
 		fprintf(stderr, "   Cycle : %d, dt_mcc : %g \n",DT_MCC, dt_mcc);
 		fprintf(stderr,"-------------------------------------------------------\n");
@@ -293,23 +276,12 @@ void Set_NullCollisionTime_cuda(){
 		}
 		// Null Method Information
 		fprintf(stderr,"--------------<Null Collision Information>-------------\n");
-		fprintf(stderr, " AR  Density = %g\n",BG[0].InitDens);
-		fprintf(stderr, " O2  Density = %g\n",BG[1].InitDens);
-		fprintf(stderr, " Ar* Density = %g\n",FG[0].InitDens);
-		fprintf(stderr, " O2A Density = %g\n",FG[1].InitDens);
-		fprintf(stderr, " O2B Density = %g\n",FG[2].InitDens);
-		fprintf(stderr, " OP  Density = %g\n",FG[3].InitDens);
-		fprintf(stderr, " OD  Density = %g\n",FG[4].InitDens);
-		fprintf(stderr, " Ar+ Density = %g\n",SP[1].InitDens);
-		fprintf(stderr, " O2+ Density = %g\n",SP[2].InitDens);
-		fprintf(stderr, " O+  Density = %g\n",SP[3].InitDens);
-		fprintf(stderr, " O-  Density = %g\n",SP[4].InitDens);
-		fprintf(stderr, " - Total Collision probability\n");
-		fprintf(stderr, "   Electon - %2.5f \n",ColProb[0]);
-		fprintf(stderr, "   Ar+ion  - %2.5f \n",ColProb[1]);
-		fprintf(stderr, "   O2+ion  - %2.5f \n",ColProb[2]);
-		fprintf(stderr, "   O+ ion  - %2.5f \n",ColProb[3]);
-		fprintf(stderr, "   O- ion  - %2.5f \n",ColProb[4]);
+		fprintf(stderr, " - Total Collision probability per Time step\n");
+		fprintf(stderr, "   Electon - %2.4f %\n",ColProb[0] * 100);
+		fprintf(stderr, "   Ar+ion  - %2.4f %\n",ColProb[1] * 100);
+		fprintf(stderr, "   O2+ion  - %2.4f %\n",ColProb[2] * 100);
+		fprintf(stderr, "   O+ ion  - %2.4f %\n",ColProb[3] * 100);
+		fprintf(stderr, "   O- ion  - %2.4f %\n",ColProb[4] * 100);
 		fprintf(stderr, " - Number of Electron MCC Cycle\n");
 		fprintf(stderr, "   Cycle : %d, dt_mcc : %g \n",DT_MCC, dt_mcc);
 		fprintf(stderr,"-------------------------------------------------------\n");

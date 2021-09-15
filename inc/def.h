@@ -127,7 +127,9 @@ typedef struct __Global_Particle_Gsize_Data
 }GPG;
 typedef struct __Global_Info_Particle
 {
+	//Size = [nsp]
 	//Constant
+	int spnum;
 	char name[10];
 	int  Loadtype;				// density load type
 	float x_center,x_fall;		// density load position

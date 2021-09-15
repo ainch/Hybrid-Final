@@ -34,7 +34,7 @@
         ]
     },
     "GasSpecies":{
-        "Type(0:Ar,1:O2,2:Ar/O2)":2,
+        "Type(0:Ar,1:O2,2:Ar/O2)":0,
         "TotalPres(Torr)":0.01,
         "Background":{
             "Argon":{"Ratio":50,"Temp(eV)":0.026},

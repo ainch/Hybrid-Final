@@ -25,7 +25,7 @@ extern void Set_NullCollisionTime_cuda();
 extern void Set_DiagParameter_cuda();
 extern void PCG_Laplace_TEST();
 extern void PCG_SOLVER_Laplace();
-
+extern void Deposit_cuda();
 #ifndef __CUDA_MAIN_CUH__
 #define __CUDA_MAIN_CUH__
 float time_sum;

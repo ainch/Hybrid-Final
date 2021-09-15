@@ -51,7 +51,7 @@ void info_Device()
     for(isp=0;isp<nsp;isp++){
         NeedMemory += 6 * SP[isp].MAXNP*sizeof(float)/1024/1024;
     }
-	NeedMemory += 1.1 * Gsize * sizeof(float);
+	//eedMemory += 1.1 * Gsize * sizeof(float);
 	if(prop.totalGlobalMem/1024/1024<NeedMemory){
 		printf("Error : Insufficient GPU memory.\n");
 		printf(" GPU Global: %u Mbytes\n", prop.totalGlobalMem/1024/1024);

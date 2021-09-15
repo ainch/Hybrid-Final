@@ -14,7 +14,8 @@ extern "C" void main_cuda()
 	Set_MatrixPCG_cuda();
 	if(Lap_Field_Solver_Test) PCG_Laplace_TEST();
     PCG_SOLVER_Laplace();
-    test();
+	Deposit_cuda();
+    test(); // start point
 	gputime_field	=0.0;
 	gputime_efield	=0.0;
 	gputime_diag	=0.0;
@@ -168,10 +169,10 @@ extern "C" void main_cuda()
 __global__ void testKernel(point *p)
 {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
-    printf("B data[%d] %g, %g\n",i,p[i].a,p[i].b);
+    //printf("B data[%d] %g, %g\n",i,p[i].a,p[i].b);
     p[i].a = 1.1;
     p[i].b = 2.2;
-    printf("A data[%d] %g, %g\n",i,p[i].a,p[i].b);
+    //printf("A data[%d] %g, %g\n",i,p[i].a,p[i].b);
     
 }
 __global__ void MakeVectorForMoveKernel(int ngx,int ngy,point *p)
@@ -200,7 +201,7 @@ int test(void)
 
     // retrieve the results
     checkCudaErrors(cudaMemcpy(cpuPointArray, gpuPointArray, numBytes, cudaMemcpyDeviceToHost));
-    printf("testKernel results:\n");
+    //printf("testKernel results:\n");
     for(int i = 0; i < numPoints; ++i)
     {
         //printf("point.a: %g, point.b: %g\n",cpuPointArray[i].a,cpuPointArray[i].b);
