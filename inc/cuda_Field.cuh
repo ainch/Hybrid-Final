@@ -46,6 +46,7 @@ size_t pitch;
 float *Lap_TEMP_Sol; // Temperature Solution of Laplace Equation
 float *Lap_PHI_Sol; // Each of conductor Phi Solution of Laplace Equation, This is Device value
 float **Lap_SIG_Sol; // Each of conductor Sigma Solution of Laplace Equation for external circuit
+float *dev_Sigma, *dev_Source;
 void Set_MatrixPCG_cuda();
 void PCG_SOLVER_Laplace();
 __device__ void Mat_x_Vec(int *I, int *J, float *val, int nnz, int num_rows, float alpha, float *inputVecX, 

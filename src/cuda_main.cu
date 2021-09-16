@@ -15,108 +15,20 @@ extern "C" void main_cuda()
 	if(Lap_Field_Solver_Test) PCG_Laplace_TEST();
     PCG_SOLVER_Laplace();
 	Deposit_cuda();
-    test(); // start point
-	gputime_field	=0.0;
-	gputime_efield	=0.0;
-	gputime_diag	=0.0;
-	gputime_move	=0.0;
-	gputime_mcc		=0.0;
-	gputime_continue=0.0;
-	gputime_deposit	=0.0;
-	gputime_sort	=0.0;
-	gputime_trace	=0.0;
-	gputime_dump	=0.0;
-	totaltime		=0.0;
-	TotalT_D		=0;
-	TotalT_H		=0;
-	TotalT_M		=0;
-	TotalT_S		=0;
     exit(1);
     while(1){
-	    cudaEventCreate(&start); cudaEventCreate(&stop);
-		cudaEventRecord( start, 0 );
 		//(*FieldSolver)();
-		cudaEventRecord( stop, 0 ); cudaEventSynchronize( stop );
-		cudaEventElapsedTime( &gputime, start, stop );
-		cudaEventDestroy( start );cudaEventDestroy( stop );
-		gputime_field+=gputime;
-		totaltime+=gputime;
-		//if(FieldIter==0){ fprintf(stderr,"\n\n FieldIter = %d,  step = %g\n\n",FieldIter,t/dt); exit(1);}
-		cudaEventCreate(&start); cudaEventCreate(&stop);
-		cudaEventRecord( start, 0 );
 		//Efield_cuda();
-		cudaEventRecord( stop, 0 ); cudaEventSynchronize( stop );
-		cudaEventElapsedTime( &gputime, start, stop );
-		cudaEventDestroy( start );cudaEventDestroy( stop );
-		gputime_efield+=gputime;
-		totaltime+=gputime;
-		///////////////////////////////////////////////////////////////////////////
-		cudaEventCreate(&start); cudaEventCreate(&stop);
-		cudaEventRecord( start, 0 );
-		//(*MOVE)();
-		cudaEventRecord( stop, 0 ); cudaEventSynchronize( stop );
-		cudaEventElapsedTime( &gputime, start, stop );
-		cudaEventDestroy( start );cudaEventDestroy( stop );
-		gputime_move+=gputime;
-		totaltime+=gputime;
-		///////////////////////////////////////////////////////////////////////////
-		cudaEventCreate(&start); cudaEventCreate(&stop);
-		cudaEventRecord( start, 0 );
+		//(*MOVE)();;
 		//(*SORT_BOUNDARY)();
-		cudaEventRecord( stop, 0 ); cudaEventSynchronize( stop );
-		cudaEventElapsedTime( &gputime, start, stop );
-		cudaEventDestroy( start );cudaEventDestroy( stop );
-		gputime_sort+=gputime;
-		totaltime+=gputime;
-		///////////////////////////////////////////////////////////////////////////
-		cudaEventCreate(&start); cudaEventCreate(&stop);
-		cudaEventRecord( start, 0 );
 		//(*MCC)();
-		cudaEventRecord( stop, 0 ); cudaEventSynchronize( stop );
-		cudaEventElapsedTime( &gputime, start, stop );
-		cudaEventDestroy( start );cudaEventDestroy( stop );
-		gputime_mcc+=gputime;
-		totaltime+=gputime;
-		///////////////////////////////////////////////////////////////////////////
 		//if(add_izrate_flag==1) AddIzRate_cuda(); // ADD IONIZATION RATE instead of ICP SOURCE
-		///////////////////////////////////////////////////////////////////////////
-		cudaEventCreate(&start); cudaEventCreate(&stop);
-		cudaEventRecord( start, 0 );
 		//(*DEPOSIT)();
-		cudaEventRecord( stop, 0 ); cudaEventSynchronize( stop );
-		cudaEventElapsedTime( &gputime, start, stop );
-		cudaEventDestroy( start );cudaEventDestroy( stop );
-		gputime_deposit+=gputime;
-		totaltime+=gputime;
-		///////////////////////////////////////////////////////////////////////////
-		cudaEventCreate(&start); cudaEventCreate(&stop);
-		cudaEventRecord( start, 0 );
 		//if(Meta_flag){// && t>5e-7)
 		//	(*CONTIEQ)();
 		//}
-		cudaEventRecord( stop, 0 ); cudaEventSynchronize( stop );
-		cudaEventElapsedTime( &gputime, start, stop );
-		cudaEventDestroy( start );cudaEventDestroy( stop );
-		gputime_continue+=gputime;
-		totaltime+=gputime;
-		///////////////////////////////////////////////////////////////////////////
-		cudaEventCreate(&start); cudaEventCreate(&stop);
-		cudaEventRecord( start, 0 );
 		//(*DIAG)();
-		cudaEventRecord( stop, 0 ); cudaEventSynchronize( stop );
-		cudaEventElapsedTime( &gputime, start, stop );
-		cudaEventDestroy( start );cudaEventDestroy( stop );
-		gputime_diag+=gputime;
-		totaltime+=gputime;
-		///////////////////////////////////////////////////////////////////////////
-		cudaEventCreate(&start); cudaEventCreate(&stop);
-		cudaEventRecord( start, 0 );
 		//SaveDumpFile();
-		cudaEventRecord( stop, 0 ); cudaEventSynchronize( stop );
-		cudaEventElapsedTime( &gputime, start, stop );
-		cudaEventDestroy( start );cudaEventDestroy( stop );
-		gputime_dump+=gputime;
-		totaltime+=gputime;
 		if(t>1e-3) break;        
         //
         t+=dt; // real time

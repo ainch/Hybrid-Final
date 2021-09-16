@@ -1389,7 +1389,7 @@ void Geometry_setting() {
          for (j=CondY0[k];j<=CondY1[k];j++){
             ID = i*ngy + j;
             vec_G[ID].CondID = CondM_ID[k];
-            if(vec_G[ID].Boundary == 0 || vec_G[ID].Boundary == DIELECTRIC || vec_G[ID].Boundary == NEUMANN){
+            if(vec_G[ID].Boundary == 0 || vec_G[ID].Boundary == DIELECTRIC){
                vec_G[ID].Boundary = CONDUCTOR;
                vec_G[ID].Temp = CondTEMP[k];
             }
@@ -1477,34 +1477,35 @@ void Geometry_setting() {
          }
       }
    }
+
    for(j=1;j<ncy;j++) {
       ID = j;
       if(vec_G[ID].Boundary==DIRICHLET) {
          vec_G[ID].Face=RIGHT;
          vec_G[ID].Area=dy*zlength;
-         if(vec_G[ID+1].CondID==0 && vec_G[ID-1].CondID!=0 && vec_G[ID].CondID!=0) {
+         if(vec_G[ID+1].CondID==0 && vec_G[ID-1].CondID!=0 && vec_G[ngy+ID].CondID!=0) {
             vec_G[ID].Face=UP;
             vec_G[ID].Area=dx*zlength;
-         }else if(vec_G[ID+1].CondID!=0 && vec_G[ID-1].CondID==0 && vec_G[ID].CondID!=0) {
+         }else if(vec_G[ID+1].CondID!=0 && vec_G[ID-1].CondID==0 && vec_G[ngy+ID].CondID!=0) {
             vec_G[ID].Face=DOWN;
             vec_G[ID].Area=dx*zlength;
-         }else if(vec_G[ID+1].CondID!=0 && vec_G[ID-1].CondID!=0 && vec_G[ID].CondID!=0) {
+         }else if(vec_G[ID+1].CondID!=0 && vec_G[ID-1].CondID!=0 && vec_G[ngy+ID].CondID!=0) {
             vec_G[ID].Face=NO_FACE;
             vec_G[ID].Area=dy*zlength;
-         }else if(vec_G[ID+1].CondID==0 && vec_G[ID-1].CondID==0 && vec_G[ID].CondID!=0) {
+         }else if(vec_G[ID+1].CondID==0 && vec_G[ID-1].CondID==0 && vec_G[ngy+ID].CondID!=0) {
             vec_G[ID].Face=NO_FACE;
             vec_G[ID].Area=dy*zlength;
          }
       }else if(vec_G[ID].Boundary==NEUMANN) {
          vec_G[ID].Face=NO_FACE;
          vec_G[ID].Area=dy*zlength;
-         if(vec_G[ID+1].CondID==0 && vec_G[ID-1].CondID!=0 && vec_G[ID].CondID!=0) {
+         if(vec_G[ID+1].CondID==0 && vec_G[ID-1].CondID!=0 && vec_G[ngy+ID].CondID!=0) {
             vec_G[ID].Face=UP;
             vec_G[ID].Area=dx*zlength;
-         }else if(vec_G[ID+1].CondID!=0 && vec_G[ID-1].CondID==0 && vec_G[ID].CondID!=0) {
+         }else if(vec_G[ID+1].CondID!=0 && vec_G[ID-1].CondID==0 && vec_G[ngy+ID].CondID!=0) {
             vec_G[ID].Face=DOWN;
             vec_G[ID].Area=dx*zlength;
-         }else if(vec_G[ID+1].CondID!=0 && vec_G[ID-1].CondID!=0 && vec_G[ID].CondID==0) {
+         }else if(vec_G[ID+1].CondID!=0 && vec_G[ID-1].CondID!=0 && vec_G[ngy+ID].CondID==0) {
             vec_G[ID].Face=RIGHT;
             vec_G[ID].Area=dy*zlength;
          }
@@ -1546,29 +1547,29 @@ void Geometry_setting() {
       if(vec_G[ID].Boundary==DIRICHLET) {
          vec_G[ID].Face=UP;
          vec_G[ID].Area=dx*zlength;
-         if(vec_G[ID+ngy].CondID==0 && vec_G[ID-ngy].CondID!=0 && vec_G[ID].CondID!=0) {
+         if(vec_G[ID+ngy].CondID==0 && vec_G[ID-ngy].CondID!=0 && vec_G[ID+1].CondID!=0) {
             vec_G[ID].Face=RIGHT;
             vec_G[ID].Area=dy*zlength;
-         }else if(vec_G[ID+ngy].CondID!=0 && vec_G[ID-ngy].CondID==0 && vec_G[ID].CondID!=0) {
+         }else if(vec_G[ID+ngy].CondID!=0 && vec_G[ID-ngy].CondID==0 && vec_G[ID+1].CondID!=0) {
             vec_G[ID].Face=LEFT;
             vec_G[ID].Area=dy*zlength;
-         }else if(vec_G[ID+ngy].CondID!=0 && vec_G[ID-ngy].CondID!=0 && vec_G[ID].CondID!=0) {
+         }else if(vec_G[ID+ngy].CondID!=0 && vec_G[ID-ngy].CondID!=0 && vec_G[ID+1].CondID!=0) {
             vec_G[ID].Face=NO_FACE;
             vec_G[ID].Area=dy*zlength;
-         }else if(vec_G[ID+ngy].CondID==0 && vec_G[ID-ngy].CondID==0 && vec_G[ID].CondID!=0) {
+         }else if(vec_G[ID+ngy].CondID==0 && vec_G[ID-ngy].CondID==0 && vec_G[ID+1].CondID!=0) {
             vec_G[ID].Face=NO_FACE;
             vec_G[ID].Area=dy*zlength;
          }
       }else if(vec_G[ID].Boundary==NEUMANN) {
          vec_G[ID].Face=NO_FACE;
          vec_G[ID].Area=dy*zlength;
-         if(vec_G[ID+ngy].CondID==0 && vec_G[ID-ngy].CondID!=0 && vec_G[ID].CondID!=0) {
+         if(vec_G[ID+ngy].CondID==0 && vec_G[ID-ngy].CondID!=0 && vec_G[ID+1].CondID!=0) {
             vec_G[ID].Face=RIGHT;
             vec_G[ID].Area=dy*zlength;
-         }else if(vec_G[ID+ngy].CondID!=0 && vec_G[ID-ngy].CondID==0 && vec_G[ID].CondID!=0) {
+         }else if(vec_G[ID+ngy].CondID!=0 && vec_G[ID-ngy].CondID==0 && vec_G[ID+1].CondID!=0) {
             vec_G[ID].Face=LEFT;
             vec_G[ID].Area=dy*zlength;
-         }else if(vec_G[ID+ngy].CondID!=0 && vec_G[ID-ngy].CondID!=0 && vec_G[ID].CondID==0) {
+         }else if(vec_G[ID+ngy].CondID!=0 && vec_G[ID-ngy].CondID!=0 && vec_G[ID+1].CondID==0) {
             vec_G[ID].Face=UP;
             vec_G[ID].Area=dx*zlength;
          }
@@ -1870,6 +1871,7 @@ void GasSetting(){
       // Initialize GPG 
       for(i=0;i<Gsize;i++){
          Host_G_sp[isp*Gsize+i].den = 0.0;
+         Host_G_sp[isp*Gsize+i].smt_den = 0.0;
          Host_G_sp[isp*Gsize+i].ave_den = 0.0;
          Host_G_sp[isp*Gsize+i].sigma = 0.0;
          Host_G_sp[isp*Gsize+i].PtNumInCell = 0;

@@ -122,6 +122,7 @@ typedef struct __Global_Particle_Gsize_Data
 	int PtNumInCell;
     int MaxPtNumInCell;  
     float den;
+	float smt_den;
 	float ave_den;
 	float sigma;
 }GPG;

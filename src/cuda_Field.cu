@@ -130,6 +130,11 @@ void Set_MatrixPCG_cuda(){
 	}
     checkCudaErrors(cudaMalloc((void**) &dev_A_idx, Gsize * sizeof(int)));
     checkCudaErrors(cudaMemcpy(dev_A_idx, vec_A_idx, Gsize * sizeof(int),cudaMemcpyHostToDevice));
+    // dev_Sigma, dev_Source
+    cudaMalloc((void**) &dev_Sigma, Gsize * sizeof(float));
+	cudaMemset((void *) dev_Sigma, 0, Gsize * sizeof(float));
+    cudaMalloc((void**) &dev_Source, Gsize * sizeof(float));
+	cudaMemset((void *) dev_Source, 0, Gsize * sizeof(float));
 }
 __device__ void Mat_x_Vec(int *I, int *J, float *val, int nnz, int num_rows, float alpha, float *inputVecX, 
                         float *outputVecY, cg::thread_block &cta, const cg::grid_group &grid){
