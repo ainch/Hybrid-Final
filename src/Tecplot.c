@@ -513,16 +513,35 @@ void Main_Variable_printorSave(){
     int i,j;
     FILE *fp;
     int nbar,kk,Gbuf;
-   
+   //int Boundary;   //Boundary Condition Constant 0~4
+	//int CondID;		// Conductor ID , NO Conductor is zero
+	//int Face;
+	//float Area;
+	//float Temp;
+	//float BackDen1;
+	//float BackVel1;
+	//float BackDen2;
+	//float BackVel2;
+	//float Lap_Pot;
+	//float Pois_Pot;
+	//float Ex;
+	//float Ey;
     fp = fopen("GsizeData_TEC.dat", "w");
     fprintf(fp, "TITLE = \"2D-PIC Gsize data set\"\n");
     fprintf(fp, "VARIABLES = \"X\",\"Y\",\n");
     fprintf(fp, "\"Boundary\",\n");
     fprintf(fp, "\"CondID\",\n");
+	fprintf(fp, "\"Face\",\n");
+	fprintf(fp, "\"Area\",\n");
     fprintf(fp, "\"Temp\",\n");
     fprintf(fp, "\"BackDen1\",\n");
-    fprintf(fp, "\"face\",\n");
-    fprintf(fp, "\"area\",\n");
+	fprintf(fp, "\"BackVel1\",\n");
+	fprintf(fp, "\"BackDen2\",\n");
+	fprintf(fp, "\"BackVel2\",\n");
+	fprintf(fp, "\"Lap_Pot\",\n");
+	fprintf(fp, "\"Pois_Pot\",\n");
+	fprintf(fp, "\"Ex\",\n");
+	fprintf(fp, "\"Ey\",\n");
 	fprintf(fp, "ZONE I = %d, J = %d, F=BLOCK,\n", ngx, ngy);
     nbar = 6;
     // x_Garray
@@ -545,6 +564,14 @@ void Main_Variable_printorSave(){
 			vec_G[i*ngy+j].CondID
     );kk++;if(kk==nbar){fprintf(fp, "\n\t");kk=0;}}kk=0;fprintf(fp, "\n");}
     kk = 0;for(j=0;j<ngy;j++){fprintf(fp, "\t");for(i=0;i<ngx;i++){
+    fprintf(fp, "%d\t",
+			vec_G[i*ngy+j].Face
+    );kk++;if(kk==nbar){fprintf(fp, "\n\t");kk=0;}}kk=0;fprintf(fp, "\n");}
+    kk = 0;for(j=0;j<ngy;j++){fprintf(fp, "\t");for(i=0;i<ngx;i++){
+    fprintf(fp, "%.3e\t",
+			vec_G[i*ngy+j].Area
+    );kk++;if(kk==nbar){fprintf(fp, "\n\t");kk=0;}}kk=0;fprintf(fp, "\n");}
+	kk = 0;for(j=0;j<ngy;j++){fprintf(fp, "\t");for(i=0;i<ngx;i++){
     fprintf(fp, "%.3e\t",
 			vec_G[i*ngy+j].Temp
     );kk++;if(kk==nbar){fprintf(fp, "\n\t");kk=0;}}kk=0;fprintf(fp, "\n");}
@@ -552,13 +579,33 @@ void Main_Variable_printorSave(){
     fprintf(fp, "%.3e\t",
 			vec_G[i*ngy+j].BackDen1
     );kk++;if(kk==nbar){fprintf(fp, "\n\t");kk=0;}}kk=0;fprintf(fp, "\n");}
-    kk = 0;for(j=0;j<ngy;j++){fprintf(fp, "\t");for(i=0;i<ngx;i++){
-    fprintf(fp, "%d\t",
-			vec_G[i*ngy+j].Face
-    );kk++;if(kk==nbar){fprintf(fp, "\n\t");kk=0;}}kk=0;fprintf(fp, "\n");}
-    kk = 0;for(j=0;j<ngy;j++){fprintf(fp, "\t");for(i=0;i<ngx;i++){
+	kk = 0;for(j=0;j<ngy;j++){fprintf(fp, "\t");for(i=0;i<ngx;i++){
     fprintf(fp, "%.3e\t",
-			vec_G[i*ngy+j].Area
+			vec_G[i*ngy+j].BackVel1
+    );kk++;if(kk==nbar){fprintf(fp, "\n\t");kk=0;}}kk=0;fprintf(fp, "\n");}
+	kk = 0;for(j=0;j<ngy;j++){fprintf(fp, "\t");for(i=0;i<ngx;i++){
+    fprintf(fp, "%.3e\t",
+			vec_G[i*ngy+j].BackDen2
+    );kk++;if(kk==nbar){fprintf(fp, "\n\t");kk=0;}}kk=0;fprintf(fp, "\n");}
+	kk = 0;for(j=0;j<ngy;j++){fprintf(fp, "\t");for(i=0;i<ngx;i++){
+    fprintf(fp, "%.3e\t",
+			vec_G[i*ngy+j].BackVel2
+    );kk++;if(kk==nbar){fprintf(fp, "\n\t");kk=0;}}kk=0;fprintf(fp, "\n");}
+	kk = 0;for(j=0;j<ngy;j++){fprintf(fp, "\t");for(i=0;i<ngx;i++){
+    fprintf(fp, "%.3e\t",
+			vec_G[i*ngy+j].Lap_Pot
+    );kk++;if(kk==nbar){fprintf(fp, "\n\t");kk=0;}}kk=0;fprintf(fp, "\n");}
+	kk = 0;for(j=0;j<ngy;j++){fprintf(fp, "\t");for(i=0;i<ngx;i++){
+    fprintf(fp, "%.3e\t",
+			vec_G[i*ngy+j].Pois_Pot
+    );kk++;if(kk==nbar){fprintf(fp, "\n\t");kk=0;}}kk=0;fprintf(fp, "\n");}
+	kk = 0;for(j=0;j<ngy;j++){fprintf(fp, "\t");for(i=0;i<ngx;i++){
+    fprintf(fp, "%.3e\t",
+			vec_G[i*ngy+j].Ex
+    );kk++;if(kk==nbar){fprintf(fp, "\n\t");kk=0;}}kk=0;fprintf(fp, "\n");}
+	kk = 0;for(j=0;j<ngy;j++){fprintf(fp, "\t");for(i=0;i<ngx;i++){
+    fprintf(fp, "%.3e\t",
+			vec_G[i*ngy+j].Ey
     );kk++;if(kk==nbar){fprintf(fp, "\n\t");kk=0;}}kk=0;fprintf(fp, "\n");}
 	// GEOMETRY
     fprintf(fp, "GEOMETRY\n");

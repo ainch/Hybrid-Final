@@ -34,6 +34,7 @@ float *CondTEMP;
 int SrcNUM;
 int *SrcM_ID;
 float *SrcDC, *SrcPOWER, *SrcAC, *SrcFREQ, *SrcPHASE, *SrcR, *SrcL, *SrcC;
+int External_Flag; // 0 : Voltage driven, 1: Power driven
 float Min_FREQ, Max_FREQ;
 int DielNUM,DielNUMR;
 int *DielM_ID, *DielX0, *DielX1, *DielY0, *DielY1;
@@ -117,4 +118,5 @@ void VFCopy(float *V,float *C,int size);
 void VICopy(int *V,int *C,int size);
 int IVnZC(char A[50],int Value); // Int Value non Zero CHECK
 float FIVnZC(char A[50],float Value);// float Value non Zero CHECK
+void MFDigonal(float **M,float C,float D,int sizeX,int sizeY);
 #endif

@@ -169,7 +169,7 @@ void InputRead() {
    }
    BufArray = json_object_get_array(SubObject2,"Source");
    SrcNUM = (int)json_array_get_count(BufArray);
-   if(PRINT_Flag) printf("\tSource # = %d\n",SrcNUM); 
+   printf("\tSource # = %d ",SrcNUM); 
    SrcM_ID = VIMalloc(SrcNUM);
    SrcDC = VFMalloc(SrcNUM);
    SrcPOWER = VFMalloc(SrcNUM);
@@ -181,6 +181,7 @@ void InputRead() {
    SrcC = VFMalloc(SrcNUM);
    Min_FREQ = 1e200;
    Max_FREQ = 0.0;
+   External_Flag = 0;
    for (i=0;i<SrcNUM;i++){
       buf = 0;
       BufObject = json_array_get_object(BufArray,i);
@@ -201,6 +202,11 @@ void InputRead() {
       SrcR[i] = (float)json_object_get_number(BufObject,"R(Ohm)");
       SrcL[i] = (float)json_object_get_number(BufObject,"L(H)");
       SrcC[i] = (float)json_object_get_number(BufObject,"C(F)");
+      if(SrcL[i]<1e-30 && SrcR[i]<1e-30 && SrcC[i] >= 1 && External_Flag != 1){
+         External_Flag = 0;
+      }else{
+         External_Flag = 1;
+      }
       if(SrcFREQ[i] != 0){
          Max_FREQ = max(Max_FREQ,SrcFREQ[i]);
          if(SrcFREQ[i]<Min_FREQ)
@@ -211,6 +217,8 @@ void InputRead() {
          exit(1);
       }
    }
+   if(External_Flag) printf(": Using circuit\n");
+   else printf(": No circuit\n");
    BufArray = json_object_get_array(SubObject2,"DielectricSpec");
    DielNUM = (int)json_array_get_count(BufArray);
    if(PRINT_Flag) printf("\tDielectric # = %d\n",DielNUM); 
@@ -1346,6 +1354,10 @@ void Geometry_setting() {
       vec_G[i].BackVel1 = (float) 0.0;
       vec_G[i].BackDen2 = (float) 0.0;
       vec_G[i].BackVel2 = (float) 0.0;
+      vec_G[i].Lap_Pot = (float) 0.0;
+      vec_G[i].Pois_Pot = (float) 0.0;
+      vec_G[i].Ex = (float) 0.0;
+      vec_G[i].Ey = (float) 0.0;
    }
    vec_C = (GCA *) malloc(Csize * sizeof(GCA));
    for(i=0;i<Csize;i++){
@@ -2022,6 +2034,16 @@ void MFInit(float **M,float C,int sizeX,int sizeY)
     for(i=0;i<sizeX;i++)
         for(j=0;j<sizeY;j++) M[i][j]=C;
 
+    return;
+}
+void MFDigonal(float **M,float C,float D,int sizeX,int sizeY)
+{
+    int i,j;
+    for(i=0;i<sizeX;i++)
+        for(j=0;j<sizeY;j++){
+            if(i==j) M[i][j]=C;
+            else M[i][j]=D;
+        } 
     return;
 }
 void MIInit(int **M,int C,int sizeX,int sizeY)

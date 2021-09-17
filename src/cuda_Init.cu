@@ -32,12 +32,24 @@ void Set_Device_Parameter(){
     FIELD_BLOCK = dim3(THREADS_PER_BLOCK, 1, 1);
     printf(" - Field Solver : [%d][%d]\n",numSms*numBlocksPerSm,THREADS_PER_BLOCK);
     printf("   Cooperative_groups = [%d]\n",numSms*numBlocksPerSm*THREADS_PER_BLOCK);
+    // Field2
+    cudaOccupancyMaxPotentialBlockSize(&mingrid,&block,(void*)Cond_Sigma_Lap,0,Gsize*nsp); 
+    grid = (Gsize*nsp + block - 1) / block;
+    printf(" - Field module : [%d][%d]\n",grid,block);
+    FIELD_GRID2 = dim3(grid, 1, 1);
+    FIELD_BLOCK2 = dim3(block, 1, 1);
     // Deposit 
     cudaOccupancyMaxPotentialBlockSize(&mingrid,&block,(void*)DepositAtom,0,Gsize*nsp); 
     grid = (Gsize*nsp + block - 1) / block;
     printf(" - Deposit module : [%d][%d]\n",grid,block);
     DEPOSIT_GRID = dim3(grid, 1, 1);
     DEPOSIT_BLOCK = dim3(block, 1, 1);
+    // Efield
+    cudaOccupancyMaxPotentialBlockSize(&mingrid,&block,(void*)GCondAInit,0,CondNUMR); 
+    grid = (CondNUMR*nsp + block - 1) / block;
+    printf(" - Efield module : [%d][%d]\n",grid,block);
+    EFIELD_GRID = dim3(grid, 1, 1);
+    EFIELD_BLOCK = dim3(block, 1, 1);
 
     // Example : Find good grid and block size
     int Search_Occupancy_Flag = 0;

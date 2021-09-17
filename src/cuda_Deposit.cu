@@ -11,10 +11,9 @@ void Deposit_cuda(){
         Smooth_121_B<<<DEPOSIT_GRID,DEPOSIT_BLOCK>>>(ngx, ngy, nsp, dev_GvecSet, dev_G_sp);
     }
     // charge density cal --> dev_Source
-     SumSource<<<DEPOSIT_GRID,DEPOSIT_BLOCK>>>(ngx, ngy, dev_info_sp, dev_GvecSet, dev_G_sp, dev_Sigma, dev_Source);
+    SumSource<<<DEPOSIT_GRID,DEPOSIT_BLOCK>>>(ngx, ngy, dev_info_sp, dev_GvecSet, dev_G_sp, dev_Sigma, dev_Source);
     // dev_Source --> dev_b  (PCG setting)
-     PCG_Set<<<DEPOSIT_GRID,DEPOSIT_BLOCK>>>(Gsize,dev_A_idx, dev_GvecSet, dev_Source, dev_b);
-     printf("Loop start!.\n");
+    PCG_Set<<<DEPOSIT_GRID,DEPOSIT_BLOCK>>>(Gsize,dev_A_idx, dev_GvecSet, dev_Source, dev_R);
 }
 __global__ void PCG_Set(int Gsize, int *IDX, GGA *vecSet, float *Source, float *B){
 	int TID=blockDim.x*(gridDim.x*blockIdx.y+blockIdx.x)+threadIdx.x;

@@ -15,11 +15,11 @@ extern "C" void main_cuda()
 	if(Lap_Field_Solver_Test) PCG_Laplace_TEST();
     PCG_SOLVER_Laplace();
 	Deposit_cuda();
-    exit(1);
     while(1){
-		//(*FieldSolver)();
-		//Efield_cuda();
-		//(*MOVE)();;
+		PCG_SOLVER();
+		Efield_cuda();
+        //START
+		//(*MOVE)();
 		//(*SORT_BOUNDARY)();
 		//(*MCC)();
 		//if(add_izrate_flag==1) AddIzRate_cuda(); // ADD IONIZATION RATE instead of ICP SOURCE
@@ -29,10 +29,15 @@ extern "C" void main_cuda()
 		//}
 		//(*DIAG)();
 		//SaveDumpFile();
-		if(t>1e-3) break;        
         //
+        
         t+=dt; // real time
         tstep++; // step
+        if((tstep%CYCLE_NUM) == 0) cstep++; // Number of Cycle step
+        printf("TIME = %2.4g (s), STEP = %d (#), CYCLE = %d\n",t,tstep,cstep);
+        //if(t>1e-3) break;    
+        if(tstep>=1) break;    
+        /*
         if((tstep%CYCLE_NUM) == 0){
             cstep++; // Number of Cycle step
             // time calculate
@@ -72,8 +77,7 @@ extern "C" void main_cuda()
 	        fprintf(stderr, "------------------------------------------------------------------------------\n");
 	
         } 
-        printf("TIME = %2.4g (s), STEP = %d (#), CYCLE = %d\r",t,tstep,cstep);
-        //
+        */
     }
 }
 

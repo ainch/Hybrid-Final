@@ -10,7 +10,7 @@ extern dim3 DEPOSIT_GRID,DEPOSIT_BLOCK;
 extern int N_smt;
 extern float *dev_Sigma, *dev_Source;
 extern int   *dev_A_idx;
-extern float *dev_b;
+extern float *dev_R;
 #ifndef __CUDA_MCC_CUH__
 #define __CUDA_MCC_CUH__
 void Deposit_cuda();

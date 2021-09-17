@@ -12,6 +12,7 @@
 #define NperTORR   8.3221e20
 #define AMU		1.66053e-27
 #define NVTS    3.3
+#define N_MAX 100
 #define THREADS_PER_BLOCK 512   
 #endif
 #ifndef __Simulation__
@@ -82,6 +83,7 @@ typedef struct __Global_PCG_DATA_Set{ // for cuda_Field_SpeedTest
     float M;
 }DPS_Data;
 typedef struct __Global_Gsize_Array{
+	//SIZE = Gsize
 	int Boundary;   //Boundary Condition Constant 0~4
 	int CondID;		// Conductor ID , NO Conductor is zero
 	int Face;
@@ -90,9 +92,14 @@ typedef struct __Global_Gsize_Array{
 	float BackDen1;
 	float BackVel1;
 	float BackDen2;
-	float BackVel2; 
+	float BackVel2;
+	float Lap_Pot;
+	float Pois_Pot;
+	float Ex;
+	float Ey;
 }GGA;
 typedef struct __Global_Csize_Array{
+	//SIZE = Csize
     int PlasmaRegion;
     float eps_r;
 	float eps;
@@ -169,6 +176,10 @@ typedef struct BackGround{
 	float mass;
 	float InitDens;
 } BackG;
+typedef struct __Global_CondNUMR_Array{
+	//SIZE = nsp * CondNUMR
+    int Charge;
+}GCondA;
 typedef struct __Global_MCC_sigmav
 {
 	// Size[] = Ar:3, O2:20, ArO2=25

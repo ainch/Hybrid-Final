@@ -45,6 +45,7 @@ extern "C" void MFCopy(float **M,float **C,int sizeX,int sizeY);
 extern "C" void MICopy(int **M,int **C,int sizeX,int sizeY);
 extern "C" void VFCopy(float *V,float *C,int size);
 extern "C" void VICopy(int *V,int *C,int size);
+extern "C" void MFDigonal(float **M,float C,float D,int sizeX,int sizeY);
 // CU Function declaration
 
 #endif
