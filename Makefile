@@ -22,10 +22,6 @@ C_OBJS = $(OBJ_DIR)/main.o \
           $(OBJ_DIR)/load.o \
           $(OBJ_DIR)/Tecplot.o \
           $(OBJ_DIR)/Particle.o
-#          $(OBJ_DIR)/savedata.o \
-#          $(OBJ_DIR)/mccTools.o \
-#          $(OBJ_DIR)/fluid.o \
-#          $(OBJ_DIR)/fdtd.o
 
 CU_OBJS = $(OBJ_DIR)/cuda_main.o \
           $(OBJ_DIR)/cuda_start.o \
@@ -34,9 +30,9 @@ CU_OBJS = $(OBJ_DIR)/cuda_main.o \
           $(OBJ_DIR)/cuda_Field.o \
           $(OBJ_DIR)/cuda_Particle.o \
           $(OBJ_DIR)/cuda_mcc.o \
-          $(OBJ_DIR)/cuda_Deposit.o 
+          $(OBJ_DIR)/cuda_Deposit.o \
+          $(OBJ_DIR)/cuda_Move.o 
 #          $(OBJ_DIR)/cuda_run.o \
-#          $(OBJ_DIR)/cuda_move.o \
 #          $(OBJ_DIR)/cuda_rand.o \
 #          $(OBJ_DIR)/cuda_mccAr_cell.o \
 #          $(OBJ_DIR)/cuda_diag.o \
@@ -62,6 +58,7 @@ CU_H_FILES = inc/xypic.cuh \
              inc/cuda_Particle.cuh \
              inc/cuda_mcc.cuh \
              inc/cuda_Deposit.cuh \
+             inc/cuda_Move.cuh \
              inc/helper_cuda.h \
              inc/main.h \
              inc/interop.cuh \

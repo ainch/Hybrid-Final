@@ -1305,6 +1305,8 @@ void Source_setting(){
    CYCLE_NUM = Max_FREQ / Min_FREQ * DT_PIC;
    DT_MCC = 0;
    dt_mcc = 0.0;
+   dt_dx = dt/dx;
+   dt_dy = dt/dy;
    printf("\tPIC TimeStep = %g (s)\n",dt);
    printf("\tContinuity TimeStep = %g (s)\n",dtc);
    printf("\tMinimum Freq Cycle step # = %d (#)\n",CYCLE_NUM);
@@ -1882,12 +1884,13 @@ void GasSetting(){
       if(DumpFlag==0) SetParticleLoad(isp, SP[isp].InitDens, SP[0].Loadtype,SP[0].x_center, SP[0].x_fall, SP[0].y_center,SP[0].y_fall,SP[isp].vti);
       // Initialize GPG 
       for(i=0;i<Gsize;i++){
+         Host_G_sp[isp*Gsize+i].PtNumInCell = 0;
+         Host_G_sp[isp*Gsize+i].PtNumMoveInterCell = 0;
+         Host_G_sp[isp*Gsize+i].MaxPtNumInCell = (int) SP[isp].MAXNP / Gsize;
          Host_G_sp[isp*Gsize+i].den = 0.0;
          Host_G_sp[isp*Gsize+i].smt_den = 0.0;
          Host_G_sp[isp*Gsize+i].ave_den = 0.0;
          Host_G_sp[isp*Gsize+i].sigma = 0.0;
-         Host_G_sp[isp*Gsize+i].PtNumInCell = 0;
-         Host_G_sp[isp*Gsize+i].MaxPtNumInCell = (int) SP[isp].MAXNP / Gsize;
       }
    }
 }

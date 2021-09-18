@@ -23,6 +23,7 @@ int ngx,ngy,Gsize;
 int ncx,ncy,Csize;
 float dx,dy;
 float idx,idy,dx2,dy2,dxdy2,hdx,hdy,r_eps0;
+float dt_dx, dt_dy;
 float fncx,fncy,fngx,fngy;
 float *x_Garray,*y_Garray;
 int BoundaryNUM;

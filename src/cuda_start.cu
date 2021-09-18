@@ -61,23 +61,11 @@ void info_Device()
 	}
 }
 void start_cuda(){
-
-	/*** Field solver ***/
-	if(Lap_Field_Solver_Flag==0){
-		
-	}else if(Lap_Field_Solver_Flag==1){
-
-	}else if(Lap_Field_Solver_Flag==2){
-
-	}else if(Lap_Field_Solver_Flag==3){
-
-	}
-	//FieldSolver = PCG_SOLVER;
 	/*** Move ***/
 	if(ConstB_Flag){
 		//MOVE = MoveB_cuda;
 	}else {
-		//MOVE = Move_cuda;
+		MOVE = Move_cuda;
 	}
 	switch(MainGas){
 	case ARGON:

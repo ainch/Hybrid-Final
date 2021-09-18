@@ -1,7 +1,5 @@
 #include "cuda_Field.cuh"
-//
 
-//
 void Efield_cuda(){
     // Function
     int i,j,isp;

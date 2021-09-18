@@ -115,7 +115,7 @@ typedef struct __Host_Charged_Particle
 }HCP;
 typedef struct __Global_Charged_Particle
 {
-	//SIZE = MAXNP * nsp
+	//SIZE = nsp * MAXNP
 	int CellID;
     float x;  
     float y;
@@ -125,8 +125,9 @@ typedef struct __Global_Charged_Particle
 }GCP;
 typedef struct __Global_Particle_Gsize_Data
 {
-	//SIZE = Gsize * nsp
+	//SIZE = nsp * Gsize
 	int PtNumInCell;
+	int PtNumMoveInterCell;
     int MaxPtNumInCell;  
     float den;
 	float smt_den;

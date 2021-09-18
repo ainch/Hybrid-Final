@@ -6,8 +6,8 @@ extern int MainGas; // Gas type 0:argon, 1:oxygen, 2:argon/oxygen
 extern int Lap_Field_Solver_Test,Lap_Field_Solver_Flag,Lap_Field_Solver_Save;
 extern int nsp;
 extern Species *SP;// particle species
-extern void (*FieldSolver)();
 extern void (*MOVE)();
+extern void Move_cuda();
 extern void (*SORT_BOUNDARY)();
 extern void (*MCC)();
 extern void (*DEPOSIT)();

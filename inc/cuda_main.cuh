@@ -8,7 +8,6 @@ extern int ngx,ngy,Gsize;
 extern int nsp;
 extern Species *SP;// particle species
 extern int Lap_Field_Solver_Test,Lap_Field_Solver_Flag,Lap_Field_Solver_Save;
-extern void (*FieldSolver)();
 extern void (*MOVE)();
 extern void (*SORT_BOUNDARY)();
 extern void (*MCC)();

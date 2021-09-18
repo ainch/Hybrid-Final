@@ -50,6 +50,12 @@ void Set_Device_Parameter(){
     printf(" - Efield module : [%d][%d]\n",grid,block);
     EFIELD_GRID = dim3(grid, 1, 1);
     EFIELD_BLOCK = dim3(block, 1, 1);
+    // Move 
+    cudaOccupancyMaxPotentialBlockSize(&mingrid,&block,(void*)DepositAtom,0,Gsize*nsp); 
+    grid = (Gsize*nsp + block - 1) / block;
+    printf(" - Move module : [%d][%d]\n",grid,block);
+    MOVE_GRID = dim3(grid, 1, 1);
+    MOVE_BLOCK = dim3(block, 1, 1);
 
     // Example : Find good grid and block size
     int Search_Occupancy_Flag = 0;

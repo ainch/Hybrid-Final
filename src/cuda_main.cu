@@ -18,8 +18,8 @@ extern "C" void main_cuda()
     while(1){
 		PCG_SOLVER();
 		Efield_cuda();
-        //START
-		//(*MOVE)();
+		(*MOVE)();
+        //start
 		//(*SORT_BOUNDARY)();
 		//(*MCC)();
 		//if(add_izrate_flag==1) AddIzRate_cuda(); // ADD IONIZATION RATE instead of ICP SOURCE
