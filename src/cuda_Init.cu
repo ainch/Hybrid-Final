@@ -3,6 +3,7 @@
 
 
 void Set_DiagParameter_cuda(){
+    
     // Host BUF VECTOR
     Host_G_buf = VFMalloc(Gsize);
     Host_C_buf = VFMalloc(Csize);
@@ -51,11 +52,18 @@ void Set_Device_Parameter(){
     EFIELD_GRID = dim3(grid, 1, 1);
     EFIELD_BLOCK = dim3(block, 1, 1);
     // Move 
-    cudaOccupancyMaxPotentialBlockSize(&mingrid,&block,(void*)DepositAtom,0,Gsize*nsp); 
+    cudaOccupancyMaxPotentialBlockSize(&mingrid,&block,(void*)MoveE_Basic,0,Gsize*nsp); 
     grid = (Gsize*nsp + block - 1) / block;
     printf(" - Move module : [%d][%d]\n",grid,block);
     MOVE_GRID = dim3(grid, 1, 1);
     MOVE_BLOCK = dim3(block, 1, 1);
+    // SortBoundary
+    cudaOccupancyMaxPotentialBlockSize(&mingrid,&block,(void*)SortBoundary_Basic,0,Gsize*nsp); 
+    grid = (Gsize*nsp + block - 1) / block;
+    printf(" - SORT module : [%d][%d]\n",grid,block);
+    SORT_GRID = dim3(grid, 1, 1);
+    SORT_BLOCK = dim3(block, 1, 1);
+
 
     // Example : Find good grid and block size
     int Search_Occupancy_Flag = 0;

@@ -1654,7 +1654,8 @@ void Geometry_setting() {
 			for (k = 0; k < DielNUM; k++)
 				if (i >= DielX0[k] && i < DielX1[k] && j >= DielY0[k] && j < DielY1[k])
 					StructureIndex[i + 1][j + 1] = DielM_ID[k];
-			for (k = 0; k < CondNUM; k++)
+			
+         for (k = 0; k < CondNUM; k++)
 				if (i >= CondX0[k] && i < CondX1[k] && j >= CondY0[k] && j < CondY1[k])
 					StructureIndex[i + 1][j + 1] = 100 + CondM_ID[k];
 		}

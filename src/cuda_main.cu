@@ -11,6 +11,7 @@ extern "C" void main_cuda()
     Set_Particle_cuda();
     Set_NullCollisionTime_cuda();
 	Set_DiagParameter_cuda();
+    Set_SortBoundary_cuda();
 	Set_MatrixPCG_cuda();
 	if(Lap_Field_Solver_Test) PCG_Laplace_TEST();
     PCG_SOLVER_Laplace();
@@ -19,11 +20,11 @@ extern "C" void main_cuda()
 		PCG_SOLVER();
 		Efield_cuda();
 		(*MOVE)();
+		(*SORT_BOUNDARY)();
         //start
-		//(*SORT_BOUNDARY)();
 		//(*MCC)();
 		//if(add_izrate_flag==1) AddIzRate_cuda(); // ADD IONIZATION RATE instead of ICP SOURCE
-		//(*DEPOSIT)();
+		(*DEPOSIT)();
 		//if(Meta_flag){// && t>5e-7)
 		//	(*CONTIEQ)();
 		//}
@@ -36,7 +37,7 @@ extern "C" void main_cuda()
         if((tstep%CYCLE_NUM) == 0) cstep++; // Number of Cycle step
         printf("TIME = %2.4g (s), STEP = %d (#), CYCLE = %d\n",t,tstep,cstep);
         //if(t>1e-3) break;    
-        if(tstep>=1) break;    
+        if(tstep>=100) break;    
         /*
         if((tstep%CYCLE_NUM) == 0){
             cstep++; // Number of Cycle step

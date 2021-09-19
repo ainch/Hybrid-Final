@@ -9,8 +9,10 @@ extern Species *SP;// particle species
 extern void (*MOVE)();
 extern void Move_cuda();
 extern void (*SORT_BOUNDARY)();
+extern void SortBounndary_cuda();
 extern void (*MCC)();
 extern void (*DEPOSIT)();
+extern void Deposit_cuda();
 extern void (*CONTIEQ)();
 extern void (*DIAG)();
 #ifndef __CUDA_START_CUH__

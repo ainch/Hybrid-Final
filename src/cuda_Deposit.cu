@@ -27,7 +27,7 @@ __global__ void SumSource(int ngx, int ngy, Species *info, GGA *vecSet, GPG *dat
      int x,y;
      x=TID/ngy; y=TID%ngy;
 	float sum, SD;
-     float SumSig = 0.0;
+    float SumSig = 0.0;
      
 	if(x==0) {
 		if(vecSet[TID+ngy].Boundary==DIELECTRIC) {

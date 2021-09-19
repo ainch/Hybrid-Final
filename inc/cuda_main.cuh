@@ -22,6 +22,7 @@ extern void Set_MatrixPCG_cuda();
 extern void Set_Particle_cuda();
 extern void Set_NullCollisionTime_cuda();
 extern void Set_DiagParameter_cuda();
+extern void Set_SortBoundary_cuda();
 extern void PCG_Laplace_TEST();
 extern void PCG_SOLVER_Laplace();
 extern void Deposit_cuda();

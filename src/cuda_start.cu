@@ -67,27 +67,23 @@ void start_cuda(){
 	}else {
 		MOVE = Move_cuda;
 	}
+	SORT_BOUNDARY = SortBounndary_cuda;
+	DEPOSIT = Deposit_cuda;
+	
 	switch(MainGas){
 	case ARGON:
-		//SORT_BOUNDARY = AR_SortAndBoundary_cuda;
-		//MCC		= ArMccDiag_cuda;
+		//MCC	= ArMccDiag_cuda;
 		//CONTIEQ = Ar_solve_continuity_eqn;
-		//DIAG    = Diagnostic;
 		break;
 	case OXYGEN:
-		//SORT_BOUNDARY = Oxy_SortAndBoundary_cuda;
 		//MCC		= OxyMccDiag_cuda;
 		//CONTIEQ = Oxy_solve_continuity_eqn;
-		//DIAG    = Diagnostic;
 		break;
 	case ARO2:
-		//SORT_BOUNDARY = ARO2_SortAndBoundary_cuda;
 		//MCC		= ARO2_MccDiag_cuda;
 		//CONTIEQ = ARO2_solve_continuity_eqn;
-		//DIAG    = Diagnostic;
 		break;
 	}
-	/*** Deposit ***/
-	//DEPOSIT = Deposit_cuda;
+		//DIAG    = Diagnostic;
 
 }

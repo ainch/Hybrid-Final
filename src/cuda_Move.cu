@@ -1,10 +1,9 @@
 #include "cuda_Move.cuh"
 
 void Move_cuda() {
-    MoveE<<<MOVE_GRID, MOVE_BLOCK>>>(Gsize, ngy, dt_dx, dt_dy, SP, dev_sp, dev_G_sp, dev_GvecSet);
-					
+    MoveE_Basic<<<MOVE_GRID, MOVE_BLOCK>>>(Gsize, ngy, dt_dx, dt_dy, SP, dev_sp, dev_G_sp, dev_GvecSet);		
 }
-__global__ void MoveE(int Gsize,int ngy,float dt_dx,float dt_dy, Species *info, GCP *sp, GPG *data, GGA *Field){
+__global__ void MoveE_Basic(int Gsize,int ngy,float dt_dx,float dt_dy, Species *info, GCP *sp, GPG *data, GGA *Field){
     int TID = threadIdx.x + blockIdx.x * blockDim.x;
 	int PNC,isp,ID;
     if(TID>Gsize*info[0].spnum) return;
