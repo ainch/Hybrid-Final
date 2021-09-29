@@ -86,5 +86,4 @@ __global__ void MoveE_Basic(int Gsize,int ngy, float dt_dx,float dt_dy, Species 
     }
 	data[TID].PtNumMoveInterCell=PNMC;
 	data[TID].PtNumInCell-=PNMC;
-
 }

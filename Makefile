@@ -39,8 +39,6 @@ CU_OBJS = $(OBJ_DIR)/cuda_main.o \
 #          $(OBJ_DIR)/cuda_rand.o \
 #          $(OBJ_DIR)/cuda_mccAr_cell.o \
 #          $(OBJ_DIR)/cuda_diag.o \
-#          
-#          
 #          $(OBJ_DIR)/cuda_beam.o
 
 C_H_FILES = inc/xypic.h \
