@@ -162,6 +162,7 @@ typedef struct __Global_Info_Particle
 	float Denscale;
 }Species;
 typedef struct fluid{
+	//Size =[nfsp]
 	char name[10];				// string name
 	int   Loadtype;				// density load type
 	float x_center,x_fall;		// density load position
@@ -169,7 +170,17 @@ typedef struct fluid{
 	float InitDens;				// initial density
 	float Temp;					// Temperature
 	float mass;
-} Fluid;
+	float Vel;
+}Fluid;
+typedef struct __Global_Fluid_Csize_Data
+{
+	//SIZE = nfsp * Csize
+	float D;     	
+    float den;		
+	float sum_den;	
+	float ave_den;	
+	float Source;	
+}GFC;
 typedef struct BackGround{
 	char name[10];				// string name
 	float Ratio;
@@ -177,7 +188,7 @@ typedef struct BackGround{
 	float Temp;				// Temperature
 	float mass;
 	float InitDens;
-} BackG;
+}BackG;
 typedef struct __Global_CondNUMR_Array{
 	//SIZE = nsp * CondNUMR
     float Charge;

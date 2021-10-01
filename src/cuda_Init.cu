@@ -17,11 +17,14 @@ void Set_Device_Parameter(){
     int numThreads;
     int numSms;
     // Find good grid and block size
-    cudaOccupancyMaxPotentialBlockSize(&mingrid,&block,(void*)SetSeed,0,Gsize); 
-    grid = (Gsize + block - 1) / block;
-    cudaMalloc((void**) &devStates, Gsize * sizeof(curandState));
-    SetSeed<<<grid,block>>>(devStates,seed,Gsize); // Each thread gets same seed
+    cudaOccupancyMaxPotentialBlockSize(&mingrid,&block,(void*)SetSeed,0,nsp*Gsize); 
+    grid = (nsp*Gsize + block - 1) / block;
+    cudaMalloc((void**) &devStates, nsp * Gsize * sizeof(curandState));
+    SetSeed<<<grid,block>>>(devStates,seed,nsp*Gsize); // Each thread gets same seed
+    cudaMalloc((void**) &dev_vsave, h_nvel * sizeof(float));
+    cudaMemcpy(dev_vsave, vsave, h_nvel * sizeof(float),cudaMemcpyHostToDevice);
     //
+
     printf(" Find good grids and blocks. \n");
     // Field Solver 
     sMemSize = sizeof(double) * THREADS_PER_BLOCK;
@@ -63,7 +66,22 @@ void Set_Device_Parameter(){
     printf(" - SORT module : [%d][%d]\n",grid,block);
     SORT_GRID = dim3(grid, 1, 1);
     SORT_BLOCK = dim3(block, 1, 1);
-
+    // MCC module
+    sMemSize_MCC = 0;
+    numBlocksPerSm = 0;
+    numThreads = THREADS_PER_BLOCK;
+    checkCudaErrors(cudaOccupancyMaxActiveBlocksPerMultiprocessor(&numBlocksPerSm, MCC_Ar_cooper, numThreads, sMemSize_MCC));
+    numSms = prop.multiProcessorCount;
+    MCC_GRID = dim3(numSms*numBlocksPerSm, 1, 1);
+    MCC_BLOCK = dim3(THREADS_PER_BLOCK, 1, 1);
+    printf(" - MCC module : [%d][%d]\n",numSms*numBlocksPerSm,THREADS_PER_BLOCK);
+    printf("   Cooperative_groups = [%d]\n",numSms*numBlocksPerSm*THREADS_PER_BLOCK);
+    // MCC
+    cudaOccupancyMaxPotentialBlockSize(&mingrid,&block,(void*)MCC_Ar_Basic,0,Gsize*nsp); 
+    grid = (Gsize*nsp + block - 1) / block;
+    printf(" - MCC module : [%d][%d]\n",grid,block);
+    MCC_GRID2 = dim3(grid, 1, 1);
+    MCC_BLOCK2 = dim3(block, 1, 1);
 
     // Example : Find good grid and block size
     int Search_Occupancy_Flag = 0;

@@ -34,7 +34,8 @@ CU_OBJS = $(OBJ_DIR)/cuda_main.o \
           $(OBJ_DIR)/cuda_Move.o \
           $(OBJ_DIR)/cuda_Sortboundary.o \
           $(OBJ_DIR)/cuda_Combination.o \
-          $(OBJ_DIR)/cuda_Tecplot.o 
+          $(OBJ_DIR)/cuda_Tecplot.o \
+          $(OBJ_DIR)/cuda_Fluid.o
 #          $(OBJ_DIR)/cuda_run.o \
 #          $(OBJ_DIR)/cuda_rand.o \
 #          $(OBJ_DIR)/cuda_mccAr_cell.o \
@@ -63,6 +64,7 @@ CU_H_FILES = inc/xypic.cuh \
              inc/cuda_Sortboundary.cuh \
              inc/cuda_Combination.cuh \
              inc/cuda_Tecplot.cuh \
+             inc/cuda_Fluid.cuh \
              inc/helper_cuda.h \
              inc/main.h \
              inc/interop.cuh \

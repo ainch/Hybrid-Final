@@ -52,13 +52,14 @@ Fluid *FG;	// fluid species
 BackG *BG;	// background species
 HCP *PtD;
 GPG *Host_G_sp;
+GFC *Host_C_F;
 float Total_Pressure;
 //
 int DT_PIC;  // Number of 1 cycle step
 int DT_CONTI; // How many times PIC dt?
 float dt;   // timestsep for PIC
 float dtc; // time step for continuity equation
-int DT_MCC; // mcc count for each step
+int DT_MCCn; // mcc count for each step
 float dt_mcc; // timestsep for MCC Module
 int CYCLE_NUM; // Minimum frequency number of cycle
 int Lap_Field_Solver_Test,Lap_Field_Solver_Flag,Lap_Field_Solver_Save;

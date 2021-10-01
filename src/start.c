@@ -353,8 +353,6 @@ void InputRead() {
       }else if(FG[0].Loadtype == COSINE){
          if(FG[0].x_center*FG[0].x_fall*FG[0].y_center*FG[0].y_fall < 0)
             exit(1);
-      }else if(FG[0].Loadtype == NP_RAIO){
-         
       }else{
          printf("\t\"Loadtype\" is error in NeutralSpecies.\n"); 
          exit(1);
@@ -364,6 +362,7 @@ void InputRead() {
       FG[0].InitDens =(float)json_object_get_number(BufObject2,"Density");
       FG[0].Temp = (float)json_object_get_number(BufObject2,"Temp(eV)");
       FG[0].mass = 39.950 * AMU;
+      FG[0].Vel = sqrt(FG[0].Temp*1.38e-23/FG[0].mass);
       BufObject = json_object_get_object(SubObject3,"ChargeSpecies");
       SP[0].Loadtype = (int)json_object_get_number(BufObject,"Loadtype");
       BufObject2 = json_object_get_object(BufObject,"LoadPosition(m)");
@@ -438,9 +437,7 @@ void InputRead() {
             exit(1);
       }else if(FG[0].Loadtype == COSINE){
          if(FG[0].x_center*FG[0].x_fall*FG[0].y_center*FG[0].y_fall < 0)
-            exit(1);
-      }else if(FG[0].Loadtype == NP_RAIO){
-         
+            exit(1);         
       }else{
          printf("\t\"Loadtype\" is error in NeutralSpecies.\n"); 
          exit(1);
@@ -450,21 +447,25 @@ void InputRead() {
       FG[0].InitDens =(float)json_object_get_number(BufObject2,"Density");
       FG[0].Temp = (float)json_object_get_number(BufObject2,"Temp(eV)");
       FG[0].mass = 32.0000 * AMU;
+      FG[0].Vel = sqrt(FG[0].Temp*1.38e-23/FG[0].mass);
       BufObject2 = json_object_get_object(BufObject,"O2B");
       strcpy(FG[1].name,"O2B");
       FG[1].InitDens =(float)json_object_get_number(BufObject2,"Density");
       FG[1].Temp = (float)json_object_get_number(BufObject2,"Temp(eV)");
       FG[1].mass = 32.0000 * AMU;
+      FG[1].Vel = sqrt(FG[1].Temp*1.38e-23/FG[1].mass);
       BufObject2 = json_object_get_object(BufObject,"OP");
       strcpy(FG[2].name,"OP");
       FG[2].InitDens =(float)json_object_get_number(BufObject2,"Density");
       FG[2].Temp = (float)json_object_get_number(BufObject2,"Temp(eV)");
       FG[2].mass = 16.0000 * AMU;
+      FG[2].Vel = sqrt(FG[2].Temp*1.38e-23/FG[2].mass);
       BufObject2 = json_object_get_object(BufObject,"OD");
       strcpy(FG[3].name,"OD");
       FG[3].InitDens =(float)json_object_get_number(BufObject2,"Density");
       FG[3].Temp = (float)json_object_get_number(BufObject2,"Temp(eV)");
       FG[3].mass = 16.0000 * AMU;
+      FG[3].Vel = sqrt(FG[3].Temp*1.38e-23/FG[3].mass);
       BufObject = json_object_get_object(SubObject3,"ChargeSpecies");
       SP[0].Loadtype = (int)json_object_get_number(BufObject,"Loadtype");
       BufObject2 = json_object_get_object(BufObject,"LoadPosition(m)");
@@ -582,9 +583,7 @@ void InputRead() {
             printf("Error : Load type %d Position ERROR!\n",FG[0].Loadtype);
             exit(1);
          }  
-      else if(FG[0].Loadtype == NP_RAIO){
-         
-      }}else{
+      }else{
          printf("\t\"Loadtype\" is error in NeutralSpecies.\n"); 
          exit(1);
       }
@@ -593,25 +592,30 @@ void InputRead() {
       FG[0].InitDens =(float)json_object_get_number(BufObject2,"Density");
       FG[0].Temp = (float)json_object_get_number(BufObject2,"Temp(eV)");
       FG[0].mass = 39.950 * AMU;
+      FG[0].Vel = sqrt(FG[0].Temp*1.38e-23/FG[0].mass);
       BufObject2 = json_object_get_object(BufObject,"OP");
       strcpy(FG[1].name,"O2A");
       FG[1].InitDens =(float)json_object_get_number(BufObject2,"Density");
       FG[1].Temp = (float)json_object_get_number(BufObject2,"Temp(eV)");
       FG[1].mass = 32.0000 * AMU;
+      FG[1].Vel = sqrt(FG[1].Temp*1.38e-23/FG[1].mass);
       BufObject2 = json_object_get_object(BufObject,"O2B");
       strcpy(FG[2].name,"O2B");
       FG[2].InitDens =(float)json_object_get_number(BufObject2,"Density");
       FG[2].Temp = (float)json_object_get_number(BufObject2,"Temp(eV)");
       FG[2].mass = 32.0000 * AMU;
+      FG[2].Vel = sqrt(FG[2].Temp*1.38e-23/FG[2].mass);
       strcpy(FG[3].name,"OP");
       FG[3].InitDens =(float)json_object_get_number(BufObject2,"Density");
       FG[3].Temp = (float)json_object_get_number(BufObject2,"Temp(eV)");
       FG[3].mass = 16.0000 * AMU;
+      FG[3].Vel = sqrt(FG[3].Temp*1.38e-23/FG[3].mass);
       BufObject2 = json_object_get_object(BufObject,"OD");
       strcpy(FG[4].name,"OD");
       FG[4].InitDens =(float)json_object_get_number(BufObject2,"Density");
       FG[4].Temp = (float)json_object_get_number(BufObject2,"Temp(eV)");
       FG[4].mass = 16.0000 * AMU;
+      FG[4].Vel = sqrt(FG[4].Temp*1.38e-23/FG[4].mass);
       BufObject2 = json_object_get_object(BufObject,"O2A");
       BufObject = json_object_get_object(SubObject3,"ChargeSpecies");
       SP[0].Loadtype = (int)json_object_get_number(BufObject,"Loadtype");
@@ -1331,7 +1335,7 @@ void Source_setting(){
    dt = 1.0 / Max_FREQ / (float)DT_PIC;
    dtc = dt * (float)DT_CONTI;
    CYCLE_NUM = Max_FREQ / Min_FREQ * DT_PIC;
-   DT_MCC = 0;
+   DT_MCCn = 0;
    dt_mcc = 0.0;
    dt_dx = dt/dx;
    dt_dy = dt/dy;
@@ -1875,10 +1879,11 @@ void FieldSolverSetting(){
    }
 }
 void GasSetting(){
-   int i,isp;
+   int i,isp,CID;
+   float xx,yy,wv;
    printf("Gas and Particle Setting\n");
-   PtD = (HCP *) malloc(nsp * sizeof(HCP));
-   Host_G_sp = (GPG *) malloc(Gsize * nsp * sizeof(GPG));
+   PtD = (HCP *) malloc(nsp * sizeof(HCP));  //__Host_Charged_Particle
+   Host_G_sp = (GPG *) malloc(Gsize * nsp * sizeof(GPG)); //__Global_Particle_Gsize_Data
    if(SP[0].Loadtype == 0)       printf("\tParicle Load Type : UNIFORM\n");
    else if(SP[0].Loadtype == 1)  printf("\tParicle Load Type : EXPONETIAL\n");
    else if(SP[0].Loadtype == 2)  printf("\tParicle Load Type : COSINE\n");
@@ -1921,6 +1926,46 @@ void GasSetting(){
          Host_G_sp[isp*Gsize+i].smt_den = 0.0;
          Host_G_sp[isp*Gsize+i].ave_den = 0.0;
          Host_G_sp[isp*Gsize+i].sigma = 0.0;
+      }
+   }
+   Host_C_F = (GFC *) malloc(nfsp * Csize * sizeof(GFC)); //__Global_Fluid_Gsize_Data
+   if(FG[0].Loadtype == 0)       printf("\tFluid Load Type : UNIFORM\n");
+   else if(FG[0].Loadtype == 1)  printf("\tFluid Load Type : EXPONETIAL\n");
+   else if(FG[0].Loadtype == 2)  printf("\tFluid Load Type : COSINE\n");
+   else if(FG[0].Loadtype == 4){
+      printf("\tFluid Load Type : SmartLoad\n");
+      printf("\tError : not yet!\n");
+      exit(1);
+   }
+   for(isp=0;isp<nfsp;isp++){
+      for(i=0;i<Csize;i++){
+         CID = isp*Csize + i;
+         Host_C_F[CID].D = 0.0f;
+         Host_C_F[CID].den = 0.0f;
+         Host_C_F[CID].sum_den = 0.0f;
+         Host_C_F[CID].ave_den = 0.0f;
+         Host_C_F[CID].Source = 0.0f;
+         if(DumpFlag==0){
+            xx = (float) ((int)i/ncy) * dx;
+			   yy = (float) ((int)i%ncy) * dy;
+            if(vec_C[CID].PlasmaRegion != 0){
+               if(FG[0].Loadtype == 0){ // UNIFORM
+                  Host_C_F[CID].den = FG[isp].InitDens;
+                  Host_C_F[CID].ave_den = FG[isp].InitDens;
+                  //printf("DEN[%d]= %g\n",CID,Host_C_F[CID].den);
+               }else if(FG[0].Loadtype == 1){// EXPONETIAL
+           	      wv = exp(-1 * ((xx - FG[0].x_center)/FG[0].x_fall)*((xx - FG[0].x_center)/FG[0].x_fall))
+                        *exp(-1 * ((yy - FG[0].y_center)/FG[0].y_fall)*((yy - FG[0].y_center)/FG[0].y_fall));
+				      Host_C_F[CID].den = FG[isp].InitDens * wv;
+				      Host_C_F[CID].ave_den = FG[isp].InitDens * wv;
+                  //printf("DEN[%d]= %g\n",CID,Host_C_F[CID].den);
+               }else if(FG[0].Loadtype == 2){// COSINE
+                  wv = fabs(cos((xx - FG[0].x_center)*M_PI/2/FG[0].x_fall)*cos((yy - FG[0].y_center)*M_PI/2/FG[0].y_fall));
+				      Host_C_F[CID].den = FG[isp].InitDens * wv;
+				      Host_C_F[CID].ave_den = FG[isp].InitDens * wv;
+               }
+            }
+         }
       }
    }
 }

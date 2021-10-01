@@ -1,8 +1,30 @@
 #include "cuda_mcc.cuh"
+void MCC_Ar_cuda(){
+	//MCC_Ar_Basic<<<MCC_GRID2, MCC_BLOCK2>>>(Gsize, ngy, devStates, dev_info_sp, dev_sp, dev_G_sp, dev_GvecSet);
+    void *kernelArgs[] = {
+        (void*)&Gsize,(void*)&ngy,(void*)&DT_MCCn,(void*)&dt_mcc,
+		(void*)&idx,(void*)&idy,(void*)&h_nvel,(void*)&dev_vsave,
+		(void*)&devStates, (void*)&dev_SigmaV,(void*)&dev_Coll_Flag,(void*)&dev_ArCX,
+		(void*)&dev_FG, (void*)&dev_C_F,(void*)&dev_GvecSet, 
+		(void*)&dev_info_sp,  (void*)&dev_G_sp, (void*)&dev_sp,
+    };
+    cudaLaunchCooperativeKernel((void *)MCC_Ar_cooper,MCC_GRID,MCC_BLOCK,kernelArgs, sMemSize_MCC, NULL);
+    cudaDeviceSynchronize();
+	exit(1);
+}
+__global__ void MCC_Ar_cooper(int Gsize, int ngy, float dt, int MCCn, float dtm,float idx,float idy, int nvel, float *vsave,
+											curandState *states, MCC_sigmav *sigv, CollF *CollP, ArCollD *CX, 
+											Fluid *infoF, GFC *Fluid, GGA *BG, Species *info, GPG *data, GCP *sp){
+	cg::thread_block cta = cg::this_thread_block();
+    cg::grid_group grid = cg::this_grid();
 
+	for (int i=grid.thread_rank(); i < 2*Gsize; i+= grid.size()){
+		printf("I = %d\n",i);
+	}
+}
 void Set_NullCollisionTime_cuda(){
     // This function calculates the following variables :
-    // 1. int DT_MCC
+    // 1. int DT_MCCn
     // 2. float dt_mcc
     // 3. dev_Coll_Flag [CollF] - [TnRct]
     // 4. dev_**CX [**CollD] - [N_LOGX]
@@ -48,12 +70,12 @@ void Set_NullCollisionTime_cuda(){
 		ColProb[0] = Ttarget[0] + Ttarget[1];
 		ColProb[1] = Ttarget[2];
 		if(ColProb[0] > prob_cut) {
-			DT_MCC = (int)ceil(ColProb[0]/prob_cut);
-			ratio = 1/(float)DT_MCC;
+			DT_MCCn = (int)ceil(ColProb[0]/prob_cut);
+			ratio = 1/(float)DT_MCCn;
 			dt_mcc = dt*ratio;
 		}
 		else {
-			DT_MCC = 1;
+			DT_MCCn = 1;
 			dt_mcc = dt;
 		}
 		// Null Method Information
@@ -62,7 +84,7 @@ void Set_NullCollisionTime_cuda(){
 		fprintf(stderr, "   Electon - %2.4f %\n",ColProb[0] * 100);
 		fprintf(stderr, "   Ar ion  - %2.4f %\n",ColProb[1] * 100);
 		fprintf(stderr, " - Number of Electron MCC Cycle\n");
-		fprintf(stderr, "   Cycle : %d, dt_mcc : %g \n",DT_MCC, dt_mcc);
+		fprintf(stderr, "   Cycle : %d, dt_mcc : %g \n",DT_MCCn, dt_mcc);
 		fprintf(stderr,"-------------------------------------------------------\n");
     }else if(MainGas == OXYGEN){
         checkCudaErrors(cudaMalloc((void**)&dev_O2CX, N_LOGX * sizeof(O2CollD)));
@@ -148,12 +170,12 @@ void Set_NullCollisionTime_cuda(){
 		ColProb[2] = Ttarget[12] + Ttarget[13] + Ttarget[14] + Ttarget[15];// O2+
 		ColProb[3] = Ttarget[16] + Ttarget[17] + Ttarget[18] + Ttarget[19];// O+
 		if(ColProb[0] > prob_cut) {
-			DT_MCC = (int)ceil(ColProb[0]/prob_cut);
-			ratio = 1/(float)DT_MCC;
+			DT_MCCn = (int)ceil(ColProb[0]/prob_cut);
+			ratio = 1/(float)DT_MCCn;
 			dt_mcc = dt*ratio;
 		}
 		else {
-			DT_MCC = 1;
+			DT_MCCn = 1;
 			dt_mcc = dt;
 		}
 		// Null Method Information
@@ -164,7 +186,7 @@ void Set_NullCollisionTime_cuda(){
 		fprintf(stderr, "   O2+ion  - %2.4f %\n",ColProb[2] * 100);
 		fprintf(stderr, "   O+ ion  - %2.4f %\n",ColProb[3] * 100);
 		fprintf(stderr, " - Number of Electron MCC Cycle\n");
-		fprintf(stderr, "   Cycle : %d, dt_mcc : %g \n",DT_MCC, dt_mcc);
+		fprintf(stderr, "   Cycle : %d, dt_mcc : %g \n",DT_MCCn, dt_mcc);
 		fprintf(stderr,"-------------------------------------------------------\n");
     }else if(MainGas == ARO2){
         checkCudaErrors(cudaMalloc((void**)&dev_ArO2CX, N_LOGX * sizeof(ArO2CollD)));
@@ -266,12 +288,12 @@ void Set_NullCollisionTime_cuda(){
 		ColProb[3] = Ttarget[19] + Ttarget[20] + Ttarget[21] + Ttarget[22];// O+
 		ColProb[4] = Ttarget[9] + Ttarget[10] + Ttarget[11] + Ttarget[12] + Ttarget[13];// O-
 		if(ColProb[0] > prob_cut) {
-			DT_MCC = (int)ceil(ColProb[0]/prob_cut);
-			ratio = 1/(float)DT_MCC;
+			DT_MCCn = (int)ceil(ColProb[0]/prob_cut);
+			ratio = 1/(float)DT_MCCn;
 			dt_mcc = dt*ratio;
 		}
 		else {
-			DT_MCC = 1;
+			DT_MCCn = 1;
 			dt_mcc = dt;
 		}
 		// Null Method Information
@@ -283,7 +305,7 @@ void Set_NullCollisionTime_cuda(){
 		fprintf(stderr, "   O+ ion  - %2.4f %\n",ColProb[3] * 100);
 		fprintf(stderr, "   O- ion  - %2.4f %\n",ColProb[4] * 100);
 		fprintf(stderr, " - Number of Electron MCC Cycle\n");
-		fprintf(stderr, "   Cycle : %d, dt_mcc : %g \n",DT_MCC, dt_mcc);
+		fprintf(stderr, "   Cycle : %d, dt_mcc : %g \n",DT_MCCn, dt_mcc);
 		fprintf(stderr,"-------------------------------------------------------\n");
     }else{
         printf("Error : MainGas = %d\n",MainGas);
@@ -294,3 +316,21 @@ void Set_NullCollisionTime_cuda(){
     checkCudaErrors(cudaMemcpy(dev_SigmaV, Host_SigmaV, num_a * sizeof(MCC_sigmav), cudaMemcpyHostToDevice));
     printf("MCC Initializing Complete!\n");
 }
+
+__global__ void MCC_Ar_Basic(int Gsize, int ngy, curandState *states, Species *info, GCP *sp, GPG *data, GGA *Field){
+	int TID = threadIdx.x + blockIdx.x * blockDim.x;
+	int isp,ID;
+ 	isp = (int)TID/Gsize; //species number [< nsp]
+    ID = (int)TID%Gsize; // Grid ID [< Gsize]
+    if(TID>Gsize*info[isp].spnum) return;
+	curandState LocalStates;
+	LocalStates = states[TID];
+	if(TID < 5 ){
+		float a,b;
+		a = curand_uniform(&LocalStates);
+		b = curand_uniform(&LocalStates);
+		printf("[%d] 1 = %g, 2 = %g\n",TID,a,b);
+	}
+	
+	states[TID]=LocalStates;
+}	

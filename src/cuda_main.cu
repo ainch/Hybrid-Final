@@ -4,7 +4,7 @@ extern "C" void main_cuda()
 {
     int isp,i,sum;
     float dsum, dsum2;
-    cudaEvent_t start, stop;
+    //cudaEvent_t start, stop;
     printf("-------------GPU_CUDA START-------------\n");
     info_Device();
     start_cuda();
@@ -22,13 +22,14 @@ extern "C" void main_cuda()
 		Efield_cuda();
         Move_cuda();
         SortBounndary_cuda();
+        MCC_Ar_cuda();
 		Deposit_cuda();
         Tecplot_save();
         //
         t+=dt; // real time
         tstep++; // step
         if((tstep%CYCLE_NUM) == 0) cstep++; // Number of Cycle step
-        printf("TIME = %2.4g (s),[%4d][%4d], Iter = %4d, res = %2.5g\n",t,tstep,cstep,*FIter,*dot_result);
+        //printf("TIME = %2.4g (s),[%4d][%4d], Iter = %4d, res = %2.5g\n",t,tstep,cstep,*FIter,*dot_result);
         //if(t>1e-3) break;    
         if(tstep == 1000) break; 
         //if(cstep==1) break;    

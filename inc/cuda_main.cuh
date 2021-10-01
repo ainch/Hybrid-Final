@@ -25,6 +25,7 @@ extern void start_cuda();					// Select Module
 extern void Set_Device_Parameter();
 extern void Set_MatrixPCG_cuda();
 extern void Set_Particle_cuda();
+extern void Set_Fluid_cuda();
 extern void Set_NullCollisionTime_cuda();
 extern void Set_DiagParameter_cuda();
 extern void Set_SortBoundary_cuda();
@@ -36,6 +37,7 @@ extern void Efield_cuda();
 extern void Move_Sort_cuda();
 extern void Move_cuda();
 extern void SortBounndary_cuda();
+extern void MCC_Ar_cuda();
 extern void Tecplot_save();
 #ifndef __CUDA_MAIN_CUH__
 #define __CUDA_MAIN_CUH__
