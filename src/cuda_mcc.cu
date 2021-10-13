@@ -11,13 +11,13 @@ __global__ void MCC_Ar_Basic(int Gsize, int Csize, int ngy, int nsp, float dt, i
 	int TID = threadIdx.x + blockIdx.x * blockDim.x;
 	if(TID>=Gsize) return;
 	// Direct Method
-	//Direct_Argon_Electron(Gsize, ngy, TID, MCCn, dtm, nvel, vsave, states, info, data, sp, N_LOGX, idLOGX, sigv, CollP, CX, BG, Fluid);
+	Direct_Argon_Electron(Gsize, ngy, TID, MCCn, dtm, nvel, vsave, states, info, data, sp, N_LOGX, idLOGX, sigv, CollP, CX, BG, Fluid);
 	Direct_Argon_ArIon(Gsize, ngy, TID, MCCn, dt, nvel, vsave, states, info, data, sp, N_LOGX, idLOGX, sigv, CollP, CX, BG, Fluid);
-	// Memory Allocation mode
-	Collision_Check(Gsize, Csize, ngy, TID, 0, dt, MCCn, dtm, states, info, data, sp, sigv, BG, Fluid);
+	// Memory mode
+	//Collision_Check(Gsize, Csize, ngy, TID, 0, dt, MCCn, dtm, states, info, data, sp, sigv, BG, Fluid);
 	//Collision_Check(Gsize, Csize, ngy, TID, 1, dt, MCCn, dtm, states, info, data, sp, sigv, BG, Fluid);
 	//Argon_Ar_Collision(Gsize, TID, dt, nvel, vsave, states, info, data, sp, N_LOGX, idLOGX, sigv, CollP, CX, BG, Fluid);
-	Argon_E_Collision(Gsize, ngy, TID, MCCn, dtm, nvel, vsave, states, info, data, sp, N_LOGX, idLOGX, sigv, CollP, CX, BG, Fluid);
+	//Argon_E_Collision(Gsize, ngy, TID, MCCn, dtm, nvel, vsave, states, info, data, sp, N_LOGX, idLOGX, sigv, CollP, CX, BG, Fluid);
 	
 }	
 __device__ void dev_maxwellv(float *vx_local,float *vy_local,float *vz_local,float vsaven,float vti,float Rphi,float Rthe){
