@@ -5,11 +5,13 @@ extern int cstep; // Number of Cycle step
 extern float dt;   // timestsep for PIC
 extern int CYCLE_NUM; // Minimum frequency number of cycle
 extern int ngx,ngy,Gsize;
+extern float dx,dy;
 extern int nsp;
 extern float PCGtol2;
 extern Species *SP;// particle species
 extern GPG *Host_G_sp;
 extern GPG *dev_G_sp;
+extern GGA *vec_G;
 extern int Lap_Field_Solver_Test,Lap_Field_Solver_Flag,Lap_Field_Solver_Save;
 extern double *dot_result;
 extern int *FIter;

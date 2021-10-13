@@ -2,9 +2,10 @@
 
 extern "C" void main_cuda()
 {
-    int isp,i,sum;
+    int isp,i,sum,k;
     float dsum, dsum2;
-    //cudaEvent_t start, stop;
+    cudaEvent_t start, stop;
+    float gputime;
     printf("-------------GPU_CUDA START-------------\n");
     info_Device();
     start_cuda();
@@ -16,39 +17,119 @@ extern "C" void main_cuda()
 	Set_MatrixPCG_cuda();
 	if(Lap_Field_Solver_Test) PCG_Laplace_TEST();
     PCG_SOLVER_Laplace();
+    Set_Fluid_cuda();
 	Deposit_cuda();
+    gputime_field	=0.0;
+	gputime_efield	=0.0;
+	gputime_diag	=0.0;
+	gputime_move	=0.0;
+	gputime_mcc		=0.0;
+	gputime_continue=0.0;
+	gputime_deposit	=0.0;
+	gputime_sort	=0.0;
+	gputime_trace	=0.0;
+	gputime_dump	=0.0;
+	totaltime		=0.0;
+	TotalT_D		=0;
+	TotalT_H		=0;
+	TotalT_M		=0;
+	TotalT_S		=0;
     while(1){
+        cudaEventCreate(&start); cudaEventCreate(&stop);
+	    cudaEventRecord( start, 0 );
 		PCG_SOLVER();
+        cudaEventRecord( stop, 0 ); cudaEventSynchronize( stop );
+	    cudaEventElapsedTime( &gputime, start, stop );
+	    cudaEventDestroy( start );cudaEventDestroy( stop );
+        gputime_field+=gputime;
+		totaltime+=gputime;
+        cudaEventCreate(&start); cudaEventCreate(&stop);
+	    cudaEventRecord( start, 0 );
 		Efield_cuda();
+        cudaEventRecord( stop, 0 ); cudaEventSynchronize( stop );
+	    cudaEventElapsedTime( &gputime, start, stop );
+	    cudaEventDestroy( start );cudaEventDestroy( stop );
+        gputime_efield+=gputime;
+		totaltime+=gputime;
+
+        cudaEventCreate(&start); cudaEventCreate(&stop);
+	    cudaEventRecord( start, 0 );
         Move_cuda();
+        cudaEventRecord( stop, 0 ); cudaEventSynchronize( stop );
+	    cudaEventElapsedTime( &gputime, start, stop );
+	    cudaEventDestroy( start );cudaEventDestroy( stop );
+        gputime_move+=gputime;
+		totaltime+=gputime;
+
+        cudaEventCreate(&start); cudaEventCreate(&stop);
+	    cudaEventRecord( start, 0 );
         SortBounndary_cuda();
+        cudaEventRecord( stop, 0 ); cudaEventSynchronize( stop );
+	    cudaEventElapsedTime( &gputime, start, stop );
+	    cudaEventDestroy( start );cudaEventDestroy( stop );
+        gputime_sort+=gputime;
+		totaltime+=gputime;
+
+        cudaEventCreate(&start); cudaEventCreate(&stop);
+	    cudaEventRecord( start, 0 );
         MCC_Ar_cuda();
+        cudaEventRecord( stop, 0 ); cudaEventSynchronize( stop );
+	    cudaEventElapsedTime( &gputime, start, stop );
+	    cudaEventDestroy( start );cudaEventDestroy( stop );
+        gputime_mcc+=gputime;
+		totaltime+=gputime;
+
+        cudaEventCreate(&start); cudaEventCreate(&stop);
+	    cudaEventRecord( start, 0 );
 		Deposit_cuda();
+        cudaEventRecord( stop, 0 ); cudaEventSynchronize( stop );
+	    cudaEventElapsedTime( &gputime, start, stop );
+	    cudaEventDestroy( start );cudaEventDestroy( stop );
+        gputime_deposit+=gputime;
+		totaltime+=gputime;
+
         Tecplot_save();
         //
         t+=dt; // real time
         tstep++; // step
         if((tstep%CYCLE_NUM) == 0) cstep++; // Number of Cycle step
-        //printf("TIME = %2.4g (s),[%4d][%4d], Iter = %4d, res = %2.5g\n",t,tstep,cstep,*FIter,*dot_result);
+        printf("TIME = %2.4g (s),[%4d][%4d], Iter = %4d, res = %2.5g\r",t,tstep,cstep,*FIter,*dot_result);
         //if(t>1e-3) break;    
-        if(tstep == 1000) break; 
-        //if(cstep==1) break;    
+        //if(tstep == 2) break; 
+        if(cstep==1){
+            time_sum = gputime_field+gputime_efield+gputime_move+gputime_sort+gputime_mcc+gputime_continue+gputime_deposit+gputime_diag+gputime_trace+gputime_dump;
+            fprintf(stderr, "\n");
+	        fprintf(stderr, "Total : time = %2.8f	(s)\n", time_sum * 0.001);
+	        fprintf(stderr, "Field	: time = %2.8f	(s)		rate = %g	(%)\n",	gputime_field * 0.001, gputime_field * 100 / time_sum);
+	        fprintf(stderr, "Efield	: time = %2.8f	(s)		rate = %g	(%)\n",	gputime_efield * 0.001, gputime_efield * 100 / time_sum);
+	        fprintf(stderr, "Move	: time = %2.8f	(s)		rate = %g	(%)\n",	gputime_move * 0.001, gputime_move * 100 / time_sum);
+	        fprintf(stderr, "Sort	: time = %2.8f	(s)		rate = %g	(%)\n",	gputime_sort * 0.001, gputime_sort * 100 / time_sum);
+	        fprintf(stderr, "Mcc	: time = %2.8f	(s)		rate = %g	(%)\n",	gputime_mcc * 0.001, gputime_mcc * 100 / time_sum);
+	        fprintf(stderr, "Depo	: time = %2.8f	(s)		rate = %g	(%)\n",	gputime_deposit * 0.001, gputime_deposit * 100 / time_sum);
+	        fprintf(stderr, "------------------------------------------------------------------------------\n");
+            break; 
+        }    
         if(isnan(*dot_result) || isinf(*dot_result)){
-             printf("\n");
+            printf("\n");
             cudaMemcpy(Host_G_sp, dev_G_sp, nsp * Gsize * sizeof(GPG),cudaMemcpyDeviceToHost);
             for(isp=0;isp<nsp;isp++){
                 sum = 0;
                 dsum = 0.0;
                 dsum2 = 0.0;
+                k = 0;
                 for(i=0;i<Gsize;i++){
-                    sum +=Host_G_sp[isp*Gsize+i].PtNumInCell;
-                    dsum +=Host_G_sp[isp*Gsize+i].den;
-                    dsum2 +=Host_G_sp[isp*Gsize+i].sigma;
-                    if(isnan(Host_G_sp[isp*Gsize+i].sigma)) printf("\tsigma[%d].[%d] = [%g]\n",isp,i,Host_G_sp[isp*Gsize+i].sigma);
+                    if(vec_G[i].DensRegion){
+                        k++;
+                        sum +=Host_G_sp[isp*Gsize+i].PtNumInCell;
+                        dsum +=Host_G_sp[isp*Gsize+i].den * SP[isp].np2c/dx/dy;
+                        dsum2 +=Host_G_sp[isp*Gsize+i].sigma;
+                        if(isnan(Host_G_sp[isp*Gsize+i].sigma)) printf("\tsigma[%d].[%d] = [%g]\n",isp,i,Host_G_sp[isp*Gsize+i].sigma);
+                    }
                 }
-                printf("\tNP - %s : %d, %g, %g\n",SP[isp].name,sum,dsum,dsum2);
+                printf("\tNP - %s : %d, %g, %g\n",SP[isp].name,sum,dsum/k,dsum2/k);
+                if(dsum/k == 0) exit(1);
             }
-            exit(1);
+            //exit(1);
         }
         
         /*

@@ -34,7 +34,7 @@
     },
     "GasSpecies":{
         "Type(0:Ar,1:O2,2:Ar/O2)":0,
-        "TotalPres(Torr)":0.01,
+        "TotalPres(Torr)":0.1,
         "Background":{
             "Argon":{"Ratio":50,"Temp(eV)":0.026},
             "Oxygen":{"Ratio":420,"Temp(eV)":0.026}
@@ -51,8 +51,8 @@
         "ChargeSpecies":{
             "Loadtype":0,
             "LoadPosition(m)":{"X0":0.00,"X1":0.04,"Y0":0.00,"Y1":0.02},
-            "Electron":{"S_ID":0,"Density":2.0e16,"Temp(eV)":0.5,"np2c":5e7,"Ratio":1,"Max_np":5e5},
-            "Ar+":{"S_ID":1,"Density":2.0e16,"Temp(eV)":0.5,"np2c":5e7,"Ratio":1,"Max_np":5e5},
+            "Electron":{"S_ID":0,"Density":2.0e16,"Temp(eV)":22.5,"np2c":5e7,"Ratio":1,"Max_np":5e5},
+            "Ar+":{"S_ID":1,"Density":2.0e16,"Temp(eV)":22.5,"np2c":5e7,"Ratio":1,"Max_np":5e5},
             "O2+":{"S_ID":2,"Density":2.0e16,"Temp(eV)":0.026,"np2c":5e7,"Ratio":1,"Max_np":5e5},
             "O+":{"S_ID":3,"Density":2.0e16,"Temp(eV)":0.026,"np2c":5e7,"Ratio":1,"Max_np":5e5},
             "O-":{"S_ID":4,"Density":2.0e16,"Temp(eV)":0.026,"np2c":5e7,"Ratio":1,"Max_np":5e5}
@@ -122,9 +122,9 @@
                 "Init_Particle_Num":500000
             },
             "Tecplot2D":0,
-            "Tec_Movie":1,
+            "Tec_Movie":0,
             "Tec_Movie_FrameNum":5000,
-            "Tec_Particle_Movie":1,
+            "Tec_Particle_Movie":0,
             "Tec_Particle_Movie_FrameNum":1000,
             "Tec_Ave_Movie":10,
             "Tec_Ave_Movie_Interval":1,

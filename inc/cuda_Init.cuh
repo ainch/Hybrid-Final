@@ -17,10 +17,10 @@ extern __global__ void Cond_Sigma_Lap(int ngx, int ngy, float dx, float dy, floa
 extern __global__ void GCondAInit(int CondNUMR, int nsp, float Value, GCondA *data);
 extern __global__ void MoveE_Basic(int Gsize,int ngy,float dt_dx,float dt_dy, Species *info, GCP *sp, GPG *data, GGA *Field);
 extern __global__ void SortBoundary_Basic(int Gsize,int ngy,float dt_dx,float dt_dy,int *StructureIndex, Species *info, GCP *sp, GPG *data, GGA *Field, GCondA *Cond, int *ReArgFlag);
-extern __global__ void MCC_Ar_cooper(int Gsize, int ngy, float dt, int MCCn, float dtm,float idx,float idy, int nvel, float *vsave,
-											curandState *states, MCC_sigmav *sigv, CollF *CollP, ArCollD *CX, 
+extern __global__ void MCC_Ar_Basic(int Gsize, int Csize, int ngy, int nsp, float dt, int MCCn, float dtm,float idx,float idy, int nvel, float *vsave,
+											curandState *states, int N_LOGX, float idLOGX, MCC_sigmav *sigv, CollF *CollP, ArCollD *CX, 
 											Fluid *infoF, GFC *Fluid, GGA *BG, Species *info, GPG *data, GCP *sp);
-extern __global__ void MCC_Ar_Basic(int Gsize, int ngy, curandState *states, Species *info, GCP *sp, GPG *data, GGA *Field);
+namespace cg = cooperative_groups;
 #ifndef __CUDA_INIT_CUH__
 #define __CUDA_INIT_CUH__
 curandState *devStates;
@@ -34,7 +34,6 @@ dim3 EFIELD_GRID,EFIELD_BLOCK;
 dim3 MOVE_GRID, MOVE_BLOCK;
 dim3 SORT_GRID, SORT_BLOCK;
 dim3 MCC_GRID, MCC_BLOCK;
-dim3 MCC_GRID2, MCC_BLOCK2;
 float *Host_G_buf, *Host_C_buf;
 void Set_Device_Parameter();
 void Set_DiagParameter_cuda();

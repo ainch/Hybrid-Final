@@ -1,26 +1,105 @@
 #include "cuda_mcc.cuh"
 void MCC_Ar_cuda(){
-	//MCC_Ar_Basic<<<MCC_GRID2, MCC_BLOCK2>>>(Gsize, ngy, devStates, dev_info_sp, dev_sp, dev_G_sp, dev_GvecSet);
-    void *kernelArgs[] = {
-        (void*)&Gsize,(void*)&ngy,(void*)&DT_MCCn,(void*)&dt_mcc,
-		(void*)&idx,(void*)&idy,(void*)&h_nvel,(void*)&dev_vsave,
-		(void*)&devStates, (void*)&dev_SigmaV,(void*)&dev_Coll_Flag,(void*)&dev_ArCX,
-		(void*)&dev_FG, (void*)&dev_C_F,(void*)&dev_GvecSet, 
-		(void*)&dev_info_sp,  (void*)&dev_G_sp, (void*)&dev_sp,
-    };
-    cudaLaunchCooperativeKernel((void *)MCC_Ar_cooper,MCC_GRID,MCC_BLOCK,kernelArgs, sMemSize_MCC, NULL);
-    cudaDeviceSynchronize();
-	exit(1);
+	MCC_Ar_Basic<<<MCC_GRID, MCC_BLOCK>>>(Gsize, Csize, ngy, nsp, dt, DT_MCCn, dt_mcc, idx, idy, h_nvel, dev_vsave, devStates, N_LOGX, idLOGX, dev_SigmaV,
+												dev_Coll_Flag, dev_ArCX, dev_FG, dev_C_F, dev_GvecSet, dev_info_sp, dev_G_sp, dev_sp);
+	cudaDeviceSynchronize();
+	//exit(1);
 }
-__global__ void MCC_Ar_cooper(int Gsize, int ngy, float dt, int MCCn, float dtm,float idx,float idy, int nvel, float *vsave,
-											curandState *states, MCC_sigmav *sigv, CollF *CollP, ArCollD *CX, 
+__global__ void MCC_Ar_Basic(int Gsize, int Csize, int ngy, int nsp, float dt, int MCCn, float dtm, float idx,float idy, int nvel, float *vsave,
+											curandState *states, int N_LOGX, float idLOGX, MCC_sigmav *sigv, CollF *CollP, ArCollD *CX, 
 											Fluid *infoF, GFC *Fluid, GGA *BG, Species *info, GPG *data, GCP *sp){
-	cg::thread_block cta = cg::this_thread_block();
-    cg::grid_group grid = cg::this_grid();
+	int TID = threadIdx.x + blockIdx.x * blockDim.x;
+	if(TID>=Gsize) return;
+	// Direct Method
+	//Direct_Argon_Electron(Gsize, ngy, TID, MCCn, dtm, nvel, vsave, states, info, data, sp, N_LOGX, idLOGX, sigv, CollP, CX, BG, Fluid);
+	Direct_Argon_ArIon(Gsize, ngy, TID, MCCn, dt, nvel, vsave, states, info, data, sp, N_LOGX, idLOGX, sigv, CollP, CX, BG, Fluid);
+	// Memory Allocation mode
+	Collision_Check(Gsize, Csize, ngy, TID, 0, dt, MCCn, dtm, states, info, data, sp, sigv, BG, Fluid);
+	//Collision_Check(Gsize, Csize, ngy, TID, 1, dt, MCCn, dtm, states, info, data, sp, sigv, BG, Fluid);
+	//Argon_Ar_Collision(Gsize, TID, dt, nvel, vsave, states, info, data, sp, N_LOGX, idLOGX, sigv, CollP, CX, BG, Fluid);
+	Argon_E_Collision(Gsize, ngy, TID, MCCn, dtm, nvel, vsave, states, info, data, sp, N_LOGX, idLOGX, sigv, CollP, CX, BG, Fluid);
+	
+}	
+__device__ void dev_maxwellv(float *vx_local,float *vy_local,float *vz_local,float vsaven,float vti,float Rphi,float Rthe){
+	float aphi,sintheta,costheta;
+	aphi=2.0*M_PI*Rphi;
+	costheta=1-2*Rthe;
+	sintheta=sqrt(1-costheta*costheta);
+	*vx_local=vti*vsaven*sintheta*__cosf(aphi);
+	*vy_local=vti*vsaven*sintheta*__sinf(aphi);
+	*vz_local=vti*vsaven*costheta;
+}
+__device__ void dev_anewvel(float energy,float vel,float *n_vx,float *n_vy,float *n_vz,int e_flag,float massrate,float rand1,float rand2){
+	float phi1,cosphi,sinphi,coschi,sinchi,up1,up2,up3;
+	float mag,r11,r12,r13,r21,r22,r23,r31,r32,r33;
+	//printf("[] : %g %g %g %g %g %g %g %g\n",energy,vel,*n_vx,*n_vy,*n_vz,massrate,rand1,rand2);
+	if(energy<1e-30)coschi=1;
+	else coschi=(energy+2.0-2.0*__powf(float(energy+1.0),rand1))/energy;
+	sinchi=sqrt(fabs(1.0-coschi*coschi));
+	phi1=2*M_PI*rand2;
+	cosphi=__cosf(phi1);
+	sinphi=__sinf(phi1);
+	if(e_flag) vel*=sqrt(1.0-2.0*(1-coschi)*1*massrate);				// hur insert Ver015
+	r13=*n_vx; r23=*n_vy; r33=*n_vz;
+	if(r33==1.0){up1=0; up2=1; up3=0;}
+	else{up1=0; up2=0; up3=1;}
+	r12=r23*up3-r33*up2;
+	r22=r33*up1-r13*up3;
+	r32=r13*up2-r23*up1;
+	mag=sqrt(r12*r12+r22*r22+r32*r32);
+	r12/=mag; r22/=mag; r32/=mag;
+	r11=r22*r33-r32*r23;
+	r21=r32*r13-r12*r33;
+	r31=r12*r23-r22*r13;
 
-	for (int i=grid.thread_rank(); i < 2*Gsize; i+= grid.size()){
-		printf("I = %d\n",i);
-	}
+	*n_vx=vel*(r11*sinchi*cosphi+r12*sinchi*sinphi+r13*coschi);
+	*n_vy=vel*(r21*sinchi*cosphi+r22*sinchi*sinphi+r23*coschi);
+	*n_vz=vel*(r31*sinchi*cosphi+r32*sinchi*sinphi+r33*coschi);
+}
+__device__ void dev_newvel_IONSC(float *vx_sc,float *vy_sc,float *vz_sc,float vel,float rand1,float rand2){
+
+	float coschi,sinchi,phi1,cosphi,sinphi;
+	float r11,r21,r31,r13,r23,r33,r12,r22,r32,up1,up2,up3;
+	float mag;
+	//float costh,sinth,tanchi;
+
+	coschi= sqrt(rand1);
+	sinchi= sqrt(fabs(1.0-coschi*coschi));
+	/*
+	costh=1-2*rand1;
+	sinth=sqrt(fabs(1.0-costh*costh));
+	tanchi=sinth/(2.0+costh);
+	coschi=1/(sqrt(1+tanchi*tanchi));
+	sinchi= sqrt(fabs(1.0-coschi*coschi));
+	*/
+
+	phi1=2*M_PI*rand2;
+	cosphi=__cosf(phi1);
+	sinphi=__sinf(phi1);
+
+	r13=*vx_sc/vel;
+	r23=*vy_sc/vel;
+	r33=*vz_sc/vel;
+
+	if(r33==1.0){up1=0; up2=1; up3=0;}
+	else{up1=0; up2=0; up3=1;}
+
+	r12=r23*up3-r33*up2;
+	r22=r33*up1-r13*up3;
+	r32=r13*up2-r23*up1;
+	mag=sqrt(r12*r12+r22*r22+r32*r32);
+
+	r12/= mag;
+	r22/= mag;
+	r32/= mag;
+
+	r11=r22*r33-r32*r23;
+	r21=r32*r13-r12*r33;
+	r31=r12*r23-r22*r13;
+
+	*vx_sc=vel*coschi*(r11*sinchi*cosphi+r12*sinchi*sinphi+r13*coschi);
+	*vy_sc=vel*coschi*(r21*sinchi*cosphi+r22*sinchi*sinphi+r23*coschi);
+	*vz_sc=vel*coschi*(r31*sinchi*cosphi+r32*sinchi*sinphi+r33*coschi);
 }
 void Set_NullCollisionTime_cuda(){
     // This function calculates the following variables :
@@ -316,21 +395,3 @@ void Set_NullCollisionTime_cuda(){
     checkCudaErrors(cudaMemcpy(dev_SigmaV, Host_SigmaV, num_a * sizeof(MCC_sigmav), cudaMemcpyHostToDevice));
     printf("MCC Initializing Complete!\n");
 }
-
-__global__ void MCC_Ar_Basic(int Gsize, int ngy, curandState *states, Species *info, GCP *sp, GPG *data, GGA *Field){
-	int TID = threadIdx.x + blockIdx.x * blockDim.x;
-	int isp,ID;
- 	isp = (int)TID/Gsize; //species number [< nsp]
-    ID = (int)TID%Gsize; // Grid ID [< Gsize]
-    if(TID>Gsize*info[isp].spnum) return;
-	curandState LocalStates;
-	LocalStates = states[TID];
-	if(TID < 5 ){
-		float a,b;
-		a = curand_uniform(&LocalStates);
-		b = curand_uniform(&LocalStates);
-		printf("[%d] 1 = %g, 2 = %g\n",TID,a,b);
-	}
-	
-	states[TID]=LocalStates;
-}	

@@ -786,29 +786,33 @@ void InputRead() {
    TecplotS_Movie_Ncycle = (int)json_object_get_number(BufObject,"Tec_Movie");
    if(TecplotS_Movie_Ncycle > 0) TecplotS_Movie_Flag = 1;
    else if(TecplotS_Movie_Ncycle == 0) TecplotS_Movie_Flag = 0;
-   TecplotS_Movie_Frame = (int)json_object_get_number(BufObject,"Tec_Movie_FrameNum");
-   if(TecplotS_Movie_Frame/DT_PIC > 1.0){
-      printf(" ERROR : Movie_Frame must be less than TimeStep_PIC.\n");
-      exit(1);
-   }else if(DT_PIC % TecplotS_Movie_Frame !=0){
-      printf(" ERROR : Movie_Frame must be an argument to TimeStep_PIC.\n");
-      exit(1);
+   if(TecplotS_Movie_Flag != 0){
+      TecplotS_Movie_Frame = (int)json_object_get_number(BufObject,"Tec_Movie_FrameNum");
+      if(TecplotS_Movie_Frame/DT_PIC > 1.0){
+         printf(" ERROR : Movie_Frame must be less than TimeStep_PIC.\n");
+         exit(1);
+      }else if(DT_PIC % TecplotS_Movie_Frame !=0){
+         printf(" ERROR : Movie_Frame must be an argument to TimeStep_PIC.\n");
+         exit(1);
+      }
+      if(TecplotS_Movie_Frame !=0) TecplotS_Movie_SCYCLE = (int)(DT_PIC/TecplotS_Movie_Frame);
    }
-   TecplotS_Movie_SCYCLE = (int)(DT_PIC/TecplotS_Movie_Frame);
    TecplotS_Movie_Count = 0;
 
    TecplotS_PT_Movie_Ncycle = (int)json_object_get_number(BufObject,"Tec_Particle_Movie");
    if(TecplotS_PT_Movie_Ncycle > 0) TecplotS_PT_Movie_Flag = 1;
    else if(TecplotS_PT_Movie_Ncycle == 0) TecplotS_PT_Movie_Flag = 0;
    TecplotS_PT_Movie_Frame = (int)json_object_get_number(BufObject,"Tec_Particle_Movie_FrameNum");
-   if(TecplotS_PT_Movie_Frame/DT_PIC > 1.0){
-      printf(" ERROR : Movie_Frame must be less than TimeStep_PIC.\n");
-      exit(1);
-   }else if(DT_PIC % TecplotS_PT_Movie_Frame !=0){
-      printf(" ERROR : Movie_Frame must be an argument to TimeStep_PIC.\n");
-      exit(1);
+   if(TecplotS_PT_Movie_Flag != 0){
+      if(TecplotS_PT_Movie_Frame/DT_PIC > 1.0){
+         printf(" ERROR : Movie_Frame must be less than TimeStep_PIC.\n");
+         exit(1);
+      }else if(DT_PIC % TecplotS_PT_Movie_Frame !=0){
+         printf(" ERROR : Movie_Frame must be an argument to TimeStep_PIC.\n");
+         exit(1);
+      }
+      if(TecplotS_PT_Movie_Frame !=0) TecplotS_PT_Movie_SCYCLE = (int)(DT_PIC/TecplotS_PT_Movie_Frame);
    }
-   TecplotS_PT_Movie_SCYCLE = (int)(DT_PIC/TecplotS_PT_Movie_Frame);
    TecplotS_PT_Movie_Count = 0;
    //printf("Tec_Ave_Movie = %d\n",(int)json_object_get_number(BufObject,"Tec_Ave_Movie"));
    //printf("Tec_Ave_Movie_Interval = %d\n",(int)json_object_get_number(BufObject,"Tec_Ave_Movie_Interval"));
@@ -1384,6 +1388,7 @@ void Geometry_setting() {
       vec_G[i].Temp = (float) 0.0;
       vec_G[i].Face = NO_FACE;
       vec_G[i].Area = (float) dy*zlength;
+      vec_G[i].DensRegion = (int) 0;
       vec_G[i].BackDen1 = (float) 0.0;
       vec_G[i].BackVel1 = (float) 0.0;
       vec_G[i].BackDen2 = (float) 0.0;
@@ -1444,6 +1449,19 @@ void Geometry_setting() {
                vec_C[CID].PlasmaRegion = (int) 0;
                vec_C[CID].eps_r = (float) 0.0;
             }
+         }
+      }
+   }
+   //vec_G[i].DensRegion = (int) 1;
+   for(i=0; i<ncx; i++){
+      for(j=0; j<ncy; j++){
+         ID = i*(ngy-1)+j;
+         if(vec_C[ID].PlasmaRegion == 1){
+            ID = i*ngy+j;
+            vec_G[ID].DensRegion = 1;
+            vec_G[ID+1].DensRegion = 1;
+            vec_G[ID+ngy].DensRegion = 1;
+            vec_G[ID+ngy+1].DensRegion = 1;
          }
       }
    }
@@ -1916,12 +1934,13 @@ void GasSetting(){
       VFInit(PtD[isp].vx,0,NP_LIMIT);
       VFInit(PtD[isp].vy,0,NP_LIMIT);
       VFInit(PtD[isp].vz,0,NP_LIMIT);
-      if(DumpFlag==0) SetParticleLoad(isp, SP[isp].InitDens, SP[0].Loadtype,SP[0].x_center, SP[0].x_fall, SP[0].y_center,SP[0].y_fall,SP[isp].vti);
+      SetParticleLoad(isp, SP[isp].InitDens, SP[0].Loadtype,SP[0].x_center, SP[0].x_fall, SP[0].y_center,SP[0].y_fall,SP[isp].vti);
       // Initialize GPG 
       for(i=0;i<Gsize;i++){
          Host_G_sp[isp*Gsize+i].PtNumInCell = 0;
          Host_G_sp[isp*Gsize+i].PtNumMoveInterCell = 0;
          Host_G_sp[isp*Gsize+i].MaxPtNumInCell = (int) SP[isp].MAXNP / Gsize;
+         Host_G_sp[isp*Gsize+i].PtNumMCCInCell = 0;
          Host_G_sp[isp*Gsize+i].den = 0.0;
          Host_G_sp[isp*Gsize+i].smt_den = 0.0;
          Host_G_sp[isp*Gsize+i].ave_den = 0.0;

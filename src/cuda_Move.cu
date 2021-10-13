@@ -9,7 +9,7 @@ __global__ void MoveE_Basic(int Gsize,int ngy, float dt_dx,float dt_dy, Species 
 	int PNC,isp,ID;
 	isp = (int)TID/Gsize; //species number [< nsp]
     ID = (int)TID%Gsize; // Grid ID [< Gsize]
-    if(TID>Gsize*info[isp].spnum) return;
+    if(TID>=Gsize*info[0].spnum) return;
 	
     PNC = data[TID].PtNumInCell;
     if(PNC==0){

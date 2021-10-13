@@ -197,7 +197,7 @@ void maxwellv(float *vx_local, float *vy_local, float *vz_local, float vti)
 			vsave[n]=sqrt(2.0)*i*dv;
     }
 	 h_nvel=nvel;
-//	 fprintf(stderr,"h_vel = %d \n", h_nvel);
+	 //fprintf(stderr,"h_vel = %d \n", h_nvel);
   }
 
   n = (int)((nvel-1)*frand());

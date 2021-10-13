@@ -139,8 +139,10 @@
                 "Init_Particle_Num":500000
             },
             "Tecplot2D":0,
-            "Tec_Movie":1,
-            "Tec_Movie_FrameNum":200,
+            "Tec_Movie":0,
+            "Tec_Movie_FrameNum":5000,
+            "Tec_Particle_Movie":0,
+            "Tec_Particle_Movie_FrameNum":1000,
             "Tec_Ave_Movie":10,
             "Tec_Ave_Movie_Interval":1,
             "Tec_Ave_Movie_num":100

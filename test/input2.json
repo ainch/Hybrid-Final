@@ -23,15 +23,15 @@
             {"M_ID":2,"X0":100,"X1":150,"Y0":  5,"Y1":10,"Temp":873}
         ],
         "Source": [
-            {"M_ID":1,"DC(V)": 0,"Power(W)":  0,"AC(V)": 500,"Freq(1/s)":13.56e6,"Phase(deg)":0.0,"R(Ohm)":  0.0,"L(H)":  0.0,"C(F)": 1.0}
+            {"M_ID":1,"DC(V)": 0,"Power(W)":  0,"AC(V)": 800,"Freq(1/s)":13.56e6,"Phase(deg)":0.0,"R(Ohm)":  0.0,"L(H)":  0.0,"C(F)": 1.0}
         ],
         "DielectricSpec": [
             {"M_ID":3,"X0":100,"X1":150,"Y0": 100,"Y1": 110,"Epsilon":2.0}
         ]
     },
     "GasSpecies":{
-        "Type(0:Ar,1:O2,2:Ar/O2)":1,
-        "TotalPres(Torr)":0.05,
+        "Type(0:Ar,1:O2,2:Ar/O2)":0,
+        "TotalPres(Torr)":2.0,
         "Background":{
             "Argon":{"Ratio":50,"Temp(eV)":0.026},
             "Oxygen":{"Ratio":420,"Temp(eV)":0.026}
@@ -57,7 +57,7 @@
     },
     "SimulationMethod":
     {
-        "TimeStep_PIC": 5000,
+        "TimeStep_PIC": 5120,
         "TimeStep_Conti": 20,
         "FieldTest":{
             "Laplace_Test_Flag":0,
@@ -119,8 +119,10 @@
                 "Init_Particle_Num":500000
             },
             "Tecplot2D":0,
-            "Tec_Movie":1,
+            "Tec_Movie":0,
             "Tec_Movie_FrameNum":5000,
+            "Tec_Particle_Movie":0,
+            "Tec_Particle_Movie_FrameNum":50,
             "Tec_Ave_Movie":10,
             "Tec_Ave_Movie_Interval":1,
             "Tec_Ave_Movie_num":100

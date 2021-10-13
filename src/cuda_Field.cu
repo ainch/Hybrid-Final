@@ -438,7 +438,8 @@ __global__ void Cond_Sigma_Lap(int ngx, int ngy, float dx, float dy, float zleng
 		}
 	}
 }
-__global__ void Cond_Sigma(int ngx, int ngy, float dx, float dy, float zlength, GGA *vecG, GCA *vecC, Species *info, GPG *data, float *Phi, float *Sigma)
+__global__ void Cond_Sigma(int ngx, int ngy, float dx, float dy, float zlength, 
+					GGA *vecG, GCA *vecC, Species *info, GPG *data, float *Phi, float *Sigma)
 {
 	int TID=blockDim.x*(gridDim.x*blockIdx.y+blockIdx.x)+threadIdx.x;
 	int x, y;
@@ -521,16 +522,20 @@ __global__ void PCG_Deposit_Temp(int Gsize, int *IDX, float *X, GGA *vecG)
 __global__ void Calculate_1GasPara(int Gsize, float mass, float press, GGA *vecG){
 	int TID=blockDim.x*(gridDim.x*blockIdx.y+blockIdx.x)+threadIdx.x;
 	if(TID>=Gsize) return;
-    vecG[TID].BackDen1 = NperTORR*press/(vecG[TID].Temp*8.6142e-5+DBL_MIN);
-	vecG[TID].BackVel1 = sqrt(vecG[TID].Temp*1.38e-23/mass);
+	if(vecG[TID].DensRegion){
+    	vecG[TID].BackDen1 = NperTORR*press/(vecG[TID].Temp*8.6142e-5+DBL_MIN);
+		vecG[TID].BackVel1 = sqrt(vecG[TID].Temp*1.38e-23/mass);
+	}
 }
 __global__ void Calculate_2GasPara(int Gsize, float mass1, float press1, float mass2, float press2, GGA *vecG){
 	int TID=blockDim.x*(gridDim.x*blockIdx.y+blockIdx.x)+threadIdx.x;
 	if(TID>=Gsize) return;
-    vecG[TID].BackDen1 = NperTORR*press1/(vecG[TID].Temp*8.6142e-5+DBL_MIN);
-	vecG[TID].BackVel1 = sqrt(vecG[TID].Temp*1.38e-23/mass1);
-    vecG[TID].BackDen2 = NperTORR*press2/(vecG[TID].Temp*8.6142e-5+DBL_MIN);
-	vecG[TID].BackVel2 = sqrt(vecG[TID].Temp*1.38e-23/mass2);
+	if(vecG[TID].DensRegion){
+    	vecG[TID].BackDen1 = NperTORR*press1/(vecG[TID].Temp*8.6142e-5+DBL_MIN);
+		vecG[TID].BackVel1 = sqrt(vecG[TID].Temp*1.38e-23/mass1);
+    	vecG[TID].BackDen2 = NperTORR*press2/(vecG[TID].Temp*8.6142e-5+DBL_MIN);
+		vecG[TID].BackVel2 = sqrt(vecG[TID].Temp*1.38e-23/mass2);
+	}
 }
 __global__ void SaveAT2D(float *A, size_t pitch, int height, float *PHI, int n){
     // High save and load for Matrix type variable 

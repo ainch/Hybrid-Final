@@ -1,4 +1,5 @@
 #include "xypic.cuh"
+extern long int seed;
 extern float dt;
 extern int Gsize,ngx,ngy;
 extern int Csize,ncx,ncy;
@@ -30,7 +31,24 @@ extern Fluid *dev_FG;
 extern curandState *devStates;
 extern int h_nvel;
 extern float *dev_vsave;
+extern int N_LOGX;
+extern float idLOGX;
 namespace cg = cooperative_groups;
+extern __device__ void Direct_Argon_Electron(int Gsize, int ngy, int ID, int MCCn, float dtm, int nvel, float *vsave, curandState *states, 
+											Species *info, GPG *data, GCP *sp, int N_LOGX, float idLOGX, 
+											MCC_sigmav *sigv, CollF *info_CX, ArCollD *CX, GGA *BG, GFC *Fluid);
+extern __device__ void Direct_Argon_ArIon(int Gsize, int ngy, int ID, int MCCn, float dt, int nvel, float *vsave, curandState *states, 
+											Species *info, GPG *data, GCP *sp, int N_LOGX, float idLOGX, 
+											MCC_sigmav *sigv, CollF *info_CX, ArCollD *CX, GGA *BG, GFC *Fluid);
+extern __device__ void Collision_Check(int Gsize, int Csize, int ngy, int ID, int isp, float dt, int MCCn, float dtm, curandState *states, 
+											Species *info, GPG *data, GCP *sp, MCC_sigmav *sigv, GGA *BG, GFC *Fluid);
+extern __device__ void Argon_E_Collision(int Gsize, int ngy, int TID, int MCCn, float dtm, int nvel,float *vsave, curandState *states, 
+											Species *info, GPG *data, GCP *sp, int N_LOGX, float idLOGX,
+											MCC_sigmav *sigv, CollF *info_CX, ArCollD *CX, GGA *BG, GFC *Fluid);
+extern __device__ void Argon_Ar_Collision(int Gsize, int TID, float dt, int nvel, float *vsave, curandState *states, 
+											Species *info, GPG *data, GCP *sp, int N_LOGX, float idLOGX, 
+											MCC_sigmav *sigv, CollF *info_CX, ArCollD *CX, GGA *BG, GFC *Fluid);
+extern __device__ float Argon_CrossSection(int R, float engy, int N_LOGX, float idLOGX, ArCollD *data);
 #ifndef __CUDA_MCC_CUH__
 #define __CUDA_MCC_CUH__
 CollF *dev_Coll_Flag;
@@ -41,8 +59,10 @@ MCC_sigmav *Host_SigmaV;
 MCC_sigmav *dev_SigmaV;
 void MCC_Ar_cuda();
 void Set_NullCollisionTime_cuda();
-__global__ void MCC_Ar_cooper(int Gsize, int ngy, float dt, int MCCn, float dtm,float idx,float idy, int nvel, float *vsave,
-											curandState *states, MCC_sigmav *sigv, CollF *CollP, ArCollD *CX, 
+__global__ void MCC_Ar_Basic(int Gsize, int Csize, int ngy, int nsp, float dt, int MCCn, float dtm,float idx,float idy, int nvel, float *vsave,
+											curandState *states, int N_LOGX, float idLOGX, MCC_sigmav *sigv, CollF *CollP, ArCollD *CX, 
 											Fluid *infoF, GFC *Fluid, GGA *BG, Species *info, GPG *data, GCP *sp);
-__global__ void MCC_Ar_Basic(int Gsize, int ngy, curandState *states, Species *info, GCP *sp, GPG *data, GGA *Field);
+__device__ void dev_maxwellv(float *vx_local,float *vy_local,float *vz_local,float vsaven,float vti,float Rphi,float Rthe);
+__device__ void dev_newvel_IONSC(float *vx_sc,float *vy_sc,float *vz_sc,float vel,float rand1,float rand2);		
+__device__ void dev_anewvel(float energy,float vel,float* n_vx,float* n_vy,float* n_vz,int e_flag,float massrate,float rand1,float rand2);
 #endif

@@ -17,7 +17,7 @@ void Set_SortBoundary_cuda(){
 __global__ void SortBoundary_Basic(int Gsize,int ngy,float dt_dx,float dt_dy,int *StructureIndex, Species *info, GCP *sp, GPG *data, GGA *Field, GCondA *Cond, int *ReArgFlag){
 	int TID = threadIdx.x + blockIdx.x * blockDim.x;
 	int isp,ID;
-    if(TID>Gsize*info[0].spnum) return;
+    if(TID>=Gsize*info[0].spnum) return;
     isp = (int)TID/Gsize; //species number [< nsp]
     ID = (int)TID%Gsize; // Grid ID [< Gsize]
 	

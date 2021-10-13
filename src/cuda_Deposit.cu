@@ -27,7 +27,7 @@ __global__ void PCG_Set(int Gsize, int *IDX, GGA *vecSet, float *Source, float *
 }
 __global__ void SumSource(int ngx, int ngy, Species *info, GGA *vecSet, GPG *data, float *Sigma, float *Source){
      int TID = threadIdx.x + blockIdx.x * blockDim.x;
-     if(TID>ngx*ngy) return;
+     if(TID>=ngx*ngy) return;
      int i;
      int x,y;
      x=TID/ngy; y=TID%ngy;
@@ -36,8 +36,8 @@ __global__ void SumSource(int ngx, int ngy, Species *info, GGA *vecSet, GPG *dat
      
 	if(x==0) {
 		if(vecSet[TID+ngy].Boundary==DIELECTRIC) {
-               for(i=0;i<info[0].spnum;i++) SumSig += 2 * data[TID + i*ngx*ngy].sigma * info[i].q_density;
-			Sigma[TID] = SumSig/vecSet[TID].Area;
+            for(i=0;i<info[0].spnum;i++) SumSig += data[TID + i*ngx*ngy].sigma * info[i].q_density;
+			Sigma[TID] = 2 * SumSig/vecSet[TID].Area;
 		    SD = SumSig;
 		}
 		else if(vecSet[TID+ngy].Boundary==CONDUCTOR) {
@@ -47,9 +47,9 @@ __global__ void SumSource(int ngx, int ngy, Species *info, GGA *vecSet, GPG *dat
 	}
 	else if(x==ngx-1) {
 		if(vecSet[TID-ngy].Boundary==DIELECTRIC) {
-			for(i=0;i<info[0].spnum;i++) SumSig += 2 * data[TID + i*ngx*ngy].sigma * info[i].q_density;
-			Sigma[TID] = SumSig/vecSet[TID].Area;
-		     SD = SumSig;
+			for(i=0;i<info[0].spnum;i++) SumSig += data[TID + i*ngx*ngy].sigma * info[i].q_density;
+			Sigma[TID] = 2 * SumSig/vecSet[TID].Area;
+		    SD = SumSig;
 		}
 		else if(vecSet[TID-ngy].Boundary==CONDUCTOR) {
 			for(i=0;i<info[0].spnum;i++) data[TID + i*ngx*ngy].sigma = 0;
@@ -58,9 +58,9 @@ __global__ void SumSource(int ngx, int ngy, Species *info, GGA *vecSet, GPG *dat
 	}
 	else if(y==0) {
 		if(vecSet[TID+1].Boundary==DIELECTRIC) {
-			for(i=0;i<info[0].spnum;i++) SumSig += 2 * data[TID + i*ngx*ngy].sigma * info[i].q_density;
-			Sigma[TID] = SumSig/vecSet[TID].Area;
-		     SD = SumSig;
+			for(i=0;i<info[0].spnum;i++) SumSig += data[TID + i*ngx*ngy].sigma * info[i].q_density;
+			Sigma[TID] = 2 * SumSig/vecSet[TID].Area;
+		    SD = SumSig;
 		}
 		else if(vecSet[TID+1].Boundary==CONDUCTOR) {
 			for(i=0;i<info[0].spnum;i++) data[TID + i*ngx*ngy].sigma = 0;
@@ -69,9 +69,9 @@ __global__ void SumSource(int ngx, int ngy, Species *info, GGA *vecSet, GPG *dat
 	}
 	else if(y==ngy-1) {
 		if(vecSet[TID-1].Boundary==DIELECTRIC) {
-			for(i=0;i<info[0].spnum;i++) SumSig += 2 * data[TID + i*ngx*ngy].sigma * info[i].q_density;
-			Sigma[TID] = SumSig/vecSet[TID].Area;
-		     SD = SumSig;
+			for(i=0;i<info[0].spnum;i++) SumSig += data[TID + i*ngx*ngy].sigma * info[i].q_density;
+			Sigma[TID] = 2 * SumSig/vecSet[TID].Area;
+		    SD = SumSig;
 		}
 		else if(vecSet[TID-1].Boundary==CONDUCTOR) {
 			for(i=0;i<info[0].spnum;i++) data[TID + i*ngx*ngy].sigma = 0;
@@ -91,13 +91,13 @@ __global__ void SumSource(int ngx, int ngy, Species *info, GGA *vecSet, GPG *dat
 		SD=0;
 	}
     SumSig = 0.0;
-    for(i=0;i<info[0].spnum;i++) SumSig += data[TID + i*ngx*ngy].sigma * info[i].q_density;
-	sum=(SumSig+SD)/EPS0;
+    for(i=0;i<info[0].spnum;i++) SumSig += data[TID + i*ngx*ngy].den * info[i].q_density;
+	sum=(SumSig + SD)/EPS0;
 	Source[TID]=sum;
 }
 __global__ void Smooth_121_A(int ngx, int ngy, int nsp, GGA *vecSet, GPG *data){
     int TID = threadIdx.x + blockIdx.x * blockDim.x;
-    if(TID>ngx*ngy*nsp) return;
+    if(TID>=ngx*ngy*nsp) return;
     if(data[TID].den == 0) return;
     int ID;
     int x,y;
@@ -150,7 +150,7 @@ __global__ void Smooth_121_A(int ngx, int ngy, int nsp, GGA *vecSet, GPG *data){
 }
 __global__ void Smooth_121_B(int ngx, int ngy, int nsp, GGA *vecSet, GPG *data){
      int TID = threadIdx.x + blockIdx.x * blockDim.x;
-     if(TID>ngx*ngy*nsp) return;
+     if(TID>=ngx*ngy*nsp) return;
      if(data[TID].smt_den == 0) return;
      int ID;
      int x,y;
@@ -203,7 +203,7 @@ __global__ void Smooth_121_B(int ngx, int ngy, int nsp, GGA *vecSet, GPG *data){
 }
 __global__ void DepositBoundary(int Gsize, int ngy, int nsp, GGA *vecSet, GPG *data){
     int TID = threadIdx.x + blockIdx.x * blockDim.x;
-    if(TID>Gsize*nsp) return;
+    if(TID>=Gsize*nsp) return;
     int ID;
     ID = (int)TID%Gsize;
 
@@ -211,15 +211,14 @@ __global__ void DepositBoundary(int Gsize, int ngy, int nsp, GGA *vecSet, GPG *d
 	else if(vecSet[ID].Face==UL_CORN || vecSet[ID].Face==LL_CORN || vecSet[ID].Face==UR_CORN || vecSet[ID].Face==LR_CORN) data[TID].den *= 4;
 	if(vecSet[ID].Boundary==NEUMANN) data[TID].den *= 2;
 	else if(vecSet[ID].Boundary==DIRICHLET && vecSet[ID].Face!=NO_FACE && vecSet[ID].CondID!=0) data[TID].den *= 2;
-    if(vecSet[ID].Face==NO_FACE && vecSet[ID].Boundary==3)
-        data[TID].den = 0;
+
 }
 __global__ void DepositAtom(int Gsize, int ngy, Species *info, GCP *sp, GPG *data){
     int TID = threadIdx.x + blockIdx.x * blockDim.x;
 	int ID,isp;
 	isp = (int)TID/Gsize;
     ID = (int)TID%Gsize;
-	if(TID>Gsize*info[isp].spnum) return;
+	if(TID>=Gsize*info[0].spnum) return;
 
 	int i,k,PNC;
     float lx,ly;
@@ -230,9 +229,6 @@ __global__ void DepositAtom(int Gsize, int ngy, Species *info, GCP *sp, GPG *dat
     WS=0.0; WN=0.0; ES=0.0; EN=0.0;
 	i = info[isp].St_num + ID;
 	for(k=0;k<PNC;k++){
-		if(TID==135 && sp[i].x == 0){
-			printf("\n[%d][%d][%d][%d][%g][%g][%g][%g]\n",TID,i,k,isp,sp[i].x,sp[i].y,sp[i].vx,sp[i].vy);
-		}
 		lx=sp[i].x; ly=sp[i].y;
 		WS+=(1-lx)*(1-ly);
 		WN+=(1-lx)*ly;
@@ -240,10 +236,6 @@ __global__ void DepositAtom(int Gsize, int ngy, Species *info, GCP *sp, GPG *dat
 		EN+=lx*ly;
 		i+=Gsize;
 	}
-	WS*=info[isp].Denscale; 
-	WN*=info[isp].Denscale; 
-	ES*=info[isp].Denscale; 
-	EN*=info[isp].Denscale;
 	atomicAdd(&data[TID].den,WS);
 	atomicAdd(&data[TID+1].den,WN);
 	atomicAdd(&data[TID+ngy].den,ES);
@@ -251,7 +243,6 @@ __global__ void DepositAtom(int Gsize, int ngy, Species *info, GCP *sp, GPG *dat
 }
 __global__ void DepositInitDensity(int Gsize, Species *info, GPG *data){
     int TID = threadIdx.x + blockIdx.x * blockDim.x;
-	int isp = (int)TID/Gsize;
-    if(TID>Gsize*info[isp].spnum) return;
+    if(TID>=Gsize*info[0].spnum) return;
     data[TID].den = 0.0;
 }

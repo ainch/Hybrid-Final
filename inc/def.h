@@ -87,6 +87,7 @@ typedef struct __Global_Gsize_Array{
 	int Boundary;   //Boundary Condition Constant 0~4
 	int CondID;		// Conductor ID , NO Conductor is zero
 	int Face;
+	int DensRegion;
 	float Area;
 	float Temp;
 	float BackDen1;
@@ -129,6 +130,7 @@ typedef struct __Global_Particle_Gsize_Data
 	int PtNumInCell;
 	int PtNumMoveInterCell;
     int MaxPtNumInCell;  
+	int PtNumMCCInCell;
     float den;
 	float smt_den;
 	float ave_den;
