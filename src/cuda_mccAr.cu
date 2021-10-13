@@ -458,89 +458,70 @@ __device__ float Argon_CrossSection(int R, float engy, int N_LOGX, float idLOGX,
 	float lengy = log10(engy);
 	float ee1, a1, a2;
 	int ee2;
-	if(R==0){
-		if(lengy < data[0].xe){
-			return data[0].cx_0;
-		}else if(lengy > data[N_LOGX-1].xe){
-			return data[N_LOGX-1].cx_0 * 0.1 * exp(-1 * (lengy - data[N_LOGX-1].xe));
-		}
-		lengy = lengy - data[0].xe;
-		ee1 = idLOGX * lengy;
-		ee2 = (int)ee1;
-		a1 = ee1 - ee2;
-		a2 = 1 - a1;
-		return a2*data[ee2].cx_0+a1*data[ee2+1].cx_0;
-	}else if(R==1){
-		if(lengy < data[0].xe){
-			return data[0].cx_1;
-		}else if(lengy > data[N_LOGX-1].xe){
-			return data[N_LOGX-1].cx_1 * 0.1 * exp(-1 * (lengy - data[N_LOGX-1].xe));
-		}
-		lengy = lengy - data[0].xe;
-		ee1 = idLOGX * lengy;
-		ee2 = (int)ee1;
-		a1 = ee1 - ee2;
-		a2 = 1 - a1;
-		return a2*data[ee2].cx_1+a1*data[ee2+1].cx_1;
-	}else if(R==2){
-		if(lengy < data[0].xe){
-			return data[0].cx_2;
-		}else if(lengy > data[N_LOGX-1].xe){
-			return data[N_LOGX-1].cx_2 * 0.1 * exp(-1 * (lengy - data[N_LOGX-1].xe));
-		}
-		lengy = lengy - data[0].xe;
-		ee1 = idLOGX * lengy;
-		ee2 = (int)ee1;
-		a1 = ee1 - ee2;
-		a2 = 1 - a1;
-		return a2*data[ee2].cx_2+a1*data[ee2+1].cx_2;
-	}else if(R==3){
-		if(lengy < data[0].xe){
-			return data[0].cx_3;
-		}else if(lengy > data[N_LOGX-1].xe){
-			return data[N_LOGX-1].cx_3 * 0.1 * exp(-1 * (lengy - data[N_LOGX-1].xe));
-		}
-		lengy = lengy - data[0].xe;
-		ee1 = idLOGX * lengy;
-		ee2 = (int)ee1;
-		a1 = ee1 - ee2;
-		a2 = 1 - a1;
-		return a2*data[ee2].cx_3+a1*data[ee2+1].cx_3;
-	}else if(R==4){
-		if(lengy < data[0].xe){
-			return data[0].cx_4;
-		}else if(lengy > data[N_LOGX-1].xe){
-			return data[N_LOGX-1].cx_4 * 0.1 * exp(-1 * (lengy - data[N_LOGX-1].xe));
-		}
-		lengy = lengy - data[0].xe;
-		ee1 = idLOGX * lengy;
-		ee2 = (int)ee1;
-		a1 = ee1 - ee2;
-		a2 = 1 - a1;
-		return a2*data[ee2].cx_4+a1*data[ee2+1].cx_4;
-	}else if(R==5){
-		if(lengy < data[0].xe){
-			return data[0].cx_5;
-		}else if(lengy > data[N_LOGX-1].xe){
-			return data[N_LOGX-1].cx_5 * 0.1 * exp(-1 * (lengy - data[N_LOGX-1].xe));
-		}
-		lengy = lengy - data[0].xe;
-		ee1 = idLOGX * lengy;
-		ee2 = (int)ee1;
-		a1 = ee1 - ee2;
-		a2 = 1 - a1;
-		return a2*data[ee2].cx_5+a1*data[ee2+1].cx_5;
-	}else if(R==6){
-		if(lengy < data[0].xe){
-			return data[0].cx_6;
-		}else if(lengy > data[N_LOGX-1].xe){
-			return data[N_LOGX-1].cx_6 * 0.1 * exp(-1 * (lengy - data[N_LOGX-1].xe));
-		}
-		lengy = lengy - data[0].xe;
-		ee1 = idLOGX * lengy;
-		ee2 = (int)ee1;
-		a1 = ee1 - ee2;
-		a2 = 1 - a1;
-		return a2*data[ee2].cx_6+a1*data[ee2+1].cx_6;
-	}
+	lengy = lengy - data[0].xe;
+	ee1 = idLOGX * lengy;
+	ee2 = (int)ee1;
+	a1 = ee1 - ee2;
+	a2 = 1 - a1;
+	switch (R) {
+        case 0 : 
+			if(lengy < data[0].xe){
+				return data[0].cx_0;
+			}else if(lengy > data[N_LOGX-1].xe){
+				return data[N_LOGX-1].cx_0 * 0.1 * exp(-1 * (lengy - data[N_LOGX-1].xe));
+			}
+			return a2*data[ee2].cx_0+a1*data[ee2+1].cx_0;
+			break;
+        case 1 :
+			if(lengy < data[0].xe){
+				return data[0].cx_1;
+			}else if(lengy > data[N_LOGX-1].xe){
+				return data[N_LOGX-1].cx_1 * 0.1 * exp(-1 * (lengy - data[N_LOGX-1].xe));
+			}
+			return a2*data[ee2].cx_1+a1*data[ee2+1].cx_1;
+			break;
+        case 2 :
+			if(lengy < data[0].xe){
+				return data[0].cx_2;
+			}else if(lengy > data[N_LOGX-1].xe){
+				return data[N_LOGX-1].cx_2 * 0.1 * exp(-1 * (lengy - data[N_LOGX-1].xe));
+			}
+			return a2*data[ee2].cx_2+a1*data[ee2+1].cx_2;
+			break;
+        case 3 :
+			if(lengy < data[0].xe){
+				return data[0].cx_3;
+			}else if(lengy > data[N_LOGX-1].xe){
+				return data[N_LOGX-1].cx_3 * 0.1 * exp(-1 * (lengy - data[N_LOGX-1].xe));
+			}
+			return a2*data[ee2].cx_3+a1*data[ee2+1].cx_3;
+			break;
+        case 4 :
+			if(lengy < data[0].xe){
+				return data[0].cx_4;
+			}else if(lengy > data[N_LOGX-1].xe){
+				return data[N_LOGX-1].cx_4 * 0.1 * exp(-1 * (lengy - data[N_LOGX-1].xe));
+			}
+			return a2*data[ee2].cx_4+a1*data[ee2+1].cx_4;
+			break;
+        case 5 :
+			if(lengy < data[0].xe){
+				return data[0].cx_5;
+			}else if(lengy > data[N_LOGX-1].xe){
+				return data[N_LOGX-1].cx_5 * 0.1 * exp(-1 * (lengy - data[N_LOGX-1].xe));
+			}
+			return a2*data[ee2].cx_5+a1*data[ee2+1].cx_5;
+			break;
+        case 6 :
+			if(lengy < data[0].xe){
+				return data[0].cx_6;
+			}else if(lengy > data[N_LOGX-1].xe){
+				return data[N_LOGX-1].cx_6 * 0.1 * exp(-1 * (lengy - data[N_LOGX-1].xe));
+			}
+			return a2*data[ee2].cx_6+a1*data[ee2+1].cx_6;
+			break;
+        default :
+            printf("\nError : Call about cross section data in ARMCC.\n\n");
+            return 0.0;
+    }
 }

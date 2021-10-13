@@ -19,6 +19,7 @@ extern "C" void main_cuda()
     PCG_SOLVER_Laplace();
     Set_Fluid_cuda();
 	Deposit_cuda();
+    /*
     gputime_field	=0.0;
 	gputime_efield	=0.0;
 	gputime_diag	=0.0;
@@ -34,60 +35,58 @@ extern "C" void main_cuda()
 	TotalT_H		=0;
 	TotalT_M		=0;
 	TotalT_S		=0;
+    */
     while(1){
-        cudaEventCreate(&start); cudaEventCreate(&stop);
-	    cudaEventRecord( start, 0 );
+        //cudaEventCreate(&start); cudaEventCreate(&stop);
+	    //cudaEventRecord( start, 0 );
 		PCG_SOLVER();
-        cudaEventRecord( stop, 0 ); cudaEventSynchronize( stop );
-	    cudaEventElapsedTime( &gputime, start, stop );
-	    cudaEventDestroy( start );cudaEventDestroy( stop );
-        gputime_field+=gputime;
-		totaltime+=gputime;
-        cudaEventCreate(&start); cudaEventCreate(&stop);
-	    cudaEventRecord( start, 0 );
+        //cudaEventRecord( stop, 0 ); cudaEventSynchronize( stop );
+	    //cudaEventElapsedTime( &gputime, start, stop );
+	    //cudaEventDestroy( start );cudaEventDestroy( stop );
+        //gputime_field+=gputime;
+		//totaltime+=gputime;
+        //cudaEventCreate(&start); cudaEventCreate(&stop);
+	    //cudaEventRecord( start, 0 );
 		Efield_cuda();
-        cudaEventRecord( stop, 0 ); cudaEventSynchronize( stop );
-	    cudaEventElapsedTime( &gputime, start, stop );
-	    cudaEventDestroy( start );cudaEventDestroy( stop );
-        gputime_efield+=gputime;
-		totaltime+=gputime;
-
-        cudaEventCreate(&start); cudaEventCreate(&stop);
-	    cudaEventRecord( start, 0 );
+        //cudaEventRecord( stop, 0 ); cudaEventSynchronize( stop );
+	    //cudaEventElapsedTime( &gputime, start, stop );
+	    //cudaEventDestroy( start );cudaEventDestroy( stop );
+        //gputime_efield+=gputime;
+		//totaltime+=gputime;
+        //cudaEventCreate(&start); cudaEventCreate(&stop);
+	    //cudaEventRecord( start, 0 );
         Move_cuda();
-        cudaEventRecord( stop, 0 ); cudaEventSynchronize( stop );
-	    cudaEventElapsedTime( &gputime, start, stop );
-	    cudaEventDestroy( start );cudaEventDestroy( stop );
-        gputime_move+=gputime;
-		totaltime+=gputime;
-
-        cudaEventCreate(&start); cudaEventCreate(&stop);
-	    cudaEventRecord( start, 0 );
+        //cudaEventRecord( stop, 0 ); cudaEventSynchronize( stop );
+	    //cudaEventElapsedTime( &gputime, start, stop );
+	    //cudaEventDestroy( start );cudaEventDestroy( stop );
+        //gputime_move+=gputime;
+		//totaltime+=gputime;
+        //cudaEventCreate(&start); cudaEventCreate(&stop);
+	    //cudaEventRecord( start, 0 );
         SortBounndary_cuda();
-        cudaEventRecord( stop, 0 ); cudaEventSynchronize( stop );
-	    cudaEventElapsedTime( &gputime, start, stop );
-	    cudaEventDestroy( start );cudaEventDestroy( stop );
-        gputime_sort+=gputime;
-		totaltime+=gputime;
-
-        cudaEventCreate(&start); cudaEventCreate(&stop);
-	    cudaEventRecord( start, 0 );
+        //cudaEventRecord( stop, 0 ); cudaEventSynchronize( stop );
+	    //cudaEventElapsedTime( &gputime, start, stop );
+	    //cudaEventDestroy( start );cudaEventDestroy( stop );
+        //gputime_sort+=gputime;
+		//totaltime+=gputime;
+        //cudaEventCreate(&start); cudaEventCreate(&stop);
+	    //cudaEventRecord( start, 0 );
         MCC_Ar_cuda();
-        cudaEventRecord( stop, 0 ); cudaEventSynchronize( stop );
-	    cudaEventElapsedTime( &gputime, start, stop );
-	    cudaEventDestroy( start );cudaEventDestroy( stop );
-        gputime_mcc+=gputime;
-		totaltime+=gputime;
-
-        cudaEventCreate(&start); cudaEventCreate(&stop);
-	    cudaEventRecord( start, 0 );
+        //MCC_O2_cuda();
+        //MCC_ArO2_cuda();
+        //cudaEventRecord( stop, 0 ); cudaEventSynchronize( stop );
+	    //cudaEventElapsedTime( &gputime, start, stop );
+	    //cudaEventDestroy( start );cudaEventDestroy( stop );
+        //gputime_mcc+=gputime;
+		//totaltime+=gputime;
+        //cudaEventCreate(&start); cudaEventCreate(&stop);
+	    //cudaEventRecord( start, 0 );
 		Deposit_cuda();
-        cudaEventRecord( stop, 0 ); cudaEventSynchronize( stop );
-	    cudaEventElapsedTime( &gputime, start, stop );
-	    cudaEventDestroy( start );cudaEventDestroy( stop );
-        gputime_deposit+=gputime;
-		totaltime+=gputime;
-
+        //cudaEventRecord( stop, 0 ); cudaEventSynchronize( stop );
+	    //cudaEventElapsedTime( &gputime, start, stop );
+	    //cudaEventDestroy( start );cudaEventDestroy( stop );
+        //gputime_deposit+=gputime;
+		//totaltime+=gputime;
         Tecplot_save();
         //
         t+=dt; // real time
@@ -97,16 +96,16 @@ extern "C" void main_cuda()
         //if(t>1e-3) break;    
         //if(tstep == 2) break; 
         if(cstep==1){
-            time_sum = gputime_field+gputime_efield+gputime_move+gputime_sort+gputime_mcc+gputime_continue+gputime_deposit+gputime_diag+gputime_trace+gputime_dump;
-            fprintf(stderr, "\n");
-	        fprintf(stderr, "Total : time = %2.8f	(s)\n", time_sum * 0.001);
-	        fprintf(stderr, "Field	: time = %2.8f	(s)		rate = %g	(%)\n",	gputime_field * 0.001, gputime_field * 100 / time_sum);
-	        fprintf(stderr, "Efield	: time = %2.8f	(s)		rate = %g	(%)\n",	gputime_efield * 0.001, gputime_efield * 100 / time_sum);
-	        fprintf(stderr, "Move	: time = %2.8f	(s)		rate = %g	(%)\n",	gputime_move * 0.001, gputime_move * 100 / time_sum);
-	        fprintf(stderr, "Sort	: time = %2.8f	(s)		rate = %g	(%)\n",	gputime_sort * 0.001, gputime_sort * 100 / time_sum);
-	        fprintf(stderr, "Mcc	: time = %2.8f	(s)		rate = %g	(%)\n",	gputime_mcc * 0.001, gputime_mcc * 100 / time_sum);
-	        fprintf(stderr, "Depo	: time = %2.8f	(s)		rate = %g	(%)\n",	gputime_deposit * 0.001, gputime_deposit * 100 / time_sum);
-	        fprintf(stderr, "------------------------------------------------------------------------------\n");
+            //time_sum = gputime_field+gputime_efield+gputime_move+gputime_sort+gputime_mcc+gputime_continue+gputime_deposit+gputime_diag+gputime_trace+gputime_dump;
+            //fprintf(stderr, "\n");
+	        //fprintf(stderr, "Total : time = %2.8f	(s)\n", time_sum * 0.001);
+	        //fprintf(stderr, "Field	: time = %2.8f	(s)		rate = %g	(%)\n",	gputime_field * 0.001, gputime_field * 100 / time_sum);
+	        //fprintf(stderr, "Efield	: time = %2.8f	(s)		rate = %g	(%)\n",	gputime_efield * 0.001, gputime_efield * 100 / time_sum);
+	        //fprintf(stderr, "Move	: time = %2.8f	(s)		rate = %g	(%)\n",	gputime_move * 0.001, gputime_move * 100 / time_sum);
+	        //fprintf(stderr, "Sort	: time = %2.8f	(s)		rate = %g	(%)\n",	gputime_sort * 0.001, gputime_sort * 100 / time_sum);
+	        //fprintf(stderr, "Mcc	: time = %2.8f	(s)		rate = %g	(%)\n",	gputime_mcc * 0.001, gputime_mcc * 100 / time_sum);
+	        //fprintf(stderr, "Depo	: time = %2.8f	(s)		rate = %g	(%)\n",	gputime_deposit * 0.001, gputime_deposit * 100 / time_sum);
+	        //fprintf(stderr, "------------------------------------------------------------------------------\n");
             break; 
         }    
         if(isnan(*dot_result) || isinf(*dot_result)){

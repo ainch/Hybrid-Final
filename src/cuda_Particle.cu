@@ -35,8 +35,8 @@ void Copy_HCPtoGCP(Species *info, HCP *A, GCP *B, GPG *C){
     for (isp = 0; isp < nsp; isp++){
         SPID = info[isp].St_num;
         SGID = isp * Gsize;
-        printf("%s : Start address = %d\n",info[isp].name,SPID);
-        printf("%s : Number of PT = %d\n",info[isp].name,info[isp].np);
+        printf(" - %s : Start address = %d\n",info[isp].name,SPID);
+        printf(" - %s : Number of PT = %d\n",info[isp].name,info[isp].np);
         for (k = 0; k < info[isp].np; k++) {
             //printf("[%d].np = %d, k = %d\n",isp,info[isp].np,k);
             XID = A[isp].x[k];
@@ -64,7 +64,7 @@ void Copy_HCPtoGCP(Species *info, HCP *A, GCP *B, GPG *C){
             sum += C[GID].den;
             if( C[GID].den != 0)  count++;
         }
-        printf("%s : Average Density = %g\n",info[isp].name,sum/count);
+        printf(" - %s : Average Density = %g\n",info[isp].name,sum/count);
     }
 }
 void Copy_GCPtoHCP(Species *info, GCP *A, HCP *B, GPG *C){

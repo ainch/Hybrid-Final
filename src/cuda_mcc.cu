@@ -1,10 +1,33 @@
 #include "cuda_mcc.cuh"
+void MCC_ArO2_cuda(){
+	MCC_ArO2_Basic<<<MCC_GRID, MCC_BLOCK>>>(Gsize, Csize, ngy, nsp, dt, DT_MCCn, dt_mcc, idx, idy, h_nvel, dev_vsave, devStates, N_LOGX, idLOGX, dev_SigmaV,
+												dev_Coll_Flag, dev_ArCX, dev_FG, dev_C_F, dev_GvecSet, dev_info_sp, dev_G_sp, dev_sp);
+	cudaDeviceSynchronize();
+}
+void MCC_O2_cuda(){
+	MCC_O2_Basic<<<MCC_GRID, MCC_BLOCK>>>(Gsize, Csize, ngy, nsp, dt, DT_MCCn, dt_mcc, idx, idy, h_nvel, dev_vsave, devStates, N_LOGX, idLOGX, dev_SigmaV,
+												dev_Coll_Flag, dev_ArCX, dev_FG, dev_C_F, dev_GvecSet, dev_info_sp, dev_G_sp, dev_sp);
+	cudaDeviceSynchronize();
+}
 void MCC_Ar_cuda(){
 	MCC_Ar_Basic<<<MCC_GRID, MCC_BLOCK>>>(Gsize, Csize, ngy, nsp, dt, DT_MCCn, dt_mcc, idx, idy, h_nvel, dev_vsave, devStates, N_LOGX, idLOGX, dev_SigmaV,
 												dev_Coll_Flag, dev_ArCX, dev_FG, dev_C_F, dev_GvecSet, dev_info_sp, dev_G_sp, dev_sp);
 	cudaDeviceSynchronize();
-	//exit(1);
 }
+__global__ void MCC_ArO2_Basic(int Gsize, int Csize, int ngy, int nsp, float dt, int MCCn, float dtm, float idx,float idy, int nvel, float *vsave,
+											curandState *states, int N_LOGX, float idLOGX, MCC_sigmav *sigv, CollF *CollP, ArCollD *CX, 
+											Fluid *infoF, GFC *Fluid, GGA *BG, Species *info, GPG *data, GCP *sp){
+	int TID = threadIdx.x + blockIdx.x * blockDim.x;
+	if(TID>=Gsize) return;
+	
+}	
+__global__ void MCC_O2_Basic(int Gsize, int Csize, int ngy, int nsp, float dt, int MCCn, float dtm, float idx,float idy, int nvel, float *vsave,
+											curandState *states, int N_LOGX, float idLOGX, MCC_sigmav *sigv, CollF *CollP, ArCollD *CX, 
+											Fluid *infoF, GFC *Fluid, GGA *BG, Species *info, GPG *data, GCP *sp){
+	int TID = threadIdx.x + blockIdx.x * blockDim.x;
+	if(TID>=Gsize) return;
+	
+}	
 __global__ void MCC_Ar_Basic(int Gsize, int Csize, int ngy, int nsp, float dt, int MCCn, float dtm, float idx,float idy, int nvel, float *vsave,
 											curandState *states, int N_LOGX, float idLOGX, MCC_sigmav *sigv, CollF *CollP, ArCollD *CX, 
 											Fluid *infoF, GFC *Fluid, GGA *BG, Species *info, GPG *data, GCP *sp){
@@ -51,52 +74,34 @@ __device__ void dev_anewvel(float energy,float vel,float *n_vx,float *n_vy,float
 	r11=r22*r33-r32*r23;
 	r21=r32*r13-r12*r33;
 	r31=r12*r23-r22*r13;
-
 	*n_vx=vel*(r11*sinchi*cosphi+r12*sinchi*sinphi+r13*coschi);
 	*n_vy=vel*(r21*sinchi*cosphi+r22*sinchi*sinphi+r23*coschi);
 	*n_vz=vel*(r31*sinchi*cosphi+r32*sinchi*sinphi+r33*coschi);
 }
 __device__ void dev_newvel_IONSC(float *vx_sc,float *vy_sc,float *vz_sc,float vel,float rand1,float rand2){
-
 	float coschi,sinchi,phi1,cosphi,sinphi;
 	float r11,r21,r31,r13,r23,r33,r12,r22,r32,up1,up2,up3;
 	float mag;
-	//float costh,sinth,tanchi;
-
 	coschi= sqrt(rand1);
 	sinchi= sqrt(fabs(1.0-coschi*coschi));
-	/*
-	costh=1-2*rand1;
-	sinth=sqrt(fabs(1.0-costh*costh));
-	tanchi=sinth/(2.0+costh);
-	coschi=1/(sqrt(1+tanchi*tanchi));
-	sinchi= sqrt(fabs(1.0-coschi*coschi));
-	*/
-
 	phi1=2*M_PI*rand2;
 	cosphi=__cosf(phi1);
 	sinphi=__sinf(phi1);
-
 	r13=*vx_sc/vel;
 	r23=*vy_sc/vel;
 	r33=*vz_sc/vel;
-
 	if(r33==1.0){up1=0; up2=1; up3=0;}
 	else{up1=0; up2=0; up3=1;}
-
 	r12=r23*up3-r33*up2;
 	r22=r33*up1-r13*up3;
 	r32=r13*up2-r23*up1;
 	mag=sqrt(r12*r12+r22*r22+r32*r32);
-
 	r12/= mag;
 	r22/= mag;
 	r32/= mag;
-
 	r11=r22*r33-r32*r23;
 	r21=r32*r13-r12*r33;
 	r31=r12*r23-r22*r13;
-
 	*vx_sc=vel*coschi*(r11*sinchi*cosphi+r12*sinchi*sinphi+r13*coschi);
 	*vy_sc=vel*coschi*(r21*sinchi*cosphi+r22*sinchi*sinphi+r23*coschi);
 	*vz_sc=vel*coschi*(r31*sinchi*cosphi+r32*sinchi*sinphi+r33*coschi);

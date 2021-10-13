@@ -31,6 +31,8 @@ CU_OBJS = $(OBJ_DIR)/cuda_main.o \
           $(OBJ_DIR)/cuda_Particle.o \
           $(OBJ_DIR)/cuda_mcc.o \
           $(OBJ_DIR)/cuda_mccAr.o \
+          $(OBJ_DIR)/cuda_mccO2.o \
+          $(OBJ_DIR)/cuda_mccArO2.o \
           $(OBJ_DIR)/cuda_Deposit.o \
           $(OBJ_DIR)/cuda_Move.o \
           $(OBJ_DIR)/cuda_Sortboundary.o \
@@ -61,6 +63,8 @@ CU_H_FILES = inc/xypic.cuh \
              inc/cuda_Particle.cuh \
              inc/cuda_mcc.cuh \
              inc/cuda_mccAr.cuh \
+             inc/cuda_mccO2.cuh \
+             inc/cuda_mccArO2.cuh \
              inc/cuda_Deposit.cuh \
              inc/cuda_Move.cuh \
              inc/cuda_Sortboundary.cuh \

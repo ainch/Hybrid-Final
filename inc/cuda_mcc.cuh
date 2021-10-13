@@ -58,7 +58,15 @@ ArO2CollD *dev_ArO2CX;
 MCC_sigmav *Host_SigmaV;
 MCC_sigmav *dev_SigmaV;
 void MCC_Ar_cuda();
+void MCC_O2_cuda();
+void MCC_ArO2_cuda();
 void Set_NullCollisionTime_cuda();
+__global__ void MCC_ArO2_Basic(int Gsize, int Csize, int ngy, int nsp, float dt, int MCCn, float dtm,float idx,float idy, int nvel, float *vsave,
+											curandState *states, int N_LOGX, float idLOGX, MCC_sigmav *sigv, CollF *CollP, ArCollD *CX, 
+											Fluid *infoF, GFC *Fluid, GGA *BG, Species *info, GPG *data, GCP *sp);
+__global__ void MCC_O2_Basic(int Gsize, int Csize, int ngy, int nsp, float dt, int MCCn, float dtm,float idx,float idy, int nvel, float *vsave,
+											curandState *states, int N_LOGX, float idLOGX, MCC_sigmav *sigv, CollF *CollP, ArCollD *CX, 
+											Fluid *infoF, GFC *Fluid, GGA *BG, Species *info, GPG *data, GCP *sp);
 __global__ void MCC_Ar_Basic(int Gsize, int Csize, int ngy, int nsp, float dt, int MCCn, float dtm,float idx,float idy, int nvel, float *vsave,
 											curandState *states, int N_LOGX, float idLOGX, MCC_sigmav *sigv, CollF *CollP, ArCollD *CX, 
 											Fluid *infoF, GFC *Fluid, GGA *BG, Species *info, GPG *data, GCP *sp);

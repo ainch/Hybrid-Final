@@ -43,8 +43,8 @@ extern MCC_sigmav *dev_SigmaV;
 extern __device__ void dev_maxwellv(float *vx_local,float *vy_local,float *vz_local,float vsaven,float vti,float Rphi,float Rthe);
 extern __device__ void dev_newvel_IONSC(float *vx_sc,float *vy_sc,float *vz_sc,float vel,float rand1,float rand2);		
 extern __device__ void dev_anewvel(float energy,float vel,float* n_vx,float* n_vy,float* n_vz,int e_flag,float massrate,float rand1,float rand2);
-#ifndef __CUDA_MCC_CUH__
-#define __CUDA_MCC_CUH__
+#ifndef __CUDA_MCCAR_CUH__
+#define __CUDA_MCCAR_CUH__
 __device__ void Direct_Argon_Electron(int Gsize, int ngy, int ID, int MCCn, float dtm, int nvel, float *vsave, curandState *states, 
 											Species *info, GPG *data, GCP *sp, int N_LOGX, float idLOGX, 
 											MCC_sigmav *sigv, CollF *info_CX, ArCollD *CX, GGA *BG, GFC *Fluid);

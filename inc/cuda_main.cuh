@@ -40,6 +40,8 @@ extern void Move_Sort_cuda();
 extern void Move_cuda();
 extern void SortBounndary_cuda();
 extern void MCC_Ar_cuda();
+extern void MCC_O2_cuda();
+extern void MCC_ArO2_cuda();
 extern void Tecplot_save();
 #ifndef __CUDA_MAIN_CUH__
 #define __CUDA_MAIN_CUH__
