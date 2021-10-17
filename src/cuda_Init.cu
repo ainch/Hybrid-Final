@@ -15,6 +15,7 @@ void Set_Device_Parameter(){
     int numBlocksPerSm;
     int numThreads;
     int numSms;
+    int size;
     // Find good grid and block size
     cudaOccupancyMaxPotentialBlockSize(&mingrid,&block,(void*)SetSeed,0,nsp*Gsize); 
     grid = (nsp*Gsize + block - 1) / block;
@@ -64,8 +65,10 @@ void Set_Device_Parameter(){
     SORT_GRID = dim3(grid, 1, 1);
     SORT_BLOCK = dim3(block, 1, 1);
     // MCC
-    cudaOccupancyMaxPotentialBlockSize(&mingrid,&block,(void*)MCC_Ar_Basic,0,Gsize); 
-    grid = (Gsize + block - 1) / block;
+    if(MainGas == ARGON) size = Gsize;
+    else size = nsp * Gsize;
+    cudaOccupancyMaxPotentialBlockSize(&mingrid,&block,(void*)MCC_Ar_Basic,0,size); 
+    grid = (size + block - 1) / block;
     printf(" - MCC module : [%d][%d]\n",grid,block);
     MCC_GRID = dim3(grid, 1, 1);
     MCC_BLOCK = dim3(block, 1, 1);

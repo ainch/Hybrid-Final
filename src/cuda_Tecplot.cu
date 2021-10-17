@@ -8,13 +8,13 @@ void Tecplot_save(){
     if(TecplotS_2D_Flag){
         if(cstep == 1){
             Tecplot_2D();
-        }else if(cstep >= 1 &&(cstep/TecplotS_2D_Ncycle == 0)){
+        }else if(cstep >= 1 &&(cstep/TecplotS_2D_Ncycle == 1.0f)){
             Tecplot_2D();
         }
     }
     if(TecplotS_Movie_Flag){
-        TecplotS_Movie_Count++;
-        if((cstep/TecplotS_Movie_Ncycle == 0)){
+        if((cstep%TecplotS_Movie_Ncycle == 0)){
+            TecplotS_Movie_Count++;
             if(TecplotS_Movie_SCYCLE == TecplotS_Movie_Count){
                 cudaMemcpy(Host_G_sp, dev_G_sp, nsp * Gsize * sizeof(GPG),cudaMemcpyDeviceToHost);
                 cudaMemcpy(vec_G, dev_GvecSet, Gsize * sizeof(GGA),cudaMemcpyDeviceToHost);
@@ -25,11 +25,11 @@ void Tecplot_save(){
                 Tecplot_Gsize_Movie(Movie_Init);
                 TecplotS_Movie_Count = 0;
             }
-        }  
+        }
     }
     if(TecplotS_PT_Movie_Flag){
-        TecplotS_PT_Movie_Count++;
-        if((cstep/TecplotS_PT_Movie_Ncycle == 0)){
+        if((cstep%TecplotS_PT_Movie_Ncycle == 0)){
+            TecplotS_PT_Movie_Count++;
             if(TecplotS_PT_Movie_SCYCLE == TecplotS_PT_Movie_Count){
                 cudaMemcpy(Host_G_sp, dev_G_sp, nsp * Gsize * sizeof(GPG),cudaMemcpyDeviceToHost);
                 for(isp=0;isp<nsp;isp++){

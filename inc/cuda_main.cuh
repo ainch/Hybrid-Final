@@ -5,6 +5,7 @@ extern int cstep; // Number of Cycle step
 extern float dt;   // timestsep for PIC
 extern int CYCLE_NUM; // Minimum frequency number of cycle
 extern int ngx,ngy,Gsize;
+extern int MainGas;
 extern float dx,dy;
 extern int nsp;
 extern float PCGtol2;
@@ -56,11 +57,3 @@ int		TotalT_H;
 int		TotalT_M;
 int		TotalT_S;
 #endif
-
-#ifndef __TEST__
-#define __TEST__
-int test(void);
-__global__ void testKernel(point *p);
-__global__ void MakeVectorForMoveKernel(int ngx,int ngy,point *p);
-#endif
-

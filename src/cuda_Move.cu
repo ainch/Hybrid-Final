@@ -81,7 +81,8 @@ __global__ void MoveE_Basic(int Gsize,int ngy, float dt_dx,float dt_dy, Species 
 		sp[index].vz=mvZ;
         sp[index].x=lx;
 		sp[index].y=ly;
-		if(sp[index].vx==0) printf("B[%g]->A[%g]\n",sp[i].x,sp[index].x);
+		//if(sp[index].vx==0) printf("vx[%d]: B[%g]->A[%g]\n",isp,sp[i].x,sp[index].x);
+		//if(sp[index].x>1.0f) printf("x[%d]: B[%g]->A[%g] = %g\n",isp,sp[i].x,sp[index].x, mvX*dt_dx);
         i+=Gsize;
     }
 	data[TID].PtNumMoveInterCell=PNMC;

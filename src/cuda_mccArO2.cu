@@ -1,5 +1,5 @@
 #include "cuda_mccArO2.cuh"
-__device__ void ArO2_Electron(int Gsize, int ngy, int ID, int MCCn, float dtm, int nvel, float *vsave, curandState *states, 
+__device__ void ArO2_Electron(int Gsize, int ngy, int ID, int MCCn, float dtm, float dx, float dy, int nvel, float *vsave, curandState *states, 
 											Species *info, GPG *data, GCP *sp, int N_LOGX, float idLOGX, 
 											MCC_sigmav *sigv, CollF *info_CX, ArO2CollD *CX, GGA *BG, GFC *Fluid){
 /*

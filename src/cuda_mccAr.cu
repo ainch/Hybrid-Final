@@ -196,7 +196,7 @@ __device__ void Direct_Argon_ArIon(int Gsize, int ngy, int ID, int MCCn, float d
 	}
 	states[ID]=LocalStates;
 }
-__device__ void Collision_Check(int Gsize, int Csize, int ngy, int ID, int isp, float dt, int MCCn, float dtm, curandState *states, Species *info, GPG *data, GCP *sp, MCC_sigmav *sigv, GGA *BG, GFC *Fluid){
+__device__ void ArCollision_Check(int Gsize, int Csize, int ngy, int ID, int isp, float dt, int MCCn, float dtm, curandState *states, Species *info, GPG *data, GCP *sp, MCC_sigmav *sigv, GGA *BG, GFC *Fluid){
 	int i,j,k,index,Randn;
 	int TID,CID,PNC,PNMC,MPNC;
 	int nx,ny,ngx;

@@ -1,6 +1,7 @@
 #include "xypic.cuh"
 
 extern long int seed;
+extern int MainGas;
 extern int ngx,ngy;
 extern int Gsize;
 extern int Csize;

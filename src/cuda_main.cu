@@ -36,6 +36,8 @@ extern "C" void main_cuda()
 	TotalT_M		=0;
 	TotalT_S		=0;
     */
+    int np[4];
+    np[0] = 0;np[1] = 0;np[2] = 0;np[3] = 0;
     while(1){
         //cudaEventCreate(&start); cudaEventCreate(&stop);
 	    //cudaEventRecord( start, 0 );
@@ -71,7 +73,7 @@ extern "C" void main_cuda()
 		//totaltime+=gputime;
         //cudaEventCreate(&start); cudaEventCreate(&stop);
 	    //cudaEventRecord( start, 0 );
-        MCC_Ar_cuda();
+        if(MainGas == ARGON) MCC_Ar_cuda();
         //MCC_O2_cuda();
         //MCC_ArO2_cuda();
         //cudaEventRecord( stop, 0 ); cudaEventSynchronize( stop );
@@ -91,11 +93,24 @@ extern "C" void main_cuda()
         //
         t+=dt; // real time
         tstep++; // step
-        if((tstep%CYCLE_NUM) == 0) cstep++; // Number of Cycle step
+        if((tstep%CYCLE_NUM) == 0){
+            cstep++; // Number of Cycle step
+            cudaMemcpy(Host_G_sp, dev_G_sp, nsp * Gsize * sizeof(GPG),cudaMemcpyDeviceToHost);
+            for(isp=0;isp<nsp;isp++){
+                sum = 0;
+                for(i=0;i<Gsize;i++){
+                    if(vec_G[i].DensRegion){
+                        sum +=Host_G_sp[isp*Gsize+i].PtNumInCell;
+                    }
+                }
+                np[isp] = sum;
+            }
+            printf("\n np = [%d],[%d],[%d],[%d]\n",np[0],np[1],np[2],np[3]);
+        }
         printf("TIME = %2.4g (s),[%4d][%4d], Iter = %4d, res = %2.5g\r",t,tstep,cstep,*FIter,*dot_result);
         //if(t>1e-3) break;    
-        //if(tstep == 2) break; 
-        if(cstep==1){
+        //if(tstep == 2){
+        if(cstep==200){
             //time_sum = gputime_field+gputime_efield+gputime_move+gputime_sort+gputime_mcc+gputime_continue+gputime_deposit+gputime_diag+gputime_trace+gputime_dump;
             //fprintf(stderr, "\n");
 	        //fprintf(stderr, "Total : time = %2.8f	(s)\n", time_sum * 0.001);
@@ -106,7 +121,7 @@ extern "C" void main_cuda()
 	        //fprintf(stderr, "Mcc	: time = %2.8f	(s)		rate = %g	(%)\n",	gputime_mcc * 0.001, gputime_mcc * 100 / time_sum);
 	        //fprintf(stderr, "Depo	: time = %2.8f	(s)		rate = %g	(%)\n",	gputime_deposit * 0.001, gputime_deposit * 100 / time_sum);
 	        //fprintf(stderr, "------------------------------------------------------------------------------\n");
-            break; 
+            //break; 
         }    
         if(isnan(*dot_result) || isinf(*dot_result)){
             printf("\n");
@@ -127,6 +142,7 @@ extern "C" void main_cuda()
                 }
                 printf("\tNP - %s : %d, %g, %g\n",SP[isp].name,sum,dsum/k,dsum2/k);
                 if(dsum/k == 0) exit(1);
+                if(isp !=0 && isnan(dsum)) exit(1);
             }
             //exit(1);
         }

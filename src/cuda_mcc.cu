@@ -6,7 +6,7 @@ void MCC_ArO2_cuda(){
 }
 void MCC_O2_cuda(){
 	MCC_O2_Basic<<<MCC_GRID, MCC_BLOCK>>>(Gsize, Csize, ngy, nsp, dt, DT_MCCn, dt_mcc, idx, idy, h_nvel, dev_vsave, devStates, N_LOGX, idLOGX, dev_SigmaV,
-												dev_Coll_Flag, dev_ArCX, dev_FG, dev_C_F, dev_GvecSet, dev_info_sp, dev_G_sp, dev_sp);
+												dev_Coll_Flag, dev_O2CX, dev_FG, dev_C_F, dev_GvecSet, dev_info_sp, dev_G_sp, dev_sp);
 	cudaDeviceSynchronize();
 }
 void MCC_Ar_cuda(){
@@ -18,15 +18,36 @@ __global__ void MCC_ArO2_Basic(int Gsize, int Csize, int ngy, int nsp, float dt,
 											curandState *states, int N_LOGX, float idLOGX, MCC_sigmav *sigv, CollF *CollP, ArCollD *CX, 
 											Fluid *infoF, GFC *Fluid, GGA *BG, Species *info, GPG *data, GCP *sp){
 	int TID = threadIdx.x + blockIdx.x * blockDim.x;
-	if(TID>=Gsize) return;
+	if(TID>=nsp*Gsize) return;
+	int isp = TID/Gsize;
+	int ID = TID%Gsize;
 	
 }	
 __global__ void MCC_O2_Basic(int Gsize, int Csize, int ngy, int nsp, float dt, int MCCn, float dtm, float idx,float idy, int nvel, float *vsave,
-											curandState *states, int N_LOGX, float idLOGX, MCC_sigmav *sigv, CollF *CollP, ArCollD *CX, 
+											curandState *states, int N_LOGX, float idLOGX, MCC_sigmav *sigv, CollF *CollP, O2CollD *CX, 
 											Fluid *infoF, GFC *Fluid, GGA *BG, Species *info, GPG *data, GCP *sp){
 	int TID = threadIdx.x + blockIdx.x * blockDim.x;
-	if(TID>=Gsize) return;
-	
+	if(TID>=nsp*Gsize) return;
+	int isp = TID/Gsize;
+	int ID = TID%Gsize;
+	// Collision check
+	O2Collision_Check(Gsize, Csize, ngy, TID, dt, MCCn, dtm, idx, idy, states, info, data, sp, sigv, BG, Fluid);
+	switch (isp){
+	case 0:
+		O2_Electron(Gsize, ngy, TID, nvel, vsave, states,  info, data, sp, N_LOGX, idLOGX, sigv, CollP, CX, BG);
+		break;
+	case 1:
+		O2_O2_ion(Gsize, ngy, TID, nvel, vsave, states,  info, data, sp, N_LOGX, idLOGX, sigv, CollP, CX, BG);
+		break;
+	case 2:
+		O2_O_ion(Gsize, ngy, TID, nvel, vsave, states,  info, data, sp, N_LOGX, idLOGX, sigv, CollP, CX, BG);
+		break;
+	case 3:
+		O2_O_negative(Gsize, ngy, TID, nvel, vsave, states,  info, data, sp, N_LOGX, idLOGX, sigv, CollP, CX, BG);
+		break;
+	default:
+		break;
+	}	
 }	
 __global__ void MCC_Ar_Basic(int Gsize, int Csize, int ngy, int nsp, float dt, int MCCn, float dtm, float idx,float idy, int nvel, float *vsave,
 											curandState *states, int N_LOGX, float idLOGX, MCC_sigmav *sigv, CollF *CollP, ArCollD *CX, 
@@ -34,8 +55,8 @@ __global__ void MCC_Ar_Basic(int Gsize, int Csize, int ngy, int nsp, float dt, i
 	int TID = threadIdx.x + blockIdx.x * blockDim.x;
 	if(TID>=Gsize) return;
 	// Direct Method
-	Direct_Argon_Electron(Gsize, ngy, TID, MCCn, dtm, nvel, vsave, states, info, data, sp, N_LOGX, idLOGX, sigv, CollP, CX, BG, Fluid);
 	Direct_Argon_ArIon(Gsize, ngy, TID, MCCn, dt, nvel, vsave, states, info, data, sp, N_LOGX, idLOGX, sigv, CollP, CX, BG, Fluid);
+	Direct_Argon_Electron(Gsize, ngy, TID, MCCn, dtm, nvel, vsave, states, info, data, sp, N_LOGX, idLOGX, sigv, CollP, CX, BG, Fluid);
 	// Memory mode
 	//Collision_Check(Gsize, Csize, ngy, TID, 0, dt, MCCn, dtm, states, info, data, sp, sigv, BG, Fluid);
 	//Collision_Check(Gsize, Csize, ngy, TID, 1, dt, MCCn, dtm, states, info, data, sp, sigv, BG, Fluid);

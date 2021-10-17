@@ -45,7 +45,8 @@ extern __device__ void dev_newvel_IONSC(float *vx_sc,float *vy_sc,float *vz_sc,f
 extern __device__ void dev_anewvel(float energy,float vel,float* n_vx,float* n_vy,float* n_vz,int e_flag,float massrate,float rand1,float rand2);
 #ifndef __CUDA_MCCAR_CUH__
 #define __CUDA_MCCAR_CUH__
-__device__ void ArO2_Electron(int Gsize, int ngy, int ID, int MCCn, float dtm, int nvel, float *vsave, curandState *states, 
+__device__ void ArO2_Electron(int Gsize, int ngy, int ID, int MCCn, float dtm, float dx, float dy, int nvel, float *vsave, 
+                                            curandState *states, 
 											Species *info, GPG *data, GCP *sp, int N_LOGX, float idLOGX, 
 											MCC_sigmav *sigv, CollF *info_CX, ArO2CollD *CX, GGA *BG, GFC *Fluid);
 __device__ void ArO2_ArIon(int Gsize, int ngy, int ID, int MCCn, float dt, int nvel, float *vsave, curandState *states, 

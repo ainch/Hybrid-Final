@@ -4,34 +4,32 @@
     },
     "Geometry": {
         "SystemSpec": {
-            "X_length(m)": 0.05,
-            "Y_length(m)": 0.022,
-            "Z_length(m)": 1,
-            "NumGridx": 251,
-            "NumGridy": 111
+            "X_length(m)": 0.21,
+            "Y_length(m)": 0.03,
+            "Z_length(m)": 1.00,
+            "NumGridx": 1051,
+            "NumGridy": 151
         },
         "BoundaryCondition": [
-            {"X0":  0,"X1":250,"Y0":   0,"Y1":   0,"B.C":1,"Temp":473},
-            {"X0":  0,"X1":250,"Y0": 110,"Y1": 110,"B.C":1,"Temp":873},
-            {"X0":  0,"X1":  0,"Y0":   0,"Y1": 110,"B.C":2,"Temp":473},
-            {"X0":250,"X1":250,"Y0":   0,"Y1": 110,"B.C":2,"Temp":473}
+            {"X0":   0,"X1":1050,"Y0":   0,"Y1":   0,"B.C":1,"Temp":473},
+            {"X0":   0,"X1":1050,"Y0": 150,"Y1": 150,"B.C":1,"Temp":473},
+            {"X0":   0,"X1":   0,"Y0":   0,"Y1": 150,"B.C":2,"Temp":473},
+            {"X0":1050,"X1":1050,"Y0":   0,"Y1": 150,"B.C":2,"Temp":473}
         ],
         "ConductorSpec": [
-            {"M_ID":1,"X0":  0,"X1":100,"Y0": 105,"Y1":110,"Temp":473},
-            {"M_ID":1,"X0":150,"X1":250,"Y0": 105,"Y1":110,"Temp":473},
-            {"M_ID":2,"X0":  0,"X1":250,"Y0":  0,"Y1": 5,"Temp":873},
-            {"M_ID":2,"X0":100,"X1":150,"Y0":  5,"Y1":10,"Temp":873}
+            {"M_ID":1,"X0":  0,"X1":1050,"Y0": 145,"Y1":150,"Temp":473},
+            {"M_ID":2,"X0":  0,"X1": 824,"Y0":   0,"Y1": 95,"Temp":473}
         ],
         "Source": [
-            {"M_ID":1,"DC(V)": 0,"Power(W)":  0,"AC(V)": 1000,"Freq(1/s)":13.56e6,"Phase(deg)":0.0,"R(Ohm)":  0.0,"L(H)":  0.0,"C(F)": 1.0}
+            {"M_ID":1,"DC(V)": 0,"Power(W)":  0,"AC(V)": 600,"Freq(1/s)":13.56e6,"Phase(deg)":0.0,"R(Ohm)":  0.0,"L(H)":  0.0,"C(F)": 1.0}
         ],
         "DielectricSpec": [
-            {"M_ID":3,"X0":100,"X1":150,"Y0": 100,"Y1": 110,"Epsilon":2.0}
+            {"M_ID":3,"X0":850,"X1":1050,"Y0":   0,"Y1": 145,"Epsilon":9.5}
         ]
     },
     "GasSpecies":{
         "Type(0:Ar,1:O2,2:Ar/O2)":0,
-        "TotalPres(Torr)":0.5,
+        "TotalPres(Torr)":3.0,
         "Background":{
             "Argon":{"Ratio":50,"Temp(eV)":0.026},
             "Oxygen":{"Ratio":420,"Temp(eV)":0.026}
@@ -39,7 +37,7 @@
         "NeutralSpecies":{
             "Loadtype":0,
             "LoadPosition(m)": {"X0":0.00,"X1":0.05,"Y0":0.003,"Y1":0.019},
-            "Ar*":{"Density":5.00e+15,"Temp(eV)":0.026},
+            "Ar*":{"Density":5.00e+18,"Temp(eV)":0.026},
             "O2A":{"Density":5.00e+15,"Temp(eV)":0.026},
             "O2B":{"Density":5.00e+15,"Temp(eV)":0.026},
             "OP":{"Density":5.00e+15,"Temp(eV)":0.026},
@@ -47,9 +45,9 @@
         },
         "ChargeSpecies":{
             "Loadtype":0,
-            "LoadPosition(m)": {"X0":0.00,"X1":0.05,"Y0":0.003,"Y1":0.019},
-            "Electron":{"S_ID":0,"Density":5.00e+15,"Temp(eV)":1.0,"np2c":5e7,"Ratio":1,"Max_np":1e7},
-            "Ar+":{"S_ID":1,"Density":5.00e+15,"Temp(eV)":0.026,"np2c":5e7,"Ratio":1,"Max_np":1e7},
+            "LoadPosition(m)": {"X0":0.00,"X1":0.21,"Y0":0.00,"Y1":0.03},
+            "Electron":{"S_ID":0,"Density":1.00e+16,"Temp(eV)":1.0,"np2c":5e7,"Ratio":1,"Max_np":13e7},
+            "Ar+":{"S_ID":1,"Density":1.00e+16,"Temp(eV)":0.026,"np2c":5e7,"Ratio":1,"Max_np":13e7},
             "O2+":{"S_ID":2,"Density":5.00e+15,"Temp(eV)":0.026,"np2c":5e7,"Ratio":1,"Max_np":1e7},
             "O+":{"S_ID":3,"Density":5.00e+15,"Temp(eV)":0.026,"np2c":5e7,"Ratio":1,"Max_np":1e7},
             "O-":{"S_ID":4,"Density":5.00e+15,"Temp(eV)":0.026,"np2c":5e7,"Ratio":1,"Max_np":1e7}
@@ -119,9 +117,9 @@
                 "Init_Particle_Num":500000
             },
             "Tecplot2D":0,
-            "Tec_Movie":5,
+            "Tec_Movie":10,
             "Tec_Movie_FrameNum":200,
-            "Tec_Particle_Movie":5,
+            "Tec_Particle_Movie":10,
             "Tec_Particle_Movie_FrameNum":200,
             "Tec_Ave_Movie":10,
             "Tec_Ave_Movie_Interval":1,

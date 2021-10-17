@@ -45,11 +45,22 @@ extern __device__ void dev_newvel_IONSC(float *vx_sc,float *vy_sc,float *vz_sc,f
 extern __device__ void dev_anewvel(float energy,float vel,float* n_vx,float* n_vy,float* n_vz,int e_flag,float massrate,float rand1,float rand2);
 #ifndef __CUDA_MCCAR_CUH__
 #define __CUDA_MCCAR_CUH__
-__device__ void O2_Electron(int Gsize, int ngy, int ID, int MCCn, float dtm, int nvel, float *vsave, curandState *states, 
+__device__ void  O2Collision_Check(int Gsize, int Csize, int ngy, int TID, float dt, int MCCn, float dtm, float dx, float dy,
+                                        curandState *states, Species *info, GPG *data, GCP *sp, MCC_sigmav *sigv, GGA *BG, GFC *Fluid);
+__device__ void O2_Electron(int Gsize, int ngy, int TID, int nvel, float *vsave, curandState *states, 
 											Species *info, GPG *data, GCP *sp, int N_LOGX, float idLOGX, 
-											MCC_sigmav *sigv, CollF *info_CX, O2CollD *CX, GGA *BG, GFC *Fluid);
-__device__ void O2_ArIon(int Gsize, int ngy, int ID, int MCCn, float dt, int nvel, float *vsave, curandState *states, 
+											MCC_sigmav *sigv, CollF *info_CX, O2CollD *CX, GGA *BG);
+__device__ void O2_O2_ion(int Gsize, int ngy, int TID, int nvel, float *vsave, curandState *states, 
 											Species *info, GPG *data, GCP *sp, int N_LOGX, float idLOGX, 
-											MCC_sigmav *sigv, CollF *info_CX, O2CollD *CX, GGA *BG, GFC *Fluid);      
+											MCC_sigmav *sigv, CollF *info_CX, O2CollD *CX, GGA *BG);
+											   
+__device__ void O2_O_ion(int Gsize, int ngy, int TID, int nvel, float *vsave, curandState *states, 
+											Species *info, GPG *data, GCP *sp, int N_LOGX, float idLOGX, 
+											MCC_sigmav *sigv, CollF *info_CX, O2CollD *CX, GGA *BG);
+											   
+__device__ void O2_O_negative(int Gsize, int ngy, int TID, int nvel, float *vsave, curandState *states, 
+											Species *info, GPG *data, GCP *sp, int N_LOGX, float idLOGX, 
+											MCC_sigmav *sigv, CollF *info_CX, O2CollD *CX, GGA *BG);
+											   
 __device__ float O2_CrossSection(int R, float engy, int N_LOGX, float idLOGX, O2CollD *data);     
 #endif
