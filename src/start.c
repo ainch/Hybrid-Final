@@ -936,6 +936,9 @@ void InputRead() {
 	      Coll_Flag[i].Th_e = 0.0; //Threshold energy
 	      Coll_Flag[i].RR = 0.0; // Reaction RATE
       }
+      Msize = TnRct * ngx * ngy;
+      MCC_rate = (float *) malloc(Msize * sizeof(float));
+      VFInit(MCC_rate,0.0,Msize);
       BufObject = json_object_get_object(SubObject6,"ArgonCase");
       Coll_Flag[0].Flag = (float)json_object_get_number(BufObject,"0.e+Ar>e+Ar");
       Coll_Flag[0].mofM = SP[0].mass/BG[0].mass;
@@ -981,6 +984,9 @@ void InputRead() {
 	      Coll_Flag[i].Th_e = 0.0; //Threshold energy
 	      Coll_Flag[i].RR = 0.0; // Reaction RATE
       }
+      Msize = TnRct * ngx * ngy;
+      MCC_rate = (float *) malloc(Msize * sizeof(float));
+      VFInit(MCC_rate,0.0,Msize);
       BufObject = json_object_get_object(SubObject6,"OxygenCase");
       Coll_Flag[0].Flag = (float)json_object_get_number(BufObject,"0.e+O2>e+O2");
       Coll_Flag[0].mofM = SP[0].mass/BG[0].mass;
@@ -1140,6 +1146,9 @@ void InputRead() {
 	      Coll_Flag[i].Th_e = 0.0; //Threshold energy
 	      Coll_Flag[i].RR = 0.0; // Reaction RATE
       }
+      Msize = TnRct * ngx * ngy;
+      MCC_rate = (float *) malloc(Msize * sizeof(float));
+      VFInit(MCC_rate,0.0,Msize);
       BufObject = json_object_get_object(SubObject6,"Argon/OxygenCase");
       Coll_Flag[0].Flag = (float)json_object_get_number(BufObject,"0.e+Ar>e+Ar");
       Coll_Flag[0].mofM = SP[0].mass/BG[0].mass;
@@ -1941,6 +1950,7 @@ void GasSetting(){
          Host_G_sp[isp*Gsize+i].PtNumMoveInterCell = 0;
          Host_G_sp[isp*Gsize+i].MaxPtNumInCell = (int) SP[isp].MAXNP / Gsize;
          Host_G_sp[isp*Gsize+i].PtNumMCCInCell = 0;
+         Host_G_sp[isp*Gsize+i].PtNullMCCInCell = 0;
          Host_G_sp[isp*Gsize+i].den = 0.0;
          Host_G_sp[isp*Gsize+i].smt_den = 0.0;
          Host_G_sp[isp*Gsize+i].ave_den = 0.0;
@@ -1964,10 +1974,10 @@ void GasSetting(){
          Host_C_F[CID].sum_den = 0.0f;
          Host_C_F[CID].ave_den = 0.0f;
          Host_C_F[CID].Source = 0.0f;
-         if(DumpFlag==0){
+         if(DumpFlag == 0){
             xx = (float) ((int)i/ncy) * dx;
 			   yy = (float) ((int)i%ncy) * dy;
-            if(vec_C[CID].PlasmaRegion != 0){
+            if(vec_C[i].PlasmaRegion != 0){
                if(FG[0].Loadtype == 0){ // UNIFORM
                   Host_C_F[CID].den = FG[isp].InitDens;
                   Host_C_F[CID].ave_den = FG[isp].InitDens;

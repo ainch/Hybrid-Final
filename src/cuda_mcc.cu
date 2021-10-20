@@ -1,68 +1,96 @@
 #include "cuda_mcc.cuh"
 void MCC_ArO2_cuda(){
 	MCC_ArO2_Basic<<<MCC_GRID, MCC_BLOCK>>>(Gsize, Csize, ngy, nsp, dt, DT_MCCn, dt_mcc, idx, idy, h_nvel, dev_vsave, devStates, N_LOGX, idLOGX, dev_SigmaV,
-												dev_Coll_Flag, dev_ArCX, dev_FG, dev_C_F, dev_GvecSet, dev_info_sp, dev_G_sp, dev_sp);
+												dev_Coll_Flag, dev_ArO2CX, TnRct, dev_MCC_rate, dev_FG, dev_C_F, dev_GvecSet, dev_info_sp, dev_G_sp, dev_sp);
 	cudaDeviceSynchronize();
 }
 void MCC_O2_cuda(){
 	MCC_O2_Basic<<<MCC_GRID, MCC_BLOCK>>>(Gsize, Csize, ngy, nsp, dt, DT_MCCn, dt_mcc, idx, idy, h_nvel, dev_vsave, devStates, N_LOGX, idLOGX, dev_SigmaV,
-												dev_Coll_Flag, dev_O2CX, dev_FG, dev_C_F, dev_GvecSet, dev_info_sp, dev_G_sp, dev_sp);
+												dev_Coll_Flag, dev_O2CX, TnRct, dev_MCC_rate, dev_FG, dev_C_F, dev_GvecSet, dev_info_sp, dev_G_sp, dev_sp);
 	cudaDeviceSynchronize();
 }
 void MCC_Ar_cuda(){
 	MCC_Ar_Basic<<<MCC_GRID, MCC_BLOCK>>>(Gsize, Csize, ngy, nsp, dt, DT_MCCn, dt_mcc, idx, idy, h_nvel, dev_vsave, devStates, N_LOGX, idLOGX, dev_SigmaV,
-												dev_Coll_Flag, dev_ArCX, dev_FG, dev_C_F, dev_GvecSet, dev_info_sp, dev_G_sp, dev_sp);
+												dev_Coll_Flag, dev_ArCX, TnRct, dev_MCC_rate, dev_FG, dev_C_F, dev_GvecSet, dev_info_sp, dev_G_sp, dev_sp);
 	cudaDeviceSynchronize();
 }
 __global__ void MCC_ArO2_Basic(int Gsize, int Csize, int ngy, int nsp, float dt, int MCCn, float dtm, float idx,float idy, int nvel, float *vsave,
-											curandState *states, int N_LOGX, float idLOGX, MCC_sigmav *sigv, CollF *CollP, ArCollD *CX, 
+											curandState *states, int N_LOGX, float idLOGX, MCC_sigmav *sigv, CollF *CollP, ArO2CollD *CX, int TnRct, float*MCCR,
 											Fluid *infoF, GFC *Fluid, GGA *BG, Species *info, GPG *data, GCP *sp){
 	int TID = threadIdx.x + blockIdx.x * blockDim.x;
 	if(TID>=nsp*Gsize) return;
 	int isp = TID/Gsize;
-	int ID = TID%Gsize;
-	
+	// Collision check
+	//if(TID !=(125*110+55)) return;
+	ArO2_Collision_Check(Gsize, Csize, ngy, TID, dt, MCCn, dtm, idx, idy, states, info, data, sp, sigv, BG, Fluid);
+	switch (isp){
+	case 0:
+		ArO2_Electron(Gsize, ngy, TID, nvel, vsave, states,  info, data, sp, N_LOGX, idLOGX, sigv, CollP, CX, TnRct, MCCR, BG);
+		break;
+	case 1:
+		//Coding Start point!
+		//ArO2_Ar_ion(Gsize, ngy, TID, nvel, vsave, states,  info, data, sp, N_LOGX, idLOGX, sigv, CollP, CX, TnRct, MCCR, BG);
+		break;
+	case 2:
+		//ArO2_O2_ion(Gsize, ngy, TID, nvel, vsave, states,  info, data, sp, N_LOGX, idLOGX, sigv, CollP, CX, TnRct, MCCR, BG);
+		break;
+	case 3:
+		//ArO2_O_ion(Gsize, ngy, TID, nvel, vsave, states,  info, data, sp, N_LOGX, idLOGX, sigv, CollP, CX, TnRct, MCCR, BG);
+		break;
+	case 4:
+		//ArO2_O_negative(Gsize, ngy, TID, nvel, vsave, states,  info, data, sp, N_LOGX, idLOGX, sigv, CollP, CX, TnRct, MCCR, BG);
+		break;
+	default:
+		break;
+	}	
 }	
 __global__ void MCC_O2_Basic(int Gsize, int Csize, int ngy, int nsp, float dt, int MCCn, float dtm, float idx,float idy, int nvel, float *vsave,
-											curandState *states, int N_LOGX, float idLOGX, MCC_sigmav *sigv, CollF *CollP, O2CollD *CX, 
+											curandState *states, int N_LOGX, float idLOGX, MCC_sigmav *sigv, CollF *CollP, O2CollD *CX, int TnRct, float*MCCR,
 											Fluid *infoF, GFC *Fluid, GGA *BG, Species *info, GPG *data, GCP *sp){
 	int TID = threadIdx.x + blockIdx.x * blockDim.x;
 	if(TID>=nsp*Gsize) return;
 	int isp = TID/Gsize;
-	int ID = TID%Gsize;
 	// Collision check
 	O2Collision_Check(Gsize, Csize, ngy, TID, dt, MCCn, dtm, idx, idy, states, info, data, sp, sigv, BG, Fluid);
 	switch (isp){
 	case 0:
-		O2_Electron(Gsize, ngy, TID, nvel, vsave, states,  info, data, sp, N_LOGX, idLOGX, sigv, CollP, CX, BG);
+		O2_Electron(Gsize, ngy, TID, nvel, vsave, states,  info, data, sp, N_LOGX, idLOGX, sigv, CollP, CX, TnRct, MCCR, BG);
 		break;
 	case 1:
-		O2_O2_ion(Gsize, ngy, TID, nvel, vsave, states,  info, data, sp, N_LOGX, idLOGX, sigv, CollP, CX, BG);
+		O2_O2_ion(Gsize, ngy, TID, nvel, vsave, states,  info, data, sp, N_LOGX, idLOGX, sigv, CollP, CX, TnRct, MCCR, BG);
 		break;
 	case 2:
-		O2_O_ion(Gsize, ngy, TID, nvel, vsave, states,  info, data, sp, N_LOGX, idLOGX, sigv, CollP, CX, BG);
+		O2_O_ion(Gsize, ngy, TID, nvel, vsave, states,  info, data, sp, N_LOGX, idLOGX, sigv, CollP, CX, TnRct, MCCR, BG);
 		break;
 	case 3:
-		O2_O_negative(Gsize, ngy, TID, nvel, vsave, states,  info, data, sp, N_LOGX, idLOGX, sigv, CollP, CX, BG);
+		O2_O_negative(Gsize, ngy, TID, nvel, vsave, states,  info, data, sp, N_LOGX, idLOGX, sigv, CollP, CX, TnRct, MCCR, BG);
 		break;
 	default:
 		break;
 	}	
 }	
 __global__ void MCC_Ar_Basic(int Gsize, int Csize, int ngy, int nsp, float dt, int MCCn, float dtm, float idx,float idy, int nvel, float *vsave,
-											curandState *states, int N_LOGX, float idLOGX, MCC_sigmav *sigv, CollF *CollP, ArCollD *CX, 
+											curandState *states, int N_LOGX, float idLOGX, MCC_sigmav *sigv, CollF *CollP, ArCollD *CX, int TnRct, float*MCCR,
 											Fluid *infoF, GFC *Fluid, GGA *BG, Species *info, GPG *data, GCP *sp){
 	int TID = threadIdx.x + blockIdx.x * blockDim.x;
-	if(TID>=Gsize) return;
 	// Direct Method
-	Direct_Argon_ArIon(Gsize, ngy, TID, MCCn, dt, nvel, vsave, states, info, data, sp, N_LOGX, idLOGX, sigv, CollP, CX, BG, Fluid);
-	Direct_Argon_Electron(Gsize, ngy, TID, MCCn, dtm, nvel, vsave, states, info, data, sp, N_LOGX, idLOGX, sigv, CollP, CX, BG, Fluid);
+	//if(TID>=Gsize) return;
+	//Direct_Argon_ArIon(Gsize, ngy, TID, MCCn, dt, nvel, vsave, states, info, data, sp, N_LOGX, idLOGX, sigv, CollP, CX, TnRct, MCCR, BG, Fluid);
+	//Direct_Argon_Electron(Gsize, ngy, TID, MCCn, dtm, nvel, vsave, states, info, data, sp, N_LOGX, idLOGX, sigv, CollP, CX, TnRct, MCCR, BG, Fluid);
 	// Memory mode
-	//Collision_Check(Gsize, Csize, ngy, TID, 0, dt, MCCn, dtm, states, info, data, sp, sigv, BG, Fluid);
-	//Collision_Check(Gsize, Csize, ngy, TID, 1, dt, MCCn, dtm, states, info, data, sp, sigv, BG, Fluid);
-	//Argon_Ar_Collision(Gsize, TID, dt, nvel, vsave, states, info, data, sp, N_LOGX, idLOGX, sigv, CollP, CX, BG, Fluid);
-	//Argon_E_Collision(Gsize, ngy, TID, MCCn, dtm, nvel, vsave, states, info, data, sp, N_LOGX, idLOGX, sigv, CollP, CX, BG, Fluid);
-	
+	if(TID>=nsp*Gsize) return;
+	int isp = TID/Gsize;
+	Ar_Collision_Check(Gsize, Csize, ngy, TID, dt, MCCn, dtm, idx, idy, states, info, data, sp, sigv, BG, Fluid);
+	switch (isp){
+	case 0:
+		Ar_Electron(Gsize, ngy, TID, nvel, vsave, states,  info, data, sp, N_LOGX, idLOGX, sigv, CollP, CX, TnRct, MCCR, BG);
+		break;
+	case 1:
+		Ar_Ar_ion(Gsize, ngy, TID, nvel, vsave, states,  info, data, sp, N_LOGX, idLOGX, sigv, CollP, CX, TnRct, MCCR, BG);
+		break;
+	default:
+		break;
+	}	
 }	
 __device__ void dev_maxwellv(float *vx_local,float *vy_local,float *vz_local,float vsaven,float vti,float Rphi,float Rthe){
 	float aphi,sintheta,costheta;
@@ -142,10 +170,12 @@ void Set_NullCollisionTime_cuda(){
     float engy;
 	float *sigma;
     float *Ttarget,*ColProb;
-    float ratio, prob_cut = 0.05; // = 5%. Collision rate per time step
+    float ratio, prob_cut = 0.08; // = 5%. Collision rate per time step
     //Cross section Data copy  CPU >> GPU
     checkCudaErrors(cudaMalloc((void**)&dev_Coll_Flag, TnRct * sizeof(CollF)));
     checkCudaErrors(cudaMemcpy(dev_Coll_Flag, Coll_Flag, TnRct * sizeof(CollF), cudaMemcpyHostToDevice));
+	checkCudaErrors(cudaMalloc((void**)&dev_MCC_rate, Msize * sizeof(float)));
+    checkCudaErrors(cudaMemcpy(dev_MCC_rate, MCC_rate, Msize * sizeof(float), cudaMemcpyHostToDevice));
     if(MainGas == ARGON){
         checkCudaErrors(cudaMalloc((void**)&dev_ArCX, N_LOGX * sizeof(ArCollD)));
         checkCudaErrors(cudaMemcpy(dev_ArCX, Ar_Data, N_LOGX * sizeof(ArCollD), cudaMemcpyHostToDevice));
@@ -404,11 +434,12 @@ void Set_NullCollisionTime_cuda(){
 		// Null Method Information
 		fprintf(stderr,"--------------<Null Collision Information>-------------\n");
 		fprintf(stderr, " - Total Collision probability per Time step\n");
-		fprintf(stderr, "   Electon - %2.4f %\n",ColProb[0] * 100);
-		fprintf(stderr, "   Ar+ion  - %2.4f %\n",ColProb[1] * 100);
-		fprintf(stderr, "   O2+ion  - %2.4f %\n",ColProb[2] * 100);
-		fprintf(stderr, "   O+ ion  - %2.4f %\n",ColProb[3] * 100);
-		fprintf(stderr, "   O- ion  - %2.4f %\n",ColProb[4] * 100);
+		fprintf(stderr, "   Electon - %2.4f % - [%1.5g][%1.5g][%1.5g][%1.5g][%1.5g][%1.5g][%1.5g][%1.5g][%1.5g]\n"
+					,ColProb[0] * 100,Ttarget[0],Ttarget[1],Ttarget[2],Ttarget[3],Ttarget[4],Ttarget[5],Ttarget[6],Ttarget[7],Ttarget[8]);
+		fprintf(stderr, "   Ar+ion  - %2.4f % - [%1.5g][%1.5g]\n",ColProb[1] * 100,Ttarget[23],Ttarget[24]);
+		fprintf(stderr, "   O2+ion  - %2.4f % - [%1.5g][%1.5g][%1.5g][%1.5g][%1.5g]\n",ColProb[2] * 100,Ttarget[14],Ttarget[15],Ttarget[16],Ttarget[17],Ttarget[18]);
+		fprintf(stderr, "   O+ ion  - %2.4f % - [%1.5g][%1.5g][%1.5g][%1.5g]\n",ColProb[3] * 100,Ttarget[19],Ttarget[20],Ttarget[21],Ttarget[22]);
+		fprintf(stderr, "   O- ion  - %2.4f % - [%1.5g][%1.5g][%1.5g][%1.5g][%1.5g]\n",ColProb[4] * 100,Ttarget[9],Ttarget[10],Ttarget[11],Ttarget[12],Ttarget[13]);
 		fprintf(stderr, " - Number of Electron MCC Cycle\n");
 		fprintf(stderr, "   Cycle : %d, dt_mcc : %g \n",DT_MCCn, dt_mcc);
 		fprintf(stderr,"-------------------------------------------------------\n");

@@ -78,6 +78,8 @@ int nRct_cx,nRct_rc; // Number of reaction _ cross section or Reaction rate
 int TnRct; // Total Number of reaction 
 int mMnum;
 CollF *Coll_Flag;
+int Msize;
+float *MCC_rate;
 //
 int FieldIter;
 int A_size;

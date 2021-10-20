@@ -23,9 +23,9 @@ void CrossSection(int* Cxnum, int* CXsize, float *CXx, float *CXy){
 	// 11- 	O2- R24. 	e + O2B > e + O2		de-excitation
 	// 12- 	O2- R40. 	e + OD > e + O		 	de-excitation
 	// 13- 	O2- R46. 	O- + O2A > e + OP + O2 	Detachment
-	// 14- 	ARO2- R58. 	O2+ + Ar > O2 + Ar+		Charge exchange
-	// 15- 	ARO2- R59. 	O2+ + Ar > O2+ + Ar+	Momentum transfer
-	// 16- 	ARO2- R67. 	Ar+ + O2 > O2 + Ar+		Momentum transfer
+	// 14- 	ArO2- R58. 	O2+ + Ar > O2 + Ar+		Charge exchange
+	// 15- 	ArO2- R59. 	O2+ + Ar > O2+ + Ar+	Momentum transfer
+	// 16- 	ArO2- R67. 	Ar+ + O2 > O2 + Ar+		Momentum transfer
 	if(*Cxnum==0){ //0- AR-R0. e + Ar > e + Ar
 		float CXbuf_x[65] = {1.00E-03,2.00E-03,3.00E-03,5.00E-03,7.00E-03,8.50E-03,1.00E-02,
 				1.50E-02,2.00E-02,3.00E-02,4.00E-02,5.00E-02,7.00E-02,1.00E-01,
@@ -584,7 +584,7 @@ void CrossSection(int* Cxnum, int* CXsize, float *CXx, float *CXy){
 			CXy[i] = CXbuf_y[i];
 		}
 	}
-	else if(*Cxnum==14){ //14- ARO2-R58. O2+ + Ar > O2 + Ar+
+	else if(*Cxnum==14){ //14- ArO2-R58. O2+ + Ar > O2 + Ar+
 		float CXbuf_x[12] = {1.00E-02,1.00E-01,1.00E+00,1.00E+01,2.00E+01,3.00E+01,
 				4.00E+01,5.00E+01,6.00E+01,7.00E+01,8.00E+01,9.00E+01};
 		float CXbuf_y[12] = {4.20E-22,4.10E-22,4.00E-22,2.30E-22,2.10E-22,2.05E-22,
@@ -599,7 +599,7 @@ void CrossSection(int* Cxnum, int* CXsize, float *CXx, float *CXy){
 			CXy[i] = CXbuf_y[i];
 		}
 	}
-	else if(*Cxnum==15){//15- ARO2-R59. O2+ + Ar > O2+ + Ar+	Momentum transfer
+	else if(*Cxnum==15){//15- ArO2-R59. O2+ + Ar > O2+ + Ar+	Momentum transfer
 		float CXbuf_x[12] = {1.00E-02,1.00E-01,1.00E+00,1.00E+01,2.00E+01,3.00E+01,
 				4.00E+01,5.00E+01,6.00E+01,7.00E+01,8.00E+01,9.00E+01};
 		float CXbuf_y[12] = {4.20E-19,4.10E-19,4.00E-19,2.30E-19,2.10E-19,2.05E-19,
@@ -614,7 +614,7 @@ void CrossSection(int* Cxnum, int* CXsize, float *CXx, float *CXy){
 			CXy[i] = CXbuf_y[i];
 		}
 	}
-	else if(*Cxnum==16){ //16- ARO2-R67. Ar+ + O2 > O2 + Ar+	Momentum transfer
+	else if(*Cxnum==16){ //16- ArO2-R67. Ar+ + O2 > O2 + Ar+	Momentum transfer
 		float CXbuf_x[12] = {1.00E-02,1.00E-01,1.00E+00,1.00E+01,2.00E+01,3.00E+01,
 				4.00E+01,5.00E+01,6.00E+01,7.00E+01,8.00E+01,9.00E+01};
 		float CXbuf_y[12] = {4.20E-19,4.10E-19,4.00E-19,2.30E-19,2.10E-19,2.05E-19,
@@ -1590,10 +1590,10 @@ void Argon_CrossSectionSET(CollF *CF){
 	N_LOGX = (int)((LOGX_MAX-LOGX_MIN)*idLOGX) + 1; // Number of Cross Section data
 	Ar_Data = (ArCollD *) malloc(N_LOGX * sizeof(ArCollD));
 	// x DATA
-	Ar_Data[0].xe = 10 * LOGX_MIN;
+	Ar_Data[0].xe = idLOGX * LOGX_MIN;
 	for(i=1;i<N_LOGX;i++) Ar_Data[i].xe = Ar_Data[i-1].xe + 1;
 	for(i=0;i<N_LOGX;i++){
-		Ar_Data[i].xe = 0.1 * Ar_Data[i].xe;
+		Ar_Data[i].xe = dLOGX * Ar_Data[i].xe;
 		Ar_Data[i].xee = pow(10,Ar_Data[i].xe);
 	} 
 	// Cross section DATA
@@ -1734,10 +1734,10 @@ void Oxygen_CrossSectionSET(CollF *CF){
 	N_LOGX = (int)((LOGX_MAX-LOGX_MIN)*idLOGX) + 1; // Number of Cross Section data
 	O2_Data = (O2CollD *) malloc(N_LOGX * sizeof(O2CollD));
 	// x DATA
-	O2_Data[0].xe = 10 * LOGX_MIN;
+	O2_Data[0].xe = idLOGX * LOGX_MIN;
 	for(i=1;i<N_LOGX;i++) O2_Data[i].xe = O2_Data[i-1].xe + 1;
 	for(i=0;i<N_LOGX;i++){
-		O2_Data[i].xe = 0.1 * O2_Data[i].xe;
+		O2_Data[i].xe = dLOGX * O2_Data[i].xe;
 		O2_Data[i].xee = pow(10,O2_Data[i].xe);
 	} 
 	// Cross section DATA
@@ -2430,11 +2430,12 @@ void ArO2_CrossSectionSET(CollF *CF){
 	idLOGX = 1 / dLOGX;	// 1 / dLOGX, global parameter
 	N_LOGX = (int)((LOGX_MAX-LOGX_MIN)*idLOGX) + 1; // Number of Cross Section data
 	ArO2_Data = (ArO2CollD *) malloc(N_LOGX * sizeof(ArO2CollD));
+	
 	// x DATA
-	ArO2_Data[0].xe = 10 * LOGX_MIN;
+	ArO2_Data[0].xe = idLOGX * LOGX_MIN;
 	for(i=1;i<N_LOGX;i++) ArO2_Data[i].xe = ArO2_Data[i-1].xe + 1;
 	for(i=0;i<N_LOGX;i++){
-		ArO2_Data[i].xe = 0.1 * ArO2_Data[i].xe;
+		ArO2_Data[i].xe = dLOGX * ArO2_Data[i].xe;
 		ArO2_Data[i].xee = pow(10,ArO2_Data[i].xe);
 	} 
 	// Cross section DATA

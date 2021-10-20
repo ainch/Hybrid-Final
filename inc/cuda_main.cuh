@@ -6,6 +6,10 @@ extern float dt;   // timestsep for PIC
 extern int CYCLE_NUM; // Minimum frequency number of cycle
 extern int ngx,ngy,Gsize;
 extern int MainGas;
+extern int TnRct; // Total Number of reaction 
+extern int Msize;
+extern float *MCC_rate;
+extern float *dev_MCC_rate;
 extern float dx,dy;
 extern int nsp;
 extern float PCGtol2;

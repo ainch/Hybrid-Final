@@ -49,18 +49,18 @@ __device__ void  O2Collision_Check(int Gsize, int Csize, int ngy, int TID, float
                                         curandState *states, Species *info, GPG *data, GCP *sp, MCC_sigmav *sigv, GGA *BG, GFC *Fluid);
 __device__ void O2_Electron(int Gsize, int ngy, int TID, int nvel, float *vsave, curandState *states, 
 											Species *info, GPG *data, GCP *sp, int N_LOGX, float idLOGX, 
-											MCC_sigmav *sigv, CollF *info_CX, O2CollD *CX, GGA *BG);
+											MCC_sigmav *sigv, CollF *info_CX, O2CollD *CX, int TnRct, float*MCCR,GGA *BG);
 __device__ void O2_O2_ion(int Gsize, int ngy, int TID, int nvel, float *vsave, curandState *states, 
 											Species *info, GPG *data, GCP *sp, int N_LOGX, float idLOGX, 
-											MCC_sigmav *sigv, CollF *info_CX, O2CollD *CX, GGA *BG);
+											MCC_sigmav *sigv, CollF *info_CX, O2CollD *CX, int TnRct, float*MCCR,GGA *BG);
 											   
 __device__ void O2_O_ion(int Gsize, int ngy, int TID, int nvel, float *vsave, curandState *states, 
 											Species *info, GPG *data, GCP *sp, int N_LOGX, float idLOGX, 
-											MCC_sigmav *sigv, CollF *info_CX, O2CollD *CX, GGA *BG);
+											MCC_sigmav *sigv, CollF *info_CX, O2CollD *CX, int TnRct, float*MCCR,GGA *BG);
 											   
 __device__ void O2_O_negative(int Gsize, int ngy, int TID, int nvel, float *vsave, curandState *states, 
 											Species *info, GPG *data, GCP *sp, int N_LOGX, float idLOGX, 
-											MCC_sigmav *sigv, CollF *info_CX, O2CollD *CX, GGA *BG);
+											MCC_sigmav *sigv, CollF *info_CX, O2CollD *CX, int TnRct, float*MCCR,GGA *BG);
 											   
 __device__ float O2_CrossSection(int R, float engy, int N_LOGX, float idLOGX, O2CollD *data);     
 #endif

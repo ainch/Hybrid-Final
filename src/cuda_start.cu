@@ -79,8 +79,8 @@ void start_cuda(){
 		//CONTIEQ = Oxy_solve_continuity_eqn;
 		break;
 	case ARO2:
-		//MCC		= ARO2_MccDiag_cuda;
-		//CONTIEQ = ARO2_solve_continuity_eqn;
+		//MCC		= ArO2_MccDiag_cuda;
+		//CONTIEQ = ArO2_solve_continuity_eqn;
 		break;
 	}
 		//DIAG    = Diagnostic;

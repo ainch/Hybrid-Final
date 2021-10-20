@@ -131,6 +131,7 @@ typedef struct __Global_Particle_Gsize_Data
 	int PtNumMoveInterCell;
     int MaxPtNumInCell;  
 	int PtNumMCCInCell;
+	int PtNullMCCInCell;
     float den;
 	float smt_den;
 	float ave_den;
@@ -206,7 +207,7 @@ typedef struct __Global_Collision_Flag
     float Flag; // CX = Flag * CX
 	float mofM; // target/projectile
 	float Th_e; //Threshold energy
-	float RR; // Reaction RATE
+	float RR; // Reaction coefficient
 } CollF;
 typedef struct __Global_Argon_Collision_Data
 {

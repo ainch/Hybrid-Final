@@ -11,16 +11,16 @@
             "NumGridy": 111
         },
         "BoundaryCondition": [
-            {"X0":  0,"X1":250,"Y0":   0,"Y1":   0,"B.C":1,"Temp":473},
-            {"X0":  0,"X1":250,"Y0": 110,"Y1": 110,"B.C":1,"Temp":873},
-            {"X0":  0,"X1":  0,"Y0":   0,"Y1": 110,"B.C":2,"Temp":473},
-            {"X0":250,"X1":250,"Y0":   0,"Y1": 110,"B.C":2,"Temp":473}
+            {"X0":  0,"X1":250,"Y0":   0,"Y1":   0,"B.C":1,"Temp":300},
+            {"X0":  0,"X1":250,"Y0": 110,"Y1": 110,"B.C":1,"Temp":300},
+            {"X0":  0,"X1":  0,"Y0":   0,"Y1": 110,"B.C":2,"Temp":300},
+            {"X0":250,"X1":250,"Y0":   0,"Y1": 110,"B.C":2,"Temp":300}
         ],
         "ConductorSpec": [
-            {"M_ID":1,"X0":  0,"X1":100,"Y0": 105,"Y1":110,"Temp":473},
-            {"M_ID":1,"X0":150,"X1":250,"Y0": 105,"Y1":110,"Temp":473},
-            {"M_ID":2,"X0":  0,"X1":250,"Y0":  0,"Y1": 5,"Temp":873},
-            {"M_ID":2,"X0":100,"X1":150,"Y0":  5,"Y1":10,"Temp":873}
+            {"M_ID":1,"X0":  0,"X1":100,"Y0": 105,"Y1":110,"Temp":300},
+            {"M_ID":1,"X0":150,"X1":250,"Y0": 105,"Y1":110,"Temp":300},
+            {"M_ID":2,"X0":  0,"X1":250,"Y0":  0,"Y1": 5,"Temp":300},
+            {"M_ID":2,"X0":100,"X1":150,"Y0":  5,"Y1":10,"Temp":300}
         ],
         "Source": [
             {"M_ID":1,"DC(V)": 0,"Power(W)":  0,"AC(V)": 1000,"Freq(1/s)":13.56e6,"Phase(deg)":0.0,"R(Ohm)":  0.0,"L(H)":  0.0,"C(F)": 1.0}
@@ -30,29 +30,29 @@
         ]
     },
     "GasSpecies":{
-        "Type(0:Ar,1:O2,2:Ar/O2)":0,
-        "TotalPres(Torr)":0.5,
+        "Type(0:Ar,1:O2,2:Ar/O2)":1,
+        "TotalPres(Torr)":1.0,
         "Background":{
-            "Argon":{"Ratio":50,"Temp(eV)":0.026},
-            "Oxygen":{"Ratio":420,"Temp(eV)":0.026}
+            "Argon":{"Ratio":99,"Temp(eV)":0.026},
+            "Oxygen":{"Ratio":1,"Temp(eV)":0.026}
         },
         "NeutralSpecies":{
             "Loadtype":0,
             "LoadPosition(m)": {"X0":0.00,"X1":0.05,"Y0":0.003,"Y1":0.019},
-            "Ar*":{"Density":5.00e+15,"Temp(eV)":0.026},
-            "O2A":{"Density":5.00e+15,"Temp(eV)":0.026},
-            "O2B":{"Density":5.00e+15,"Temp(eV)":0.026},
-            "OP":{"Density":5.00e+15,"Temp(eV)":0.026},
-            "OD":{"Density":5.00e+15,"Temp(eV)":0.026}
+            "Ar*":{"Density":5.00e+19,"Temp(eV)":0.026},
+            "O2A":{"Density":5.00e+19,"Temp(eV)":0.026},
+            "O2B":{"Density":5.00e+19,"Temp(eV)":0.026},
+            "OP":{"Density":5.00e+19,"Temp(eV)":0.026},
+            "OD":{"Density":5.00e+19,"Temp(eV)":0.026}
         },
         "ChargeSpecies":{
             "Loadtype":0,
             "LoadPosition(m)": {"X0":0.00,"X1":0.05,"Y0":0.003,"Y1":0.019},
-            "Electron":{"S_ID":0,"Density":5.00e+15,"Temp(eV)":1.0,"np2c":5e7,"Ratio":1,"Max_np":1e7},
-            "Ar+":{"S_ID":1,"Density":5.00e+15,"Temp(eV)":0.026,"np2c":5e7,"Ratio":1,"Max_np":1e7},
-            "O2+":{"S_ID":2,"Density":5.00e+15,"Temp(eV)":0.026,"np2c":5e7,"Ratio":1,"Max_np":1e7},
-            "O+":{"S_ID":3,"Density":5.00e+15,"Temp(eV)":0.026,"np2c":5e7,"Ratio":1,"Max_np":1e7},
-            "O-":{"S_ID":4,"Density":5.00e+15,"Temp(eV)":0.026,"np2c":5e7,"Ratio":1,"Max_np":1e7}
+            "Electron":{"S_ID":0,"Density":1.00e+16,"Temp(eV)":1.0,"np2c":2e7,"Ratio":1,"Max_np":5e7},
+            "Ar+":{"S_ID":1,"Density":1.00e+16,"Temp(eV)":0.026,"np2c":2e7,"Ratio":1,"Max_np":5e7},
+            "O2+":{"S_ID":2,"Density":1.00e+16,"Temp(eV)":0.026,"np2c":2e7,"Ratio":1,"Max_np":5e7},
+            "O+":{"S_ID":3,"Density":1.00e+16,"Temp(eV)":0.026,"np2c":2e7,"Ratio":1,"Max_np":5e7},
+            "O-":{"S_ID":4,"Density":1.00e+16,"Temp(eV)":0.026,"np2c":2e7,"Ratio":1,"Max_np":5e7}
         }
     },
     "SimulationMethod":
@@ -322,7 +322,7 @@
             "33.e+O2B>e+2OD":1.0,
             "34.e+O2B>2e+O^+OP":1.0,
             "35.e+O->2e+OP":1.0,
-            "36.e+O2^>OP+OD ":1.0,
+            "36.e+O2^>OP+OD":1.0,
             "37.e+OP>e+OP":1.0,
             "38.e+OP>e+OD":1.0,
             "39.e+OP>e+O*":1.0,

@@ -2,8 +2,7 @@
 
 extern "C" void main_cuda()
 {
-    int isp,i,sum,k;
-    float dsum, dsum2;
+    int isp,i,k,sum,dsum,dsum2;
     cudaEvent_t start, stop;
     float gputime;
     printf("-------------GPU_CUDA START-------------\n");
@@ -36,8 +35,12 @@ extern "C" void main_cuda()
 	TotalT_M		=0;
 	TotalT_S		=0;
     */
-    int np[4];
-    np[0] = 0;np[1] = 0;np[2] = 0;np[3] = 0;
+    int np[5],np2[5],np3[5];
+    float np4[5];
+    np[0] = 0;np[1] = 0;np[2] = 0;np[3] = 0;np[4] = 0;
+    np2[0] = 0;np2[1] = 0;np2[2] = 0;np2[3] = 0;np2[4] = 0;
+    np3[0] = 0;np3[1] = 0;np3[2] = 0;np3[3] = 0;np3[4] = 0;
+    np4[0] = 0.0f;np4[1] = 0.0f;np4[2] = 0.0f;np4[3] = 0.0f;np4[4] = 0.0f;
     while(1){
         //cudaEventCreate(&start); cudaEventCreate(&stop);
 	    //cudaEventRecord( start, 0 );
@@ -74,8 +77,8 @@ extern "C" void main_cuda()
         //cudaEventCreate(&start); cudaEventCreate(&stop);
 	    //cudaEventRecord( start, 0 );
         if(MainGas == ARGON) MCC_Ar_cuda();
-        //MCC_O2_cuda();
-        //MCC_ArO2_cuda();
+        if(MainGas == OXYGEN) MCC_O2_cuda();
+        if(MainGas == ARO2) MCC_ArO2_cuda();
         //cudaEventRecord( stop, 0 ); cudaEventSynchronize( stop );
 	    //cudaEventElapsedTime( &gputime, start, stop );
 	    //cudaEventDestroy( start );cudaEventDestroy( stop );
@@ -93,24 +96,131 @@ extern "C" void main_cuda()
         //
         t+=dt; // real time
         tstep++; // step
+        //if(tstep == 1){
         if((tstep%CYCLE_NUM) == 0){
             cstep++; // Number of Cycle step
             cudaMemcpy(Host_G_sp, dev_G_sp, nsp * Gsize * sizeof(GPG),cudaMemcpyDeviceToHost);
             for(isp=0;isp<nsp;isp++){
                 sum = 0;
+                dsum = 0;
+                dsum2 = 0;
                 for(i=0;i<Gsize;i++){
                     if(vec_G[i].DensRegion){
                         sum +=Host_G_sp[isp*Gsize+i].PtNumInCell;
+                        dsum +=Host_G_sp[isp*Gsize+i].PtNumMCCInCell;
+                        dsum2 +=Host_G_sp[isp*Gsize+i].PtNullMCCInCell;   
                     }
                 }
                 np[isp] = sum;
+                np2[isp] = dsum;
+                np3[isp] = dsum2;
             }
-            printf("\n np = [%d],[%d],[%d],[%d]\n",np[0],np[1],np[2],np[3]);
+            printf("Np = [%d],[%d],[%d],[%d],[%d]\n",np[0],np[1],np[2],np[3],np[4]);
+            printf("mcc = [%d],[%d],[%d],[%d],[%d]\n",np2[0],np2[1],np2[2],np2[3],np2[4]);
+            printf("null = [%d],[%d],[%d],[%d],[%d]\n",np3[0],np3[1],np3[2],np3[3],np3[4]);
+            printf("[%] = [%3.2g %],[%3.2g %],[%3.2g %],[%3.2g %],[%3.2g %]\n"
+                                    ,100*(float)np2[0]/(np[0]+np2[0]),100*(float)np2[1]/(np[1]+np2[1])
+                                    ,100*(float)np2[2]/(np[2]+np2[2]),100*(float)np2[3]/(np[3]+np2[3])
+                                    ,100*(float)np2[4]/(np[4]+np2[4]));
         }
-        printf("TIME = %2.4g (s),[%4d][%4d], Iter = %4d, res = %2.5g\r",t,tstep,cstep,*FIter,*dot_result);
+        //printf("TIME = %2.4g (s),[%4d][%4d], Iter = %4d, res = %2.5g\n",t,tstep,cstep,*FIter,*dot_result);
         //if(t>1e-3) break;    
-        //if(tstep == 2){
-        if(cstep==200){
+        if(tstep == 1){
+        //if(cstep==200){
+            cudaMemcpy(Host_G_sp, dev_G_sp, nsp * Gsize * sizeof(GPG),cudaMemcpyDeviceToHost);
+            for(isp=0;isp<nsp;isp++){
+                sum = 0;
+                dsum = 0;
+                dsum2 = 0;
+                for(i=0;i<Gsize;i++){
+                    if(vec_G[i].DensRegion){
+                        sum +=Host_G_sp[isp*Gsize+i].PtNumInCell; 
+                        dsum +=Host_G_sp[isp*Gsize+i].PtNumMCCInCell;
+                        dsum2 +=Host_G_sp[isp*Gsize+i].PtNullMCCInCell;   
+                    }
+                }
+                np[isp] = sum;
+                np2[isp] = dsum;
+                np3[isp] = dsum2;
+            }
+            if(MainGas == ARGON){
+                printf("Np = [%d],[%d]\n",np[0],np[1]);
+                printf("mcc = [%d],[%d]\n",np2[0],np2[1]);
+                printf("null = [%d],[%d]\n",np3[0],np3[1]);
+                printf("Coll = [%d],[%d]\n",np2[0]-np3[0],np2[1]-np3[1]);
+                printf("[%] = [%3.2g %],[%3.2g %]\n",100*(float)np2[0]/(np[0]+np2[0]),100*(float)np2[1]/(np[1]+np2[1]));
+                cudaMemcpy(MCC_rate, dev_MCC_rate, Msize * sizeof(float), cudaMemcpyDeviceToHost);
+                for(isp=0;isp<TnRct;isp++){
+                    for(i=0;i<Gsize;i++){
+                        if(vec_G[i].DensRegion){
+                            if(isp<=4){
+                                np4[0] += MCC_rate[i*TnRct+isp];
+                            }else if(isp>4 && isp<=6){
+                                np4[1] += MCC_rate[i*TnRct+isp];
+                            }
+                        }
+                    }
+                    printf("R[%d] = [%g],[%g]\n",isp,np4[0],np4[1]);
+                    np4[0] = 0.0f;np4[1] = 0.0f;
+                }
+            }
+            if(MainGas == OXYGEN){
+                printf("Np = [%d],[%d],[%d],[%d]\n",np[0],np[1],np[2],np[3]);
+                printf("mcc = [%d],[%d],[%d],[%d]\n",np2[0],np2[1],np2[2],np2[3]);
+                printf("null = [%d],[%d],[%d],[%d]\n",np3[0],np3[1],np3[2],np3[3]);
+                printf("Coll = [%d],[%d],[%d],[%d]\n",np2[0]-np3[0],np2[1]-np3[1],np2[2]-np3[2],np2[3]-np3[3]);
+                printf("[%] = [%3.2g %],[%3.2g %],[%3.2g %],[%3.2g %]\n"
+                                    ,100*(float)np2[0]/(np[0]+np2[0]),100*(float)np2[1]/(np[1]+np2[1])
+                                    ,100*(float)np2[2]/(np[2]+np2[2]),100*(float)np2[3]/(np[3]+np2[3]));
+                cudaMemcpy(MCC_rate, dev_MCC_rate, Msize * sizeof(float), cudaMemcpyDeviceToHost);
+                for(isp=0;isp<TnRct;isp++){
+                    for(i=0;i<Gsize;i++){
+                        if(vec_G[i].DensRegion){
+                            if(isp<=40){
+                                np4[0] += MCC_rate[i*TnRct+isp];
+                            }else if(isp>40 && isp<=46){
+                                np4[3] += MCC_rate[i*TnRct+isp];
+                            }else if(isp>46 && isp<=52){
+                                np4[1] += MCC_rate[i*TnRct+isp];
+                            }else if(isp>52 && isp<=57){
+                                np4[2] += MCC_rate[i*TnRct+isp];
+                            }
+                        }
+                    }
+                    printf("R[%d] = [%g],[%g],[%g],[%g]\n",isp,np4[0],np4[1],np4[2],np4[3]);
+                    np4[0] = 0.0f;np4[1] = 0.0f;np4[2] = 0.0f;np4[3] = 0.0f;
+                }
+            }
+            if(MainGas == ARO2){
+                printf("Np = [%d],[%d],[%d],[%d],[%d]\n",np[0],np[1],np[2],np[3],np[4]);
+                printf("mcc = [%d],[%d],[%d],[%d],[%d]\n",np2[0],np2[1],np2[2],np2[3],np2[4]);
+                printf("null = [%d],[%d],[%d],[%d],[%d]\n",np3[0],np3[1],np3[2],np3[3],np3[4]);
+                printf("Coll = [%d],[%d],[%d],[%d],[%d]\n",np2[0]-np3[0],np2[1]-np3[1],np2[2]-np3[2],np2[3]-np3[3],np2[4]-np3[4]);
+                printf("[%] = [%3.2g %],[%3.2g %],[%3.2g %],[%3.2g %],[%3.2g %]\n"
+                                    ,100*(float)np2[0]/(np[0]+np2[0]),100*(float)np2[1]/(np[1]+np2[1])
+                                    ,100*(float)np2[2]/(np[2]+np2[2]),100*(float)np2[3]/(np[3]+np2[3])
+                                    ,100*(float)np2[4]/(np[4]+np2[4]));
+                cudaMemcpy(MCC_rate, dev_MCC_rate, Msize * sizeof(float), cudaMemcpyDeviceToHost);
+                for(isp=0;isp<TnRct;isp++){
+                    for(i=0;i<Gsize;i++){
+                        if(vec_G[i].DensRegion){
+                            if(isp<=45){
+                                np4[0] += MCC_rate[i*TnRct+isp];
+                            }else if(isp>45 && isp<=51){
+                                np4[4] += MCC_rate[i*TnRct+isp];
+                            }else if(isp>51 && isp<=59){
+                                np4[2] += MCC_rate[i*TnRct+isp];
+                            }else if(isp>59 && isp<=64){
+                                np4[3] += MCC_rate[i*TnRct+isp];
+                            }else if(isp>64 && isp<=67){
+                                np4[1] += MCC_rate[i*TnRct+isp];
+                            }
+                        }
+                    }
+                    printf("R[%d] = [%g],[%g],[%g],[%g],[%g]\n",isp,np4[0],np4[1],np4[2],np4[3],np4[4]);
+                    np4[0] = 0.0f;np4[1] = 0.0f;np4[2] = 0.0f;np4[3] = 0.0f;np4[4] = 0.0f;
+                }
+            }
             //time_sum = gputime_field+gputime_efield+gputime_move+gputime_sort+gputime_mcc+gputime_continue+gputime_deposit+gputime_diag+gputime_trace+gputime_dump;
             //fprintf(stderr, "\n");
 	        //fprintf(stderr, "Total : time = %2.8f	(s)\n", time_sum * 0.001);
@@ -122,6 +232,7 @@ extern "C" void main_cuda()
 	        //fprintf(stderr, "Depo	: time = %2.8f	(s)		rate = %g	(%)\n",	gputime_deposit * 0.001, gputime_deposit * 100 / time_sum);
 	        //fprintf(stderr, "------------------------------------------------------------------------------\n");
             //break; 
+            exit(1);
         }    
         if(isnan(*dot_result) || isinf(*dot_result)){
             printf("\n");
@@ -142,9 +253,9 @@ extern "C" void main_cuda()
                 }
                 printf("\tNP - %s : %d, %g, %g\n",SP[isp].name,sum,dsum/k,dsum2/k);
                 if(dsum/k == 0) exit(1);
-                if(isp !=0 && isnan(dsum)) exit(1);
+                //if(isp !=0 && isnan(dsum)) exit(1);
             }
-            //exit(1);
+            exit(1);
         }
         
         /*

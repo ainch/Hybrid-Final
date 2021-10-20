@@ -1,9 +1,9 @@
 #include "cuda_mccO2.cuh"
 __device__ void O2_Electron(int Gsize, int ngy, int TID, int nvel, float *vsave, curandState *states, 
 											Species *info, GPG *data, GCP *sp, int N_LOGX, float idLOGX, 
-											MCC_sigmav *sigv, CollF *info_CX, O2CollD *CX, GGA *BG){
+											MCC_sigmav *sigv, CollF *info_CX, O2CollD *CX, int TnRct, float*MCCR,GGA *BG){
 	int i,j,k,n,index,index2,index3;
-	int PNMC,MPNC,Flag;
+	int PNMC,MPNC,Null,Flag;
 	int Target,oldPNC;
 	int Colltype;
 	float mofm,R1,R2;
@@ -15,7 +15,7 @@ __device__ void O2_Electron(int Gsize, int ngy, int TID, int nvel, float *vsave,
     curandState LocalStates = states[TID];
 	PNMC = data[TID].PtNumMCCInCell;
 	MPNC = data[TID].MaxPtNumInCell;
-	
+	Null = 0;
     // Calculate total Collision probability
 	i = info[0].St_num + TID + (MPNC-1)*Gsize;
 	for(k=0;k<PNMC;k++){
@@ -43,41 +43,51 @@ __device__ void O2_Electron(int Gsize, int ngy, int TID, int nvel, float *vsave,
                 R1 = curand_uniform(&LocalStates) * sigv[0].val / vel;
 				if(engy > info_CX[0].Th_e &&R1<=(SumSigma=O2_CrossSection(0, engy, N_LOGX, idLOGX, CX))){
                     // R0 Elastic
+					MCCR[TID*TnRct]++;
 				}else if(engy > info_CX[1].Th_e && R1<=(SumSigma += O2_CrossSection(1, engy, N_LOGX, idLOGX, CX))){
                     //"1.e+O2>e+O2*");
 					engy-=info_CX[1].Th_e;
 					vel=sqrt(fabs(engy)/info[0].Escale);
+					MCCR[TID*TnRct+1]++;
 				}else if(engy > info_CX[2].Th_e && R1<=(SumSigma += O2_CrossSection(2, engy, N_LOGX, idLOGX, CX))){
                     //"2.e+O2>e+O2*");
 					engy-=info_CX[2].Th_e;
 					vel=sqrt(fabs(engy)/info[0].Escale);
+					MCCR[TID*TnRct+2]++;
 				}else if(engy > info_CX[3].Th_e && R1<=(SumSigma += O2_CrossSection(3, engy, N_LOGX, idLOGX, CX))){
                     //"3.e+O2>e+O2A");
 					engy-=info_CX[3].Th_e;
 					vel=sqrt(fabs(engy)/info[0].Escale);
+					MCCR[TID*TnRct+3]++;
 				}else if(engy > info_CX[4].Th_e && R1<=(SumSigma += O2_CrossSection(4, engy, N_LOGX, idLOGX, CX))){
 					//"4.e+O2>e+O2B");
                     engy-=info_CX[4].Th_e;
 					vel=sqrt(fabs(engy)/info[0].Escale);
+					MCCR[TID*TnRct+4]++;
 				}else if(engy > info_CX[5].Th_e && R1<=(SumSigma += O2_CrossSection(5, engy, N_LOGX, idLOGX, CX))){
                     //"5.e+O2>e+O2*");
 					engy-=info_CX[5].Th_e;
 					vel=sqrt(fabs(engy)/info[0].Escale);
+					MCCR[TID*TnRct+5]++;
 				}else if(engy > info_CX[6].Th_e && R1<=(SumSigma += O2_CrossSection(6, engy, N_LOGX, idLOGX, CX))){
                     //"6.e+O2>OP+O-"
                     Colltype = 2;
+					MCCR[TID*TnRct+6]++;
                 }else if(engy > info_CX[7].Th_e && R1<=(SumSigma += O2_CrossSection(7, engy, N_LOGX, idLOGX, CX))){
                     //"7.e+O2>e+2OP");
 					engy-=info_CX[7].Th_e;
 					vel=sqrt(fabs(engy)/info[0].Escale);
+					MCCR[TID*TnRct+7]++;
                 }else if(engy > info_CX[8].Th_e && R1<=(SumSigma += O2_CrossSection(8, engy, N_LOGX, idLOGX, CX))){
                     //"8.e+O2>e+OP+OD");
 					engy-=info_CX[8].Th_e;
 					vel=sqrt(fabs(engy)/info[0].Escale);
+					MCCR[TID*TnRct+8]++;
                 }else if(engy > info_CX[9].Th_e && R1<=(SumSigma += O2_CrossSection(9, engy, N_LOGX, idLOGX, CX))){
                     //"9.e+O2>e+2OD");
 					engy-=info_CX[9].Th_e;
 					vel=sqrt(fabs(engy)/info[0].Escale);
+					MCCR[TID*TnRct+9]++;
                 }else if(engy > info_CX[10].Th_e && R1<=(SumSigma += O2_CrossSection(10, engy, N_LOGX, idLOGX, CX))){
                     //"10.e+O2>2e+O2^");
                     Colltype = 3;
@@ -85,10 +95,12 @@ __device__ void O2_Electron(int Gsize, int ngy, int TID, int nvel, float *vsave,
 					vel=sqrt(fabs(engy)/info[0].Escale);
 					Iz_isp1 = 0;
 					Iz_isp2 = 1;
+					MCCR[TID*TnRct+10]++;
                 }else if(engy > info_CX[11].Th_e && R1<=(SumSigma += O2_CrossSection(11, engy, N_LOGX, idLOGX, CX))){
                     //"11.e+O2>e+OP+O*");
 					engy-=info_CX[11].Th_e;
 					vel=sqrt(fabs(engy)/info[0].Escale);
+					MCCR[TID*TnRct+11]++;
                 }else if(engy > info_CX[12].Th_e && R1<=(SumSigma += O2_CrossSection(12, engy, N_LOGX, idLOGX, CX))){
                     //"12.e+O2>e+O^+O-");
                     Colltype = 3;
@@ -96,6 +108,7 @@ __device__ void O2_Electron(int Gsize, int ngy, int TID, int nvel, float *vsave,
 					vel=sqrt(fabs(engy)/info[0].Escale);
 					Iz_isp1 = 2;
 					Iz_isp2 = 3;
+					MCCR[TID*TnRct+12]++;
                 }else if(engy > info_CX[13].Th_e && R1<=(SumSigma += O2_CrossSection(13, engy, N_LOGX, idLOGX, CX))){
                     //"13.e+O2>2e+O^+OP");  
                     Colltype = 3;
@@ -103,8 +116,10 @@ __device__ void O2_Electron(int Gsize, int ngy, int TID, int nvel, float *vsave,
 					vel=sqrt(fabs(engy)/info[0].Escale);
 					Iz_isp1 = 0;
 					Iz_isp2 = 2;
+					MCCR[TID*TnRct+13]++;
 				}else{
 					Colltype = 0;
+					Null++;
 				}
 				break;
 			}
@@ -117,31 +132,40 @@ __device__ void O2_Electron(int Gsize, int ngy, int TID, int nvel, float *vsave,
 					vel=sqrt(fabs(engy)/info[0].Escale);
 					Iz_isp1 = 0;
 					Iz_isp2 = 1;
+					MCCR[TID*TnRct+14]++;
 				}else if(engy > info_CX[15].Th_e && R1<=(SumSigma += O2_CrossSection(15, engy, N_LOGX, idLOGX, CX))){
 					Colltype = 2; //"15.e+O2A>OP+O-");
+					MCCR[TID*TnRct+15]++;
 				}else if(engy > info_CX[16].Th_e && R1<=(SumSigma += O2_CrossSection(16, engy, N_LOGX, idLOGX, CX))){
 					engy+=0.977f;
 					vel=sqrt(fabs(engy)/info[0].Escale);
+					MCCR[TID*TnRct+16]++;
 				}else if(engy > info_CX[17].Th_e && R1<=(SumSigma += O2_CrossSection(17, engy, N_LOGX, idLOGX, CX))){
 					engy+=0.977f;
 					vel=sqrt(fabs(engy)/info[0].Escale);
+					MCCR[TID*TnRct+17]++;
 				}else if(engy > info_CX[18].Th_e && R1<=(SumSigma += O2_CrossSection(18, engy, N_LOGX, idLOGX, CX))){
 					engy-=info_CX[18].Th_e;
 					vel=sqrt(fabs(engy)/info[0].Escale);
+					MCCR[TID*TnRct+18]++;
 				}else if(engy > info_CX[19].Th_e && R1<=(SumSigma += O2_CrossSection(19, engy, N_LOGX, idLOGX, CX))){
 					engy-=info_CX[19].Th_e;
 					vel=sqrt(fabs(engy)/info[0].Escale);
+					MCCR[TID*TnRct+19]++;
 				}else if(engy > info_CX[20].Th_e && R1<=(SumSigma += O2_CrossSection(20, engy, N_LOGX, idLOGX, CX))){
 					engy-=info_CX[20].Th_e;
 					vel=sqrt(fabs(engy)/info[0].Escale);
+					MCCR[TID*TnRct+20]++;
 				}else if(engy > info_CX[21].Th_e && R1<=(SumSigma += O2_CrossSection(21, engy, N_LOGX, idLOGX, CX))){
 					Colltype = 3; //"21.e+O2A>2e+O^+OP");
 					engy-=info_CX[21].Th_e;
 					vel=sqrt(fabs(engy)/info[0].Escale);
 					Iz_isp1 = 0;
 					Iz_isp2 = 2;
+					MCCR[TID*TnRct+21]++;
 				}else{
 					Colltype = 0;
+					Null++;
 				}
 				break;
 			}
@@ -154,31 +178,40 @@ __device__ void O2_Electron(int Gsize, int ngy, int TID, int nvel, float *vsave,
 					vel=sqrt(fabs(engy)/info[0].Escale);
 					Iz_isp1 = 0;
 					Iz_isp2 = 1;
+					MCCR[TID*TnRct+22]++;
 				}else if(engy > info_CX[23].Th_e && R1<=(SumSigma += O2_CrossSection(23, engy, N_LOGX, idLOGX, CX))){
 					Colltype = 2; //"23.e+O2B>OP+O-");
+					MCCR[TID*TnRct+23]++;
 				}else if(engy > info_CX[24].Th_e && R1<=(SumSigma += O2_CrossSection(24, engy, N_LOGX, idLOGX, CX))){
 					engy+=1.627f;
 					vel=sqrt(fabs(engy)/info[0].Escale);
+					MCCR[TID*TnRct+24]++;
 				}else if(engy > info_CX[25].Th_e && R1<=(SumSigma += O2_CrossSection(25, engy, N_LOGX, idLOGX, CX))){
 					engy+=1.627f;
 					vel=sqrt(fabs(engy)/info[0].Escale);
+					MCCR[TID*TnRct+25]++;
 				}else if(engy > info_CX[26].Th_e && R1<=(SumSigma += O2_CrossSection(26, engy, N_LOGX, idLOGX, CX))){
 					engy-=info_CX[26].Th_e;
 					vel=sqrt(fabs(engy)/info[0].Escale);
+					MCCR[TID*TnRct+26]++;
 				}else if(engy > info_CX[27].Th_e && R1<=(SumSigma += O2_CrossSection(27, engy, N_LOGX, idLOGX, CX))){
 					engy-=info_CX[27].Th_e;
 					vel=sqrt(fabs(engy)/info[0].Escale);
+					MCCR[TID*TnRct+27]++;
 				}else if(engy > info_CX[28].Th_e && R1<=(SumSigma += O2_CrossSection(28, engy, N_LOGX, idLOGX, CX))){
 					engy-=info_CX[28].Th_e;
 					vel=sqrt(fabs(engy)/info[0].Escale);
+					MCCR[TID*TnRct+28]++;
 				}else if(engy > info_CX[29].Th_e && R1<=(SumSigma += O2_CrossSection(29, engy, N_LOGX, idLOGX, CX))){
 					Colltype = 3; //"29.e+O2B>2e+O^+OP");
 					engy-=info_CX[29].Th_e;
 					vel=sqrt(fabs(engy)/info[0].Escale);
 					Iz_isp1 = 0;
 					Iz_isp2 = 2;
+					MCCR[TID*TnRct+29]++;
 				}else{
 					Colltype = 0;
+					Null++;
 				}
                 break;
 			}
@@ -189,8 +222,10 @@ __device__ void O2_Electron(int Gsize, int ngy, int TID, int nvel, float *vsave,
 					Colltype = 5; //"30.e+O->2e+OP");
 					engy-=info_CX[30].Th_e;
 					vel=sqrt(fabs(engy)/info[0].Escale);
+					MCCR[TID*TnRct+30]++;
 				}else{
 					Colltype = 0;
+					Null++;
 				}
                 break;
 			}
@@ -199,8 +234,10 @@ __device__ void O2_Electron(int Gsize, int ngy, int TID, int nvel, float *vsave,
                 R1 = curand_uniform(&LocalStates)*sigv[4].val / vel;
                 if(engy > info_CX[31].Th_e &&R1<=(SumSigma=O2_CrossSection(31, engy, N_LOGX, idLOGX, CX))){
 					Colltype = 4; //"31.e+O2^>OP+OD");
+					MCCR[TID*TnRct+31]++;
 				}else{
 					Colltype = 0;
+					Null++;
 				}
                 break;
 			}
@@ -210,29 +247,37 @@ __device__ void O2_Electron(int Gsize, int ngy, int TID, int nvel, float *vsave,
                 if(engy > info_CX[32].Th_e &&R1<=(SumSigma=O2_CrossSection(32, engy, N_LOGX, idLOGX, CX))){
 					engy-=info_CX[32].Th_e;
 					vel=sqrt(fabs(engy)/info[0].Escale);
+					MCCR[TID*TnRct+32]++;
 				}else if(engy > info_CX[33].Th_e && R1<=(SumSigma += O2_CrossSection(33, engy, N_LOGX, idLOGX, CX))){
 					engy-=info_CX[33].Th_e;
 					vel=sqrt(fabs(engy)/info[0].Escale);
+					MCCR[TID*TnRct+33]++;
 				}else if(engy > info_CX[34].Th_e && R1<=(SumSigma += O2_CrossSection(34, engy, N_LOGX, idLOGX, CX))){
 					engy-=info_CX[34].Th_e;
 					vel=sqrt(fabs(engy)/info[0].Escale);
+					MCCR[TID*TnRct+34]++;
 				}else if(engy > info_CX[35].Th_e && R1<=(SumSigma += O2_CrossSection(35, engy, N_LOGX, idLOGX, CX))){
 					engy-=info_CX[35].Th_e;
 					vel=sqrt(fabs(engy)/info[0].Escale);
+					MCCR[TID*TnRct+35]++;
 				}else if(engy > info_CX[36].Th_e && R1<=(SumSigma += O2_CrossSection(36, engy, N_LOGX, idLOGX, CX))){
 					engy-=info_CX[36].Th_e;
 					vel=sqrt(fabs(engy)/info[0].Escale);
+					MCCR[TID*TnRct+36]++;
 				}else if(engy > info_CX[37].Th_e && R1<=(SumSigma += O2_CrossSection(37, engy, N_LOGX, idLOGX, CX))){
 					Colltype = 3; //"37.e+OP>2e+O^");
 					engy-=info_CX[37].Th_e;
 					vel=sqrt(fabs(engy)/info[0].Escale);
 					Iz_isp1 = 0;
 					Iz_isp2 = 2;
+					MCCR[TID*TnRct+37]++;
 				}else if(engy > info_CX[38].Th_e && R1<=(SumSigma += O2_CrossSection(38, engy, N_LOGX, idLOGX, CX))){
 					engy-=info_CX[38].Th_e;
 					vel=sqrt(fabs(engy)/info[0].Escale);
+					MCCR[TID*TnRct+38]++;
 				}else{
 					Colltype = 0;
+					Null++;
 				}
                 break;
 			}
@@ -245,11 +290,14 @@ __device__ void O2_Electron(int Gsize, int ngy, int TID, int nvel, float *vsave,
 					vel=sqrt(fabs(engy)/info[0].Escale);
 					Iz_isp1 = 0;
 					Iz_isp2 = 2;
+					MCCR[TID*TnRct+39]++;
 				}else if(engy > info_CX[40].Th_e && R1<=(SumSigma += O2_CrossSection(40, engy, N_LOGX, idLOGX, CX))){
 					engy+=1.96f;
 					vel=sqrt(fabs(engy)/info[0].Escale);
+					MCCR[TID*TnRct+40]++;
 				}else{
 					Colltype = 0;
+					Null++;
 				}
                 break;
 			}
@@ -377,12 +425,13 @@ __device__ void O2_Electron(int Gsize, int ngy, int TID, int nvel, float *vsave,
 		i-=Gsize;
 	}
 	states[TID]=LocalStates;
+	data[TID].PtNullMCCInCell = Null;
 }
 __device__ void O2_O2_ion(int Gsize, int ngy, int TID, int nvel, float *vsave, curandState *states, 
 											Species *info, GPG *data, GCP *sp, int N_LOGX, float idLOGX, 
-											MCC_sigmav *sigv, CollF *info_CX, O2CollD *CX, GGA *BG){
+											MCC_sigmav *sigv, CollF *info_CX, O2CollD *CX, int TnRct, float*MCCR,GGA *BG){
 	int i,j,k,n,index,index2,index3;
-	int ID,PNMC,MPNC,Flag;
+	int ID,PNMC,MPNC,Null,Flag;
 	int Target,oldPNC;
 	int Colltype;
 	float mofm,R1,R2;
@@ -395,7 +444,7 @@ __device__ void O2_O2_ion(int Gsize, int ngy, int TID, int nvel, float *vsave, c
     curandState LocalStates = states[TID];
 	PNMC = data[TID].PtNumMCCInCell;
 	MPNC = data[TID].MaxPtNumInCell;
-	
+	Null = 0;
     // Calculate total Collision probability
 	i = info[1].St_num + ID + (MPNC-1)*Gsize;
 	for(k=0;k<PNMC;k++){
@@ -425,6 +474,9 @@ __device__ void O2_O2_ion(int Gsize, int ngy, int TID, int nvel, float *vsave, c
                 R1 = curand_uniform(&LocalStates) * sigv[12].val / vel;
 				if(engy > info_CX[47].Th_e &&R1<=(SumSigma=O2_CrossSection(47, engy, N_LOGX, idLOGX, CX))){
 					Colltype = 3; 
+					MCCR[ID*TnRct+47]++;
+				}else{
+					Null++;
 				}
 				break;
 			}
@@ -433,10 +485,15 @@ __device__ void O2_O2_ion(int Gsize, int ngy, int TID, int nvel, float *vsave, c
                 R1 = curand_uniform(&LocalStates)*sigv[13].val / vel;
 				if(engy > info_CX[48].Th_e &&R1<=(SumSigma=O2_CrossSection(48, engy, N_LOGX, idLOGX, CX))){
 					Colltype = 2; 
+					MCCR[ID*TnRct+48]++;
 				}else if(engy > info_CX[49].Th_e &&R1<=(SumSigma=O2_CrossSection(49, engy, N_LOGX, idLOGX, CX))){
 					Colltype = 1; 
+					MCCR[ID*TnRct+49]++;
 				}else if(engy > info_CX[50].Th_e &&R1<=(SumSigma=O2_CrossSection(50, engy, N_LOGX, idLOGX, CX))){
 					Colltype = 3; 
+					MCCR[ID*TnRct+50]++;
+				}else{
+					Null++;
 				}
 				break;
 			}
@@ -445,6 +502,9 @@ __device__ void O2_O2_ion(int Gsize, int ngy, int TID, int nvel, float *vsave, c
                 R1 = curand_uniform(&LocalStates)*sigv[14].val / vel;
                 if(engy > info_CX[51].Th_e &&R1<=(SumSigma=O2_CrossSection(51, engy, N_LOGX, idLOGX, CX))){
 					Colltype = 2; 
+					MCCR[ID*TnRct+51]++;
+				}else{
+					Null++;
 				}
                 break;
 			}
@@ -453,6 +513,9 @@ __device__ void O2_O2_ion(int Gsize, int ngy, int TID, int nvel, float *vsave, c
                 R1 = curand_uniform(&LocalStates)*sigv[15].val / vel;
                 if(engy > info_CX[52].Th_e && R1<=(SumSigma=O2_CrossSection(52, engy, N_LOGX, idLOGX, CX))){
 					Colltype = 2; 
+					MCCR[ID*TnRct+52]++;
+				}else{
+					Null++;
 				}
                 break;
 			}
@@ -508,12 +571,13 @@ __device__ void O2_O2_ion(int Gsize, int ngy, int TID, int nvel, float *vsave, c
 		i-=Gsize;
 	}
 	states[TID]=LocalStates;
+	data[TID].PtNullMCCInCell = Null;
 }
 __device__ void O2_O_ion(int Gsize, int ngy, int TID, int nvel, float *vsave, curandState *states, 
 											Species *info, GPG *data, GCP *sp, int N_LOGX, float idLOGX, 
-											MCC_sigmav *sigv, CollF *info_CX, O2CollD *CX, GGA *BG){
+											MCC_sigmav *sigv, CollF *info_CX, O2CollD *CX, int TnRct, float*MCCR,GGA *BG){
 	int i,j,k,n,index,index2,index3;
-	int ID,PNMC,MPNC,Flag;
+	int ID,PNMC,MPNC,Null,Flag;
 	int Target,oldPNC;
 	int Colltype;
 	float mofm,R1,R2;
@@ -526,7 +590,7 @@ __device__ void O2_O_ion(int Gsize, int ngy, int TID, int nvel, float *vsave, cu
     curandState LocalStates = states[TID];
 	PNMC = data[TID].PtNumMCCInCell;
 	MPNC = data[TID].MaxPtNumInCell;
-	
+	Null = 0;
     // Calculate total Collision probability
 	i = info[2].St_num + ID + (MPNC-1)*Gsize;
 	for(k=0;k<PNMC;k++){
@@ -556,8 +620,12 @@ __device__ void O2_O_ion(int Gsize, int ngy, int TID, int nvel, float *vsave, cu
                 R1 = curand_uniform(&LocalStates) * sigv[16].val / vel;
 				if(engy > info_CX[53].Th_e &&R1<=(SumSigma=O2_CrossSection(53, engy, N_LOGX, idLOGX, CX))){
 					Colltype = 2; 
+					MCCR[ID*TnRct+53]++;
 				}else if(engy > info_CX[54].Th_e &&R1<=(SumSigma=O2_CrossSection(54, engy, N_LOGX, idLOGX, CX))){
 					Colltype = 1; 
+					MCCR[ID*TnRct+54]++;
+				}else{
+					Null++;
 				}
 				break;
 			}
@@ -566,6 +634,9 @@ __device__ void O2_O_ion(int Gsize, int ngy, int TID, int nvel, float *vsave, cu
                 R1 = curand_uniform(&LocalStates)*sigv[17].val / vel;
 				if(engy > info_CX[55].Th_e &&R1<=(SumSigma=O2_CrossSection(55, engy, N_LOGX, idLOGX, CX))){
 					Colltype = 3; 
+					MCCR[ID*TnRct+55]++;
+				}else{
+					Null++;
 				}
 				break;
 			}
@@ -574,6 +645,9 @@ __device__ void O2_O_ion(int Gsize, int ngy, int TID, int nvel, float *vsave, cu
                 R1 = curand_uniform(&LocalStates)*sigv[18].val / vel;
                 if(engy > info_CX[56].Th_e &&R1<=(SumSigma=O2_CrossSection(56, engy, N_LOGX, idLOGX, CX))){
 					Colltype = 2; 
+					MCCR[ID*TnRct+56]++;
+				}else{
+					Null++;
 				}
                 break;
 			}
@@ -582,6 +656,9 @@ __device__ void O2_O_ion(int Gsize, int ngy, int TID, int nvel, float *vsave, cu
                 R1 = curand_uniform(&LocalStates)*sigv[19].val / vel;
                 if(engy > info_CX[57].Th_e && R1<=(SumSigma=O2_CrossSection(57, engy, N_LOGX, idLOGX, CX))){
 					Colltype = 2; 
+					MCCR[ID*TnRct+57]++;
+				}else{
+					Null++;
 				}
                 break;
 			}
@@ -637,12 +714,13 @@ __device__ void O2_O_ion(int Gsize, int ngy, int TID, int nvel, float *vsave, cu
 		i-=Gsize;
 	}
 	states[TID]=LocalStates;
+	data[TID].PtNullMCCInCell = Null;
 }
 __device__ void O2_O_negative(int Gsize, int ngy, int TID, int nvel, float *vsave, curandState *states, 
 											Species *info, GPG *data, GCP *sp, int N_LOGX, float idLOGX, 
-											MCC_sigmav *sigv, CollF *info_CX, O2CollD *CX, GGA *BG){
+											MCC_sigmav *sigv, CollF *info_CX, O2CollD *CX, int TnRct, float*MCCR, GGA *BG){
 	int i,j,k,n,index,index2,index3;
-	int ID,PNMC,MPNC,Flag;
+	int ID,PNMC,MPNC,Null,Flag;
 	int Target,oldPNC;
 	int Colltype;
 	float mofm,R1,R2;
@@ -655,7 +733,7 @@ __device__ void O2_O_negative(int Gsize, int ngy, int TID, int nvel, float *vsav
     curandState LocalStates = states[TID];
 	PNMC = data[TID].PtNumMCCInCell;
 	MPNC = data[TID].MaxPtNumInCell;
-	
+	Null = 0;
     // Calculate total Collision probability
 	i = info[3].St_num + ID + (MPNC-1)*Gsize;
 	for(k=0;k<PNMC;k++){
@@ -682,8 +760,12 @@ __device__ void O2_O_negative(int Gsize, int ngy, int TID, int nvel, float *vsav
                 R1 = curand_uniform(&LocalStates) * sigv[9].val / vel;
 				if(engy > info_CX[41].Th_e &&R1<=(SumSigma=O2_CrossSection(41, engy, N_LOGX, idLOGX, CX))){
 					Colltype = 1; 
+					MCCR[ID*TnRct+41]++;
 				}else if(engy > info_CX[42].Th_e && R1<=(SumSigma += O2_CrossSection(42, engy, N_LOGX, idLOGX, CX))){
 					Colltype = 2; 
+					MCCR[ID*TnRct+42]++;
+				}else{
+					Null++;
 				}
 				break;
 			}
@@ -692,6 +774,9 @@ __device__ void O2_O_negative(int Gsize, int ngy, int TID, int nvel, float *vsav
                 R1 = curand_uniform(&LocalStates)*sigv[10].val / vel;
 				if(engy > info_CX[43].Th_e &&R1<=(SumSigma=O2_CrossSection(43, engy, N_LOGX, idLOGX, CX))){
 					Colltype = 2; 
+					MCCR[ID*TnRct+43]++;
+				}else{
+					Null++;
 				}
 				break;
 			}
@@ -700,6 +785,9 @@ __device__ void O2_O_negative(int Gsize, int ngy, int TID, int nvel, float *vsav
                 R1 = curand_uniform(&LocalStates)*sigv[11].val / vel;
                 if(engy > info_CX[44].Th_e &&R1<=(SumSigma=O2_CrossSection(44, engy, N_LOGX, idLOGX, CX))){
 					Colltype = 3; 
+					MCCR[ID*TnRct+44]++;
+				}else{
+					Null++;
 				}
                 break;
 			}
@@ -708,6 +796,9 @@ __device__ void O2_O_negative(int Gsize, int ngy, int TID, int nvel, float *vsav
                 R1 = curand_uniform(&LocalStates)*sigv[12].val / vel;
                 if(engy > info_CX[45].Th_e && R1<=(SumSigma=O2_CrossSection(45, engy, N_LOGX, idLOGX, CX))){
 					Colltype = 3; 
+					MCCR[ID*TnRct+45]++;
+				}else{
+					Null++;
 				}
                 break;
 			}
@@ -716,6 +807,9 @@ __device__ void O2_O_negative(int Gsize, int ngy, int TID, int nvel, float *vsav
                 R1 = curand_uniform(&LocalStates)*sigv[13].val / vel;
                 if(engy > info_CX[46].Th_e &&R1<=(SumSigma=O2_CrossSection(46, engy, N_LOGX, idLOGX, CX))){
 					Colltype = 2; 
+					MCCR[ID*TnRct+46]++;
+				}else{
+					Null++;
 				}
                 break;
 			}
@@ -768,6 +862,7 @@ __device__ void O2_O_negative(int Gsize, int ngy, int TID, int nvel, float *vsav
 		i-=Gsize;
 	}
 	states[TID]=LocalStates;
+	data[TID].PtNullMCCInCell = Null;
 }
 __device__ void  O2Collision_Check(int Gsize, int Csize, int ngy, int TID, float dt, int MCCn, float dtm, float dx, float dy,
                                         curandState *states, Species *info, GPG *data, GCP *sp, MCC_sigmav *sigv, GGA *BG, GFC *Fluid){
@@ -844,7 +939,6 @@ __device__ void  O2Collision_Check(int Gsize, int Csize, int ngy, int TID, float
 			index = info[isp].St_num + ID + (MPNC-PNMC)*Gsize;
             switch (isp){
             case 0:
-		        R1 = Tprob * R1;
                 if(R1 <= Prob1)	        Flag = (int)0;
                 else if(R1 <= Prob2)	Flag = (int)1;
                 else if(R1 <= Prob3)	Flag = (int)2;
@@ -854,21 +948,18 @@ __device__ void  O2Collision_Check(int Gsize, int Csize, int ngy, int TID, float
 		        else			        Flag = (int)6;
                 break;
             case 1:
-                R1 = Tprob * R1;
                 if(R1 <= Prob1)	        Flag = (int)0;
                 else if(R1 <= Prob2)	Flag = (int)1;
                 else if(R1 <= Prob3)	Flag = (int)2;
 		        else			        Flag = (int)3;
                 break;
             case 2:
-                R1 = Tprob * R1;
                 if(R1 <= Prob1)	        Flag = (int)0;
                 else if(R1 <= Prob2)	Flag = (int)1;
                 else if(R1 <= Prob3)	Flag = (int)2;
 		        else			        Flag = (int)3;
                 break;
             case 3:
-                R1 = Tprob * R1;
                 if(R1 <= Prob1)	        Flag = (int)0;
                 else if(R1 <= Prob2)	Flag = (int)1;
                 else if(R1 <= Prob3)	Flag = (int)2;
@@ -896,8 +987,7 @@ __device__ float O2_CrossSection(int R, float engy, int N_LOGX, float idLOGX, O2
 	float lengy = log10(engy);
 	float ee1, a1, a2;
 	int ee2;
-	lengy = lengy - data[0].xe;
-	ee1 = idLOGX * lengy;
+	ee1 = idLOGX * (lengy - data[0].xe);
 	ee2 = (int)ee1;
 	a1 = ee1 - ee2;
 	a2 = 1 - a1;

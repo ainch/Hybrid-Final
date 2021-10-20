@@ -41,7 +41,7 @@ void SetParticleLoad(int isp, float Ninit, int load_type, float x_left,float x_r
 			}
 		}
 		SP[isp].np = index;
-		printf("\tTotal Number of %s particle = %d, N_per_cell : %d\n",SP[isp].name, SP[isp].np, n_per_cell);
+		printf("\tTotal Number of %s particle = %d, N_per_cell : %d, MaxPTnumInCell = %d\n",SP[isp].name, SP[isp].np, n_per_cell, (int) SP[isp].MAXNP / Gsize);
 		if (SP[isp].np > NP_LIMIT) {
 			printf("LOAD: too many particles, species %s\n", SP[isp].name);
 			exit(1);
@@ -83,7 +83,7 @@ void SetParticleLoad(int isp, float Ninit, int load_type, float x_left,float x_r
 			}
 		}
 		SP[isp].np = index;
-		printf("\tTotal Number of %s particle = %d\n",SP[isp].name, SP[isp].np);
+		printf("\tTotal Number of %s particle = %d, MaxPTnumInCell = %d\n",SP[isp].name, SP[isp].np, (int) SP[isp].MAXNP / Gsize);
 		if (SP[isp].np > NP_LIMIT) {
 			printf("LOAD: too many particles, species %s\n", SP[isp].name);
 			exit(1);
@@ -126,7 +126,7 @@ void SetParticleLoad(int isp, float Ninit, int load_type, float x_left,float x_r
 			}
 		}
 		SP[isp].np = index;
-		printf("\tTotal Number of %s particle = %d\n",SP[isp].name, SP[isp].np);
+		printf("\tTotal Number of %s particle = %d, MaxPTnumInCell = %d\n",SP[isp].name, SP[isp].np, (int) SP[isp].MAXNP / Gsize);
 		if (SP[isp].np > NP_LIMIT) {
 			printf("LOAD: too many particles, species %s\n", SP[isp].name);
 			exit(1);
@@ -154,7 +154,7 @@ void SetParticleLoad(int isp, float Ninit, int load_type, float x_left,float x_r
 			}
 		}
 		SP[isp].np = index;
-		printf("\tTotal Number of %s particle = %d\n",SP[isp].name, SP[isp].np);
+		printf("\tTotal Number of %s particle = %d, MaxPTnumInCell = %d\n",SP[isp].name, SP[isp].np, (int) SP[isp].MAXNP / Gsize);
 		if (SP[isp].np > NP_LIMIT) {
 			printf("LOAD: too many particles, species %s\n", SP[isp].name);
 			exit(1);
