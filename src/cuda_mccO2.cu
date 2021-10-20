@@ -557,7 +557,7 @@ __device__ void O2_O2_ion(int Gsize, int ngy, int TID, int nvel, float *vsave, c
 			break;
         case 3: // 3 : Charge exchange o+
 			oldPNC = atomicAdd(&data[TID+Gsize].PtNumInCell,1);
-			index = info[1].St_num + ID + oldPNC*Gsize;
+			index = info[2].St_num + ID + oldPNC*Gsize;
 			sp[index].CellID = TID;
 			sp[index].x = sp[i].x;
 			sp[index].y = sp[i].y;

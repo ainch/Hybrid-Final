@@ -1268,7 +1268,7 @@ void InputRead() {
       Coll_Flag[57].mofM = SP[2].mass/FG[2].mass;
       Coll_Flag[58].Flag = (float)json_object_get_number(BufObject,"58.O2^+Ar>O2+Ar^");
       Coll_Flag[58].mofM = SP[2].mass/BG[0].mass;
-      Coll_Flag[59].Flag = (float)json_object_get_number(BufObject,"59.O2^+Ar>O2^+Ar^");
+      Coll_Flag[59].Flag = (float)json_object_get_number(BufObject,"59.O2^+Ar>O2^+Ar");
       Coll_Flag[59].mofM = SP[2].mass/BG[0].mass;
       Coll_Flag[60].Flag = (float)json_object_get_number(BufObject,"60.O^+O2>OP+O2^");
       Coll_Flag[60].mofM = SP[3].mass/BG[1].mass;

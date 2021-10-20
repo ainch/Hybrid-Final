@@ -215,10 +215,10 @@ __global__ void DepositBoundary(int Gsize, int ngy, int nsp, GGA *vecSet, GPG *d
 }
 __global__ void DepositAtom(int Gsize, int ngy, Species *info, GCP *sp, GPG *data){
     int TID = threadIdx.x + blockIdx.x * blockDim.x;
+	if(TID>=Gsize*info[0].spnum) return;
 	int ID,isp;
 	isp = (int)TID/Gsize;
     ID = (int)TID%Gsize;
-	if(TID>=Gsize*info[0].spnum) return;
 
 	int i,k,PNC;
     float lx,ly;

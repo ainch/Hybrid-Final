@@ -511,93 +511,30 @@ __device__ void ArO2_Electron(int Gsize, int ngy, int TID, int nvel, float *vsav
 __device__ void ArO2_Ar_ion(int Gsize, int ngy, int TID, int nvel, float *vsave, curandState *states, 
 											Species *info, GPG *data, GCP *sp, int N_LOGX, float idLOGX, 
 											MCC_sigmav *sigv, CollF *info_CX, ArO2CollD *CX, int TnRct,float *MCCR, GGA *BG){
-	int i,k,n,index;
-	int ID,PNMC,MPNC,PNC,AddPt;
-	int Target,oldPNC;
-	float prob;
-	float cut1;
-	float R1,R2;
-	float VX,VY,VZ,VX_buf,VY_buf,VZ_buf;
-	float dum,vel,vel2,engy,rengy;
-	float SumSigma,SumEngyLoss;
-	float vneutx,vneuty,vneutz;
-	ID = Gsize + TID;
-	PNC = data[ID].PtNumInCell;
-	PNMC = data[ID].PtNumMCCInCell;
-	MPNC = data[ID].MaxPtNumInCell;
-	AddPt = 0;
-	curandState LocalStates = states[ID];
-	prob = 1.0f;
-	i = info[1].St_num + TID + (MPNC-1)*Gsize;
-	for(k=0;k<PNMC;k++){
-		// Calculate energy
-		n = (nvel-1)*curand_uniform(&LocalStates);
-		dev_maxwellv(&vneutx,&vneuty,&vneutz,vsave[n],BG[TID].BackVel1,curand_uniform(&LocalStates),curand_uniform(&LocalStates));
-		VX = sp[i].vx - vneutx;
-		VY = sp[i].vy - vneuty;
-		VZ = sp[i].vz - vneutz;
-		dum = VX*VX+VY*VY+VZ*VZ;
-		vel = sqrt(dum);
-		engy = info[1].Escale * dum;
-		R1 = curand_uniform(&LocalStates) * sigv[2].val / vel;
-		SumSigma = ArO2_CrossSection(5, engy, N_LOGX, idLOGX, CX);
-		if(R1<=SumSigma){
-			// 5. Ar + Ar^ > Ar + Ar^		Charge Exchange
-			VX_buf = vneutx;
-			VY_buf = vneuty;
-			VZ_buf = vneutz;
-		}else if(R1<=(SumSigma += ArO2_CrossSection(6, engy, N_LOGX, idLOGX, CX))){
-			// 6. AR + AR^ > AR + AR^		ELASTIC SCATTERING
-			dev_newvel_IONSC(&VX,&VY,&VZ,vel,curand_uniform(&LocalStates),curand_uniform(&LocalStates));
-			VX_buf = VX+vneutx;
-			VY_buf = VY+vneuty;
-			VZ_buf = VZ+vneutz;
-		}else{
-			VX_buf = sp[i].vx;
-			VY_buf = sp[i].vy;
-			VZ_buf = sp[i].vz;
-		}
-		index = info[1].St_num + TID + (PNC+AddPt) * Gsize; 
-		sp[index].CellID = ID;
-		sp[index].x = sp[i].x;
-		sp[index].y = sp[i].y;
-		sp[index].vx = VX_buf;
-		sp[index].vy = VY_buf;
-		sp[index].vz = VZ_buf;		
-		i-=Gsize;
-		AddPt++;
-	}
-	data[ID].PtNumInCell = PNC + AddPt;
-	states[TID]=LocalStates;
-}
-__device__ void ArO2_O2_ion(int Gsize, int ngy, int TID, int nvel, float *vsave, curandState *states, 
-											Species *info, GPG *data, GCP *sp, int N_LOGX, float idLOGX, 
-											MCC_sigmav *sigv, CollF *info_CX, ArO2CollD *CX, int TnRct,float *MCCR, GGA *BG){
 	int i,j,k,n,index,index2,index3;
-	int ID,PNMC,MPNC,Flag;
+	int ID,PNMC,MPNC,Null,Flag;
 	int Target,oldPNC;
 	int Colltype;
 	float mofm,R1,R2;
 	float VX,VY,VZ;
 	float engy,dum,vel;	
 	float SumSigma,SumEngyLoss;
-	float vneutx,vneuty,vneutz;
+	float vneut,vneutx,vneuty,vneutz;
 
 	ID = TID%Gsize;
     curandState LocalStates = states[TID];
 	PNMC = data[TID].PtNumMCCInCell;
 	MPNC = data[TID].MaxPtNumInCell;
-	
+	Null = 0;
     // Calculate total Collision probability
 	i = info[1].St_num + ID + (MPNC-1)*Gsize;
 	for(k=0;k<PNMC;k++){
         // Calculate energy
+		Flag = sp[i].CellID;
+		if(Flag == 0) vneut = BG[ID].BackVel1;
+		else  vneut = BG[ID].BackVel2;
 		n = (nvel-1)*curand_uniform(&LocalStates);
-		dev_maxwellv(&vneutx,&vneuty,&vneutz,vsave[n],BG[ID].BackVel1,curand_uniform(&LocalStates),curand_uniform(&LocalStates));
-		VX = sp[i].vx;
-		VY = sp[i].vy;
-		VZ = sp[i].vz;
-        Flag = sp[i].CellID;
+		dev_maxwellv(&vneutx,&vneuty,&vneutz,vsave[n],vneut,curand_uniform(&LocalStates),curand_uniform(&LocalStates));
         VX = sp[i].vx - vneutx;
 		VY = sp[i].vy - vneuty;
 		VZ = sp[i].vz - vneutz;
@@ -609,48 +546,38 @@ __device__ void ArO2_O2_ion(int Gsize, int ngy, int TID, int nvel, float *vsave,
         // Colltype
         // 0 : Null collision
         // 1 : Scattering
-        // 2 : Charge exchange O2+
-		// 3 : Charge exchange O+
+        // 2 : Charge exchange 
+		R1 = curand_uniform(&LocalStates);
         switch(Flag){
 			case 0:{
-				mofm = info_CX[47].mofM;
-                R1 = curand_uniform(&LocalStates) * sigv[12].val / vel;
-				if(engy > info_CX[47].Th_e &&R1<=(SumSigma=ArO2_CrossSection(47, engy, N_LOGX, idLOGX, CX))){
-					Colltype = 3; 
+				mofm = info_CX[65].mofM;
+        		R1 = curand_uniform(&LocalStates)*sigv[23].val / vel;
+				if(engy > info_CX[65].Th_e &&R1<=(SumSigma=ArO2_CrossSection(65, engy, N_LOGX, idLOGX, CX))){
+					Colltype = 2; 
+					MCCR[ID*TnRct+65]++;
+				}else if(engy > info_CX[66].Th_e &&R1<=(SumSigma=ArO2_CrossSection(66, engy, N_LOGX, idLOGX, CX))){
+					Colltype = 1; 
+					MCCR[ID*TnRct+66]++;
+				}else{
+					Null++;
 				}
 				break;
 			}
 			case 1:{
-				mofm = info_CX[48].mofM;
-                R1 = curand_uniform(&LocalStates)*sigv[13].val / vel;
-				if(engy > info_CX[48].Th_e &&R1<=(SumSigma=ArO2_CrossSection(48, engy, N_LOGX, idLOGX, CX))){
-					Colltype = 2; 
-				}else if(engy > info_CX[49].Th_e &&R1<=(SumSigma=ArO2_CrossSection(49, engy, N_LOGX, idLOGX, CX))){
+				mofm = info_CX[67].mofM;
+        		R1 = curand_uniform(&LocalStates)*sigv[24].val / vel;
+				if(engy > info_CX[67].Th_e &&R1<=(SumSigma=ArO2_CrossSection(67, engy, N_LOGX, idLOGX, CX))){
 					Colltype = 1; 
-				}else if(engy > info_CX[50].Th_e &&R1<=(SumSigma=ArO2_CrossSection(50, engy, N_LOGX, idLOGX, CX))){
-					Colltype = 3; 
+					MCCR[ID*TnRct+67]++;
+				}else{
+					Null++;
 				}
 				break;
 			}
-			case 2:{
-				mofm = info_CX[51].mofM;
-                R1 = curand_uniform(&LocalStates)*sigv[14].val / vel;
-                if(engy > info_CX[51].Th_e &&R1<=(SumSigma=ArO2_CrossSection(51, engy, N_LOGX, idLOGX, CX))){
-					Colltype = 2; 
-				}
-                break;
-			}
-			case 3:{
-				mofm = info_CX[52].mofM;
-                R1 = curand_uniform(&LocalStates)*sigv[15].val / vel;
-                if(engy > info_CX[52].Th_e && R1<=(SumSigma=ArO2_CrossSection(52, engy, N_LOGX, idLOGX, CX))){
-					Colltype = 2; 
-				}
-                break;
-			}
 			default:{
-            	break;
-        	}
+
+				break;
+			}
 		}
 		switch (Colltype){
         case 0: // 0 : Null collision
@@ -674,7 +601,7 @@ __device__ void ArO2_O2_ion(int Gsize, int ngy, int TID, int nvel, float *vsave,
 			sp[index].vy = VY+vneuty;
 			sp[index].vz = VZ+vneutz;
             break;
-        case 2: // 2 : Charge exchange o2+
+        case 2: // 2 : Charge exchange 
 			oldPNC = atomicAdd(&data[TID].PtNumInCell,1);
 			index = info[1].St_num + ID + oldPNC*Gsize;
 			sp[index].CellID = TID;
@@ -684,28 +611,19 @@ __device__ void ArO2_O2_ion(int Gsize, int ngy, int TID, int nvel, float *vsave,
 			sp[index].vy = vneuty;
 			sp[index].vz = vneutz;
 			break;
-        case 3: // 3 : Charge exchange o+
-			oldPNC = atomicAdd(&data[TID+Gsize].PtNumInCell,1);
-			index = info[1].St_num + ID + oldPNC*Gsize;
-			sp[index].CellID = TID;
-			sp[index].x = sp[i].x;
-			sp[index].y = sp[i].y;
-			sp[index].vx = vneutx;
-			sp[index].vy = vneuty;
-			sp[index].vz = vneutz;
-            break;
         default:
             break;
         }
 		i-=Gsize;
 	}
 	states[TID]=LocalStates;
+	data[TID].PtNullMCCInCell = Null;
 }
-__device__ void ArO2_O_ion(int Gsize, int ngy, int TID, int nvel, float *vsave, curandState *states, 
+__device__ void ArO2_O2_ion(int Gsize, int ngy, int TID, int nvel, float *vsave, curandState *states, 
 											Species *info, GPG *data, GCP *sp, int N_LOGX, float idLOGX, 
 											MCC_sigmav *sigv, CollF *info_CX, ArO2CollD *CX, int TnRct,float *MCCR, GGA *BG){
 	int i,j,k,n,index,index2,index3;
-	int ID,PNMC,MPNC,Flag;
+	int ID,PNMC,MPNC,Null,Flag;
 	int Target,oldPNC;
 	int Colltype;
 	float mofm,R1,R2;
@@ -718,7 +636,7 @@ __device__ void ArO2_O_ion(int Gsize, int ngy, int TID, int nvel, float *vsave, 
     curandState LocalStates = states[TID];
 	PNMC = data[TID].PtNumMCCInCell;
 	MPNC = data[TID].MaxPtNumInCell;
-	
+	Null = 0;
     // Calculate total Collision probability
 	i = info[2].St_num + ID + (MPNC-1)*Gsize;
 	for(k=0;k<PNMC;k++){
@@ -742,38 +660,69 @@ __device__ void ArO2_O_ion(int Gsize, int ngy, int TID, int nvel, float *vsave, 
         // 1 : Scattering
         // 2 : Charge exchange O2+
 		// 3 : Charge exchange O+
+		// 4 : Charge exchange AR+
         switch(Flag){
 			case 0:{
-				mofm = info_CX[53].mofM;
-                R1 = curand_uniform(&LocalStates) * sigv[16].val / vel;
-				if(engy > info_CX[53].Th_e &&R1<=(SumSigma=ArO2_CrossSection(53, engy, N_LOGX, idLOGX, CX))){
-					Colltype = 2; 
-				}else if(engy > info_CX[54].Th_e &&R1<=(SumSigma=ArO2_CrossSection(54, engy, N_LOGX, idLOGX, CX))){
-					Colltype = 1; 
+				mofm = info_CX[52].mofM;
+                R1 = curand_uniform(&LocalStates) * sigv[14].val / vel;
+				if(engy > info_CX[52].Th_e &&R1<=(SumSigma=ArO2_CrossSection(52, engy, N_LOGX, idLOGX, CX))){
+					Colltype = 3; 
+					MCCR[ID*TnRct+52]++;
+				}else{
+					Null++;
 				}
 				break;
 			}
 			case 1:{
-				mofm = info_CX[55].mofM;
-                R1 = curand_uniform(&LocalStates)*sigv[17].val / vel;
-				if(engy > info_CX[55].Th_e &&R1<=(SumSigma=ArO2_CrossSection(55, engy, N_LOGX, idLOGX, CX))){
+				mofm = info_CX[53].mofM;
+                R1 = curand_uniform(&LocalStates)*sigv[15].val / vel;
+				if(engy > info_CX[53].Th_e &&R1<=(SumSigma=ArO2_CrossSection(53, engy, N_LOGX, idLOGX, CX))){
+					Colltype = 2; 
+					MCCR[ID*TnRct+53]++;
+				}else if(engy > info_CX[54].Th_e &&R1<=(SumSigma=ArO2_CrossSection(54, engy, N_LOGX, idLOGX, CX))){
+					Colltype = 1; 
+					MCCR[ID*TnRct+54]++;
+				}else if(engy > info_CX[55].Th_e &&R1<=(SumSigma=ArO2_CrossSection(55, engy, N_LOGX, idLOGX, CX))){
 					Colltype = 3; 
+					MCCR[ID*TnRct+55]++;
+				}else{
+					Null++;
 				}
 				break;
 			}
 			case 2:{
 				mofm = info_CX[56].mofM;
-                R1 = curand_uniform(&LocalStates)*sigv[18].val / vel;
+                R1 = curand_uniform(&LocalStates)*sigv[16].val / vel;
                 if(engy > info_CX[56].Th_e &&R1<=(SumSigma=ArO2_CrossSection(56, engy, N_LOGX, idLOGX, CX))){
 					Colltype = 2; 
+					MCCR[ID*TnRct+56]++;
+				}else{
+					Null++;
 				}
                 break;
 			}
 			case 3:{
 				mofm = info_CX[57].mofM;
-                R1 = curand_uniform(&LocalStates)*sigv[19].val / vel;
+                R1 = curand_uniform(&LocalStates)*sigv[17].val / vel;
                 if(engy > info_CX[57].Th_e && R1<=(SumSigma=ArO2_CrossSection(57, engy, N_LOGX, idLOGX, CX))){
 					Colltype = 2; 
+					MCCR[ID*TnRct+57]++;
+				}else{
+					Null++;
+				}
+                break;
+			}
+			case 4:{
+				mofm = info_CX[58].mofM;
+                R1 = curand_uniform(&LocalStates)*sigv[18].val / vel;
+                if(engy > info_CX[58].Th_e && R1<=(SumSigma=ArO2_CrossSection(58, engy, N_LOGX, idLOGX, CX))){
+					Colltype = 4; 
+					MCCR[ID*TnRct+58]++;
+				}else if(engy > info_CX[59].Th_e && R1<=(SumSigma=ArO2_CrossSection(59, engy, N_LOGX, idLOGX, CX))){
+					Colltype = 2; 
+					MCCR[ID*TnRct+59]++;
+				}else{
+					Null++;
 				}
                 break;
 			}
@@ -804,8 +753,8 @@ __device__ void ArO2_O_ion(int Gsize, int ngy, int TID, int nvel, float *vsave, 
 			sp[index].vz = VZ+vneutz;
             break;
         case 2: // 2 : Charge exchange o2+
-			oldPNC = atomicAdd(&data[TID-Gsize].PtNumInCell,1);
-			index = info[1].St_num + ID + oldPNC*Gsize;
+			oldPNC = atomicAdd(&data[TID].PtNumInCell,1);
+			index = info[2].St_num + ID + oldPNC*Gsize;
 			sp[index].CellID = TID;
 			sp[index].x = sp[i].x;
 			sp[index].y = sp[i].y;
@@ -814,8 +763,18 @@ __device__ void ArO2_O_ion(int Gsize, int ngy, int TID, int nvel, float *vsave, 
 			sp[index].vz = vneutz;
 			break;
         case 3: // 3 : Charge exchange o+
-			oldPNC = atomicAdd(&data[TID].PtNumInCell,1);
-			index = info[2].St_num + ID + oldPNC*Gsize;
+			oldPNC = atomicAdd(&data[TID+Gsize].PtNumInCell,1);
+			index = info[3].St_num + ID + oldPNC*Gsize;
+			sp[index].CellID = TID;
+			sp[index].x = sp[i].x;
+			sp[index].y = sp[i].y;
+			sp[index].vx = vneutx;
+			sp[index].vy = vneuty;
+			sp[index].vz = vneutz;
+            break;
+		case 4: // 4 : Charge exchange AR+
+			oldPNC = atomicAdd(&data[TID-Gsize].PtNumInCell,1);
+			index = info[1].St_num + ID + oldPNC*Gsize;
 			sp[index].CellID = TID;
 			sp[index].x = sp[i].x;
 			sp[index].y = sp[i].y;
@@ -829,12 +788,156 @@ __device__ void ArO2_O_ion(int Gsize, int ngy, int TID, int nvel, float *vsave, 
 		i-=Gsize;
 	}
 	states[TID]=LocalStates;
+	data[TID].PtNullMCCInCell = Null;
+}
+__device__ void ArO2_O_ion(int Gsize, int ngy, int TID, int nvel, float *vsave, curandState *states, 
+											Species *info, GPG *data, GCP *sp, int N_LOGX, float idLOGX, 
+											MCC_sigmav *sigv, CollF *info_CX, ArO2CollD *CX, int TnRct,float *MCCR, GGA *BG){
+	int i,j,k,n,index,index2,index3;
+	int ID,PNMC,MPNC,Null,Flag;
+	int Target,oldPNC;
+	int Colltype;
+	float mofm,R1,R2;
+	float VX,VY,VZ;
+	float engy,dum,vel;	
+	float SumSigma,SumEngyLoss;
+	float vneutx,vneuty,vneutz;
+
+	ID = TID%Gsize;
+    curandState LocalStates = states[TID];
+	PNMC = data[TID].PtNumMCCInCell;
+	MPNC = data[TID].MaxPtNumInCell;
+	Null = 0;
+    // Calculate total Collision probability
+	i = info[3].St_num + ID + (MPNC-1)*Gsize;
+	for(k=0;k<PNMC;k++){
+        // Calculate energy
+		n = (nvel-1)*curand_uniform(&LocalStates);
+		dev_maxwellv(&vneutx,&vneuty,&vneutz,vsave[n],BG[ID].BackVel2,curand_uniform(&LocalStates),curand_uniform(&LocalStates));
+		VX = sp[i].vx;
+		VY = sp[i].vy;
+		VZ = sp[i].vz;
+        Flag = sp[i].CellID;
+        VX = sp[i].vx - vneutx;
+		VY = sp[i].vy - vneuty;
+		VZ = sp[i].vz - vneutz;
+		dum = VX*VX+VY*VY+VZ*VZ;
+		vel = sqrt(dum);
+		engy = info[3].Escale * dum;
+        Colltype = 0;
+        //Start
+        // Colltype
+        // 0 : Null collision
+        // 1 : Scattering
+        // 2 : Charge exchange O2+
+		// 3 : Charge exchange O+
+        switch(Flag){
+			case 0:{
+				mofm = info_CX[60].mofM;
+                R1 = curand_uniform(&LocalStates) * sigv[19].val / vel;
+				if(engy > info_CX[60].Th_e &&R1<=(SumSigma=ArO2_CrossSection(60, engy, N_LOGX, idLOGX, CX))){
+					Colltype = 2; 
+					MCCR[ID*TnRct+60]++;
+				}else if(engy > info_CX[61].Th_e &&R1<=(SumSigma=ArO2_CrossSection(61, engy, N_LOGX, idLOGX, CX))){
+					Colltype = 1; 
+					MCCR[ID*TnRct+61]++;
+				}else{
+					Null++;
+				}
+				break;
+			}
+			case 1:{
+				mofm = info_CX[62].mofM;
+                R1 = curand_uniform(&LocalStates)*sigv[20].val / vel;
+				if(engy > info_CX[62].Th_e &&R1<=(SumSigma=ArO2_CrossSection(62, engy, N_LOGX, idLOGX, CX))){
+					Colltype = 3; 
+					MCCR[ID*TnRct+62]++;
+				}else{
+					Null++;
+				}
+				break;
+			}
+			case 2:{
+				mofm = info_CX[63].mofM;
+                R1 = curand_uniform(&LocalStates)*sigv[21].val / vel;
+                if(engy > info_CX[63].Th_e &&R1<=(SumSigma=ArO2_CrossSection(63, engy, N_LOGX, idLOGX, CX))){
+					Colltype = 2; 
+					MCCR[ID*TnRct+63]++;
+				}else{
+					Null++;
+				}
+                break;
+			}
+			case 3:{
+				mofm = info_CX[64].mofM;
+                R1 = curand_uniform(&LocalStates)*sigv[22].val / vel;
+                if(engy > info_CX[64].Th_e && R1<=(SumSigma=ArO2_CrossSection(64, engy, N_LOGX, idLOGX, CX))){
+					Colltype = 2; 
+					MCCR[ID*TnRct+64]++;
+				}else{
+					Null++;
+				}
+                break;
+			}
+			default:{
+            	break;
+        	}
+		}
+		switch (Colltype){
+        case 0: // 0 : Null collision
+			oldPNC = atomicAdd(&data[TID].PtNumInCell,1);
+			index = info[3].St_num + ID + oldPNC*Gsize;
+			sp[index].CellID = TID;
+			sp[index].x = sp[i].x;
+			sp[index].y = sp[i].y;
+			sp[index].vx = sp[i].vx;
+			sp[index].vy = sp[i].vy;
+			sp[index].vz = sp[i].vz;
+            break;
+        case 1: // 1 : Scattering
+			dev_newvel_IONSC(&VX,&VY,&VZ,vel,curand_uniform(&LocalStates),curand_uniform(&LocalStates));
+			oldPNC = atomicAdd(&data[TID].PtNumInCell,1);
+			index = info[3].St_num + ID + oldPNC*Gsize;
+			sp[index].CellID = TID;
+			sp[index].x = sp[i].x;
+			sp[index].y = sp[i].y;
+			sp[index].vx = VX+vneutx;
+			sp[index].vy = VY+vneuty;
+			sp[index].vz = VZ+vneutz;
+            break;
+        case 2: // 2 : Charge exchange o2+
+			oldPNC = atomicAdd(&data[TID-Gsize].PtNumInCell,1);
+			index = info[2].St_num + ID + oldPNC*Gsize;
+			sp[index].CellID = TID;
+			sp[index].x = sp[i].x;
+			sp[index].y = sp[i].y;
+			sp[index].vx = vneutx;
+			sp[index].vy = vneuty;
+			sp[index].vz = vneutz;
+			break;
+        case 3: // 3 : Charge exchange o+
+			oldPNC = atomicAdd(&data[TID].PtNumInCell,1);
+			index = info[3].St_num + ID + oldPNC*Gsize;
+			sp[index].CellID = TID;
+			sp[index].x = sp[i].x;
+			sp[index].y = sp[i].y;
+			sp[index].vx = vneutx;
+			sp[index].vy = vneuty;
+			sp[index].vz = vneutz;
+            break;
+        default:
+            break;
+        }
+		i-=Gsize;
+	}
+	states[TID]=LocalStates;
+	data[TID].PtNullMCCInCell = Null;
 }
 __device__ void ArO2_O_negative(int Gsize, int ngy, int TID, int nvel, float *vsave, curandState *states, 
 											Species *info, GPG *data, GCP *sp, int N_LOGX, float idLOGX, 
 											MCC_sigmav *sigv, CollF *info_CX, ArO2CollD *CX, int TnRct,float *MCCR, GGA *BG){
 	int i,j,k,n,index,index2,index3;
-	int ID,PNMC,MPNC,Flag;
+	int ID,PNMC,MPNC,Null,Flag;
 	int Target,oldPNC;
 	int Colltype;
 	float mofm,R1,R2;
@@ -847,9 +950,9 @@ __device__ void ArO2_O_negative(int Gsize, int ngy, int TID, int nvel, float *vs
     curandState LocalStates = states[TID];
 	PNMC = data[TID].PtNumMCCInCell;
 	MPNC = data[TID].MaxPtNumInCell;
-	
+	Null = 0;
     // Calculate total Collision probability
-	i = info[3].St_num + ID + (MPNC-1)*Gsize;
+	i = info[4].St_num + ID + (MPNC-1)*Gsize;
 	for(k=0;k<PNMC;k++){
         // Calculate energy
 		VX = sp[i].vx;
@@ -860,7 +963,7 @@ __device__ void ArO2_O_negative(int Gsize, int ngy, int TID, int nvel, float *vs
         dum = VX*VX+VY*VY+VZ*VZ;
 		vel = sqrt(dum);
 		VX/=vel; VY/=vel; VZ/=vel;
-		engy = info[3].Escale * dum;
+		engy = info[4].Escale * dum;
         Colltype = 0;
         //Start
         // Colltype
@@ -870,44 +973,60 @@ __device__ void ArO2_O_negative(int Gsize, int ngy, int TID, int nvel, float *vs
 		// 3 : dissociative  recombination just delete
         switch(Flag){
 			case 0:{
-				mofm = info_CX[41].mofM;
+				mofm = info_CX[46].mofM;
                 R1 = curand_uniform(&LocalStates) * sigv[9].val / vel;
-				if(engy > info_CX[41].Th_e &&R1<=(SumSigma=ArO2_CrossSection(41, engy, N_LOGX, idLOGX, CX))){
+				if(engy > info_CX[46].Th_e &&R1<=(SumSigma=ArO2_CrossSection(46, engy, N_LOGX, idLOGX, CX))){
 					Colltype = 1; 
-				}else if(engy > info_CX[42].Th_e && R1<=(SumSigma += ArO2_CrossSection(42, engy, N_LOGX, idLOGX, CX))){
+					MCCR[ID*TnRct+46]++;
+				}else if(engy > info_CX[47].Th_e && R1<=(SumSigma += ArO2_CrossSection(47, engy, N_LOGX, idLOGX, CX))){
 					Colltype = 2; 
+					MCCR[ID*TnRct+47]++;
+				}else{
+					Null++;
 				}
 				break;
 			}
 			case 1:{
-				mofm = info_CX[43].mofM;
+				mofm = info_CX[48].mofM;
                 R1 = curand_uniform(&LocalStates)*sigv[10].val / vel;
-				if(engy > info_CX[43].Th_e &&R1<=(SumSigma=ArO2_CrossSection(43, engy, N_LOGX, idLOGX, CX))){
+				if(engy > info_CX[48].Th_e &&R1<=(SumSigma=ArO2_CrossSection(48, engy, N_LOGX, idLOGX, CX))){
 					Colltype = 2; 
+					MCCR[ID*TnRct+48]++;
+				}else{
+					Null++;
 				}
 				break;
 			}
 			case 2:{
-				mofm = info_CX[44].mofM;
+				mofm = info_CX[49].mofM;
                 R1 = curand_uniform(&LocalStates)*sigv[11].val / vel;
-                if(engy > info_CX[44].Th_e &&R1<=(SumSigma=ArO2_CrossSection(44, engy, N_LOGX, idLOGX, CX))){
+                if(engy > info_CX[49].Th_e &&R1<=(SumSigma=ArO2_CrossSection(49, engy, N_LOGX, idLOGX, CX))){
 					Colltype = 3; 
+					MCCR[ID*TnRct+49]++;
+				}else{
+					Null++;
 				}
                 break;
 			}
 			case 3:{
-				mofm = info_CX[45].mofM;
+				mofm = info_CX[50].mofM;
                 R1 = curand_uniform(&LocalStates)*sigv[12].val / vel;
-                if(engy > info_CX[45].Th_e && R1<=(SumSigma=ArO2_CrossSection(45, engy, N_LOGX, idLOGX, CX))){
+                if(engy > info_CX[50].Th_e && R1<=(SumSigma=ArO2_CrossSection(50, engy, N_LOGX, idLOGX, CX))){
 					Colltype = 3; 
+					MCCR[ID*TnRct+50]++;
+				}else{
+					Null++;
 				}
                 break;
 			}
 			case 4:{
-				mofm = info_CX[46].mofM;
+				mofm = info_CX[51].mofM;
                 R1 = curand_uniform(&LocalStates)*sigv[13].val / vel;
-                if(engy > info_CX[46].Th_e &&R1<=(SumSigma=ArO2_CrossSection(46, engy, N_LOGX, idLOGX, CX))){
+                if(engy > info_CX[51].Th_e &&R1<=(SumSigma=ArO2_CrossSection(51, engy, N_LOGX, idLOGX, CX))){
 					Colltype = 2; 
+					MCCR[ID*TnRct+51]++;
+				}else{
+					Null++;
 				}
                 break;
 			}
@@ -919,9 +1038,7 @@ __device__ void ArO2_O_negative(int Gsize, int ngy, int TID, int nvel, float *vs
 		switch (Colltype){
         case 0: // 0 : Null collision
 			oldPNC = atomicAdd(&data[TID].PtNumInCell,1);
-			//printf("\n[%d][%d] : oldPNC = %d \n\n",TID,Gsize,oldPNC);
-			index = info[3].St_num + ID + oldPNC*Gsize;
-			//printf("0[%d][%d]: %g,%g,%g,%g,%g,\n",TID,ID,sp[i].x,sp[i].y,sp[i].vx,sp[i].vy,sp[i].vz);
+			index = info[4].St_num + ID + oldPNC*Gsize;
 			sp[index].CellID = TID;
 			sp[index].x = sp[i].x;
 			sp[index].y = sp[i].y;
@@ -930,10 +1047,9 @@ __device__ void ArO2_O_negative(int Gsize, int ngy, int TID, int nvel, float *vs
 			sp[index].vz = sp[i].vz;
             break;
         case 1: // 1 : Scattering
-			//printf("1[%d][%d]: %g,%g,%g,%g,%g,\n",TID,ID,sp[i].x,sp[i].y,sp[i].vx,sp[i].vy,sp[i].vz);
 			dev_newvel_IONSC(&VX,&VY,&VZ,vel,curand_uniform(&LocalStates),curand_uniform(&LocalStates));
 			oldPNC = atomicAdd(&data[TID].PtNumInCell,1);
-			index = info[3].St_num + ID + oldPNC*Gsize;
+			index = info[4].St_num + ID + oldPNC*Gsize;
 			sp[index].CellID = TID;
 			sp[index].x = sp[i].x;
 			sp[index].y = sp[i].y;
@@ -942,7 +1058,6 @@ __device__ void ArO2_O_negative(int Gsize, int ngy, int TID, int nvel, float *vs
 			sp[index].vz = VZ;
             break;
         case 2: // 2 : Detachment using maxwellv
-			//printf("2[%d][%d]: %g,%g,%g,%g,%g,\n",TID,ID,sp[i].x,sp[i].y,sp[i].vx,sp[i].vy,sp[i].vz);
 			oldPNC = atomicAdd(&data[ID].PtNumInCell,1);
 			index = info[0].St_num + ID + oldPNC*Gsize;
 			sp[index].CellID = ID;
@@ -960,6 +1075,7 @@ __device__ void ArO2_O_negative(int Gsize, int ngy, int TID, int nvel, float *vs
 		i-=Gsize;
 	}
 	states[TID]=LocalStates;
+	data[TID].PtNullMCCInCell = Null;
 }
 __device__ void  ArO2_Collision_Check(int Gsize, int Csize, int ngy, int TID, float dt, int MCCn, float dtm, float dx, float dy,
                                         curandState *states, Species *info, GPG *data, GCP *sp, MCC_sigmav *sigv, GGA *BG, GFC *Fluid){

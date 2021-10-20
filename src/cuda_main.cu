@@ -3,6 +3,7 @@
 extern "C" void main_cuda()
 {
     int isp,i,k,sum,dsum,dsum2;
+    float dsum3,dsum4;
     cudaEvent_t start, stop;
     float gputime;
     printf("-------------GPU_CUDA START-------------\n");
@@ -118,14 +119,14 @@ extern "C" void main_cuda()
             printf("Np = [%d],[%d],[%d],[%d],[%d]\n",np[0],np[1],np[2],np[3],np[4]);
             printf("mcc = [%d],[%d],[%d],[%d],[%d]\n",np2[0],np2[1],np2[2],np2[3],np2[4]);
             printf("null = [%d],[%d],[%d],[%d],[%d]\n",np3[0],np3[1],np3[2],np3[3],np3[4]);
-            printf("[%] = [%3.2g %],[%3.2g %],[%3.2g %],[%3.2g %],[%3.2g %]\n"
-                                    ,100*(float)np2[0]/(np[0]+np2[0]),100*(float)np2[1]/(np[1]+np2[1])
-                                    ,100*(float)np2[2]/(np[2]+np2[2]),100*(float)np2[3]/(np[3]+np2[3])
-                                    ,100*(float)np2[4]/(np[4]+np2[4]));
+            //printf("[%] = [%3.2g %],[%3.2g %],[%3.2g %],[%3.2g %],[%3.2g %]\n"
+            //                        ,100*(float)np2[0]/(np[0]+np2[0]),100*(float)np2[1]/(np[1]+np2[1])
+            //                        ,100*(float)np2[2]/(np[2]+np2[2]),100*(float)np2[3]/(np[3]+np2[3])
+            //                        ,100*(float)np2[4]/(np[4]+np2[4]));
         }
-        //printf("TIME = %2.4g (s),[%4d][%4d], Iter = %4d, res = %2.5g\n",t,tstep,cstep,*FIter,*dot_result);
+        printf("TIME = %1.4e (s),[%3d][%3d], Iter = %3d, res = %1.3e\n",t,tstep,cstep,*FIter,*dot_result);
         //if(t>1e-3) break;    
-        if(tstep == 1){
+        //if(tstep == 1){
         //if(cstep==200){
             cudaMemcpy(Host_G_sp, dev_G_sp, nsp * Gsize * sizeof(GPG),cudaMemcpyDeviceToHost);
             for(isp=0;isp<nsp;isp++){
@@ -193,9 +194,9 @@ extern "C" void main_cuda()
             }
             if(MainGas == ARO2){
                 printf("Np = [%d],[%d],[%d],[%d],[%d]\n",np[0],np[1],np[2],np[3],np[4]);
-                printf("mcc = [%d],[%d],[%d],[%d],[%d]\n",np2[0],np2[1],np2[2],np2[3],np2[4]);
-                printf("null = [%d],[%d],[%d],[%d],[%d]\n",np3[0],np3[1],np3[2],np3[3],np3[4]);
-                printf("Coll = [%d],[%d],[%d],[%d],[%d]\n",np2[0]-np3[0],np2[1]-np3[1],np2[2]-np3[2],np2[3]-np3[3],np2[4]-np3[4]);
+                //printf("mcc = [%d],[%d],[%d],[%d],[%d]\n",np2[0],np2[1],np2[2],np2[3],np2[4]);
+                //printf("null = [%d],[%d],[%d],[%d],[%d]\n",np3[0],np3[1],np3[2],np3[3],np3[4]);
+                printf("   Coll = [%d],[%d],[%d],[%d],[%d]\n",np2[0]-np3[0],np2[1]-np3[1],np2[2]-np3[2],np2[3]-np3[3],np2[4]-np3[4]);
                 printf("[%] = [%3.2g %],[%3.2g %],[%3.2g %],[%3.2g %],[%3.2g %]\n"
                                     ,100*(float)np2[0]/(np[0]+np2[0]),100*(float)np2[1]/(np[1]+np2[1])
                                     ,100*(float)np2[2]/(np[2]+np2[2]),100*(float)np2[3]/(np[3]+np2[3])
@@ -217,7 +218,7 @@ extern "C" void main_cuda()
                             }
                         }
                     }
-                    printf("R[%d] = [%g],[%g],[%g],[%g],[%g]\n",isp,np4[0],np4[1],np4[2],np4[3],np4[4]);
+                    //printf("R[%d] = [%g],[%g],[%g],[%g],[%g]\n",isp,np4[0],np4[1],np4[2],np4[3],np4[4]);
                     np4[0] = 0.0f;np4[1] = 0.0f;np4[2] = 0.0f;np4[3] = 0.0f;np4[4] = 0.0f;
                 }
             }
@@ -232,27 +233,27 @@ extern "C" void main_cuda()
 	        //fprintf(stderr, "Depo	: time = %2.8f	(s)		rate = %g	(%)\n",	gputime_deposit * 0.001, gputime_deposit * 100 / time_sum);
 	        //fprintf(stderr, "------------------------------------------------------------------------------\n");
             //break; 
-            exit(1);
-        }    
+            //exit(1);
+        //}    
         if(isnan(*dot_result) || isinf(*dot_result)){
             printf("\n");
             cudaMemcpy(Host_G_sp, dev_G_sp, nsp * Gsize * sizeof(GPG),cudaMemcpyDeviceToHost);
             for(isp=0;isp<nsp;isp++){
                 sum = 0;
-                dsum = 0.0;
-                dsum2 = 0.0;
+                dsum3 = 0.0;
+                dsum4 = 0.0;
                 k = 0;
                 for(i=0;i<Gsize;i++){
                     if(vec_G[i].DensRegion){
                         k++;
-                        sum +=Host_G_sp[isp*Gsize+i].PtNumInCell;
-                        dsum +=Host_G_sp[isp*Gsize+i].den * SP[isp].np2c/dx/dy;
-                        dsum2 +=Host_G_sp[isp*Gsize+i].sigma;
+                        sum += Host_G_sp[isp*Gsize+i].PtNumInCell;
+                        dsum3 += Host_G_sp[isp*Gsize+i].den * SP[isp].np2c/dx/dy;
+                        dsum4 += Host_G_sp[isp*Gsize+i].sigma;
                         if(isnan(Host_G_sp[isp*Gsize+i].sigma)) printf("\tsigma[%d].[%d] = [%g]\n",isp,i,Host_G_sp[isp*Gsize+i].sigma);
                     }
                 }
-                printf("\tNP - %s : %d, %g, %g\n",SP[isp].name,sum,dsum/k,dsum2/k);
-                if(dsum/k == 0) exit(1);
+                printf("\tNP - %s : %d, %g, %g\n",SP[isp].name,sum,dsum3/k,dsum4/k);
+                if(dsum3/k == 0) exit(1);
                 //if(isp !=0 && isnan(dsum)) exit(1);
             }
             exit(1);

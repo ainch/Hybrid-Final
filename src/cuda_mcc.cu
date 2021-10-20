@@ -28,17 +28,16 @@ __global__ void MCC_ArO2_Basic(int Gsize, int Csize, int ngy, int nsp, float dt,
 		ArO2_Electron(Gsize, ngy, TID, nvel, vsave, states,  info, data, sp, N_LOGX, idLOGX, sigv, CollP, CX, TnRct, MCCR, BG);
 		break;
 	case 1:
-		//Coding Start point!
-		//ArO2_Ar_ion(Gsize, ngy, TID, nvel, vsave, states,  info, data, sp, N_LOGX, idLOGX, sigv, CollP, CX, TnRct, MCCR, BG);
+		ArO2_Ar_ion(Gsize, ngy, TID, nvel, vsave, states,  info, data, sp, N_LOGX, idLOGX, sigv, CollP, CX, TnRct, MCCR, BG);
 		break;
 	case 2:
-		//ArO2_O2_ion(Gsize, ngy, TID, nvel, vsave, states,  info, data, sp, N_LOGX, idLOGX, sigv, CollP, CX, TnRct, MCCR, BG);
+		ArO2_O2_ion(Gsize, ngy, TID, nvel, vsave, states,  info, data, sp, N_LOGX, idLOGX, sigv, CollP, CX, TnRct, MCCR, BG);
 		break;
 	case 3:
-		//ArO2_O_ion(Gsize, ngy, TID, nvel, vsave, states,  info, data, sp, N_LOGX, idLOGX, sigv, CollP, CX, TnRct, MCCR, BG);
+		ArO2_O_ion(Gsize, ngy, TID, nvel, vsave, states,  info, data, sp, N_LOGX, idLOGX, sigv, CollP, CX, TnRct, MCCR, BG);
 		break;
 	case 4:
-		//ArO2_O_negative(Gsize, ngy, TID, nvel, vsave, states,  info, data, sp, N_LOGX, idLOGX, sigv, CollP, CX, TnRct, MCCR, BG);
+		ArO2_O_negative(Gsize, ngy, TID, nvel, vsave, states,  info, data, sp, N_LOGX, idLOGX, sigv, CollP, CX, TnRct, MCCR, BG);
 		break;
 	default:
 		break;
