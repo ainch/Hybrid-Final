@@ -31,28 +31,28 @@
     },
     "GasSpecies":{
         "Type(0:Ar,1:O2,2:Ar/O2)":2,
-        "TotalPres(Torr)":5.0,
+        "TotalPres(Torr)":1.0,
         "Background":{
-            "Argon":{"Ratio":99,"Temp(eV)":0.026},
-            "Oxygen":{"Ratio":1,"Temp(eV)":0.026}
+            "Argon":{"Ratio":50,"Temp(eV)":0.026},
+            "Oxygen":{"Ratio":50,"Temp(eV)":0.026}
         },
         "NeutralSpecies":{
             "Loadtype":0,
             "LoadPosition(m)": {"X0":0.00,"X1":0.05,"Y0":0.003,"Y1":0.019},
-            "Ar*":{"Density":5.00e+19,"Temp(eV)":0.026},
-            "O2A":{"Density":5.00e+19,"Temp(eV)":0.026},
-            "O2B":{"Density":5.00e+19,"Temp(eV)":0.026},
-            "OP":{"Density":5.00e+19,"Temp(eV)":0.026},
-            "OD":{"Density":5.00e+19,"Temp(eV)":0.026}
+            "Ar*":{"Density":5.00e+15,"Temp(eV)":0.026},
+            "O2A":{"Density":5.00e+15,"Temp(eV)":0.026},
+            "O2B":{"Density":5.00e+15,"Temp(eV)":0.026},
+            "OP":{"Density":5.00e+15,"Temp(eV)":0.026},
+            "OD":{"Density":5.00e+15,"Temp(eV)":0.026}
         },
         "ChargeSpecies":{
             "Loadtype":0,
             "LoadPosition(m)": {"X0":0.00,"X1":0.05,"Y0":0.003,"Y1":0.019},
-            "Electron":{"S_ID":0,"Density":1.00e+16,"Temp(eV)":1.0,"np2c":2e7,"Ratio":1,"Max_np":10e7},
-            "Ar+":{"S_ID":1,"Density":1.00e+16,"Temp(eV)":0.026,"np2c":2e7,"Ratio":1,"Max_np":10e7},
-            "O2+":{"S_ID":2,"Density":1.00e+16,"Temp(eV)":0.026,"np2c":2e7,"Ratio":1,"Max_np":10e7},
-            "O+":{"S_ID":3,"Density":0.50e+16,"Temp(eV)":0.026,"np2c":2e7,"Ratio":1,"Max_np":10e7},
-            "O-":{"S_ID":4,"Density":1.50e+16,"Temp(eV)":0.026,"np2c":2e7,"Ratio":1,"Max_np":10e7}
+            "Electron":{"S_ID":0,"Density":1.00e+16,"Temp(eV)":1.0,"np2c":8e7,"Ratio":1,"Max_np":10e7},
+            "Ar+":{"S_ID":1,"Density":1.00e+16,"Temp(eV)":0.026,"np2c":8e7,"Ratio":1,"Max_np":10e7},
+            "O2+":{"S_ID":2,"Density":1.00e+16,"Temp(eV)":0.026,"np2c":8e7,"Ratio":1,"Max_np":10e7},
+            "O+":{"S_ID":3,"Density":0.50e+16,"Temp(eV)":0.026,"np2c":8e7,"Ratio":1,"Max_np":10e7},
+            "O-":{"S_ID":4,"Density":1.50e+16,"Temp(eV)":0.026,"np2c":8e7,"Ratio":1,"Max_np":10e7}
         }
     },
     "SimulationMethod":
@@ -121,7 +121,7 @@
             "Tecplot2D":0,
             "Tec_Movie":0,
             "Tec_Movie_FrameNum":200,
-            "Tec_Particle_Movie":0,
+            "Tec_Particle_Movie":1,
             "Tec_Particle_Movie_FrameNum":200,
             "Tec_Ave_Movie":0,
             "Tec_Ave_Movie_Interval":1,
