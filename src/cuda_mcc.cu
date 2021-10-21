@@ -20,8 +20,6 @@ __global__ void MCC_ArO2_Basic(int Gsize, int Csize, int ngy, int nsp, float dt,
 	int TID = threadIdx.x + blockIdx.x * blockDim.x;
 	if(TID>=nsp*Gsize) return;
 	int isp = TID/Gsize;
-	// Collision check
-	//if(TID !=(125*110+55)) return;
 	ArO2_Collision_Check(Gsize, Csize, ngy, TID, dt, MCCn, dtm, idx, idy, states, info, data, sp, sigv, BG, Fluid);
 	switch (isp){
 	case 0:
@@ -41,7 +39,31 @@ __global__ void MCC_ArO2_Basic(int Gsize, int Csize, int ngy, int nsp, float dt,
 		break;
 	default:
 		break;
+	}
+	/*	
+	// Collision check
+	//if(TID !=(125*110+55)) return;
+	ArO2_Collision_Check_TEST(Gsize, Csize, ngy, TID, dt, MCCn, dtm, idx, idy, states, info, data, sp, sigv, BG, Fluid);
+	switch (isp){
+	case 0:
+		ArO2_Electron_TEST(Gsize, ngy, TID, nvel, vsave, states,  info, data, sp, N_LOGX, idLOGX, sigv, CollP, CX, TnRct, MCCR, BG);
+		break;
+	case 1:
+		ArO2_Ar_ion_TEST(Gsize, ngy, TID, nvel, vsave, states,  info, data, sp, N_LOGX, idLOGX, sigv, CollP, CX, TnRct, MCCR, BG);
+		break;
+	case 2:
+		ArO2_O2_ion_TEST(Gsize, ngy, TID, nvel, vsave, states,  info, data, sp, N_LOGX, idLOGX, sigv, CollP, CX, TnRct, MCCR, BG);
+		break;
+	case 3:
+		ArO2_O_ion_TEST(Gsize, ngy, TID, nvel, vsave, states,  info, data, sp, N_LOGX, idLOGX, sigv, CollP, CX, TnRct, MCCR, BG);
+		break;
+	case 4:
+		ArO2_O_negative_TEST(Gsize, ngy, TID, nvel, vsave, states,  info, data, sp, N_LOGX, idLOGX, sigv, CollP, CX, TnRct, MCCR, BG);
+		break;
+	default:
+		break;
 	}	
+	*/
 }	
 __global__ void MCC_O2_Basic(int Gsize, int Csize, int ngy, int nsp, float dt, int MCCn, float dtm, float idx,float idy, int nvel, float *vsave,
 											curandState *states, int N_LOGX, float idLOGX, MCC_sigmav *sigv, CollF *CollP, O2CollD *CX, int TnRct, float*MCCR,

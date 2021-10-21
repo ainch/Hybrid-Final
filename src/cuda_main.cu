@@ -124,10 +124,10 @@ extern "C" void main_cuda()
             //                        ,100*(float)np2[2]/(np[2]+np2[2]),100*(float)np2[3]/(np[3]+np2[3])
             //                        ,100*(float)np2[4]/(np[4]+np2[4]));
         }
-        printf("TIME = %1.4e (s),[%3d][%3d], Iter = %3d, res = %1.3e\n",t,tstep,cstep,*FIter,*dot_result);
+        printf("TIME = %1.4e (s),[%3d][%3d], Iter = %3d, res = %1.3e\r",t,tstep,cstep,*FIter,*dot_result);
         //if(t>1e-3) break;    
         //if(tstep == 1){
-        //if(cstep==200){
+        if(cstep==200){
             cudaMemcpy(Host_G_sp, dev_G_sp, nsp * Gsize * sizeof(GPG),cudaMemcpyDeviceToHost);
             for(isp=0;isp<nsp;isp++){
                 sum = 0;
@@ -194,8 +194,8 @@ extern "C" void main_cuda()
             }
             if(MainGas == ARO2){
                 printf("Np = [%d],[%d],[%d],[%d],[%d]\n",np[0],np[1],np[2],np[3],np[4]);
-                //printf("mcc = [%d],[%d],[%d],[%d],[%d]\n",np2[0],np2[1],np2[2],np2[3],np2[4]);
-                //printf("null = [%d],[%d],[%d],[%d],[%d]\n",np3[0],np3[1],np3[2],np3[3],np3[4]);
+                printf("mcc = [%d],[%d],[%d],[%d],[%d]\n",np2[0],np2[1],np2[2],np2[3],np2[4]);
+                printf("null = [%d],[%d],[%d],[%d],[%d]\n",np3[0],np3[1],np3[2],np3[3],np3[4]);
                 printf("   Coll = [%d],[%d],[%d],[%d],[%d]\n",np2[0]-np3[0],np2[1]-np3[1],np2[2]-np3[2],np2[3]-np3[3],np2[4]-np3[4]);
                 printf("[%] = [%3.2g %],[%3.2g %],[%3.2g %],[%3.2g %],[%3.2g %]\n"
                                     ,100*(float)np2[0]/(np[0]+np2[0]),100*(float)np2[1]/(np[1]+np2[1])
@@ -218,7 +218,7 @@ extern "C" void main_cuda()
                             }
                         }
                     }
-                    //printf("R[%d] = [%g],[%g],[%g],[%g],[%g]\n",isp,np4[0],np4[1],np4[2],np4[3],np4[4]);
+                    if(isp<=67) printf("R[%d] = [%g],[%g],[%g],[%g],[%g]\n",isp,np4[0],np4[1],np4[2],np4[3],np4[4]);
                     np4[0] = 0.0f;np4[1] = 0.0f;np4[2] = 0.0f;np4[3] = 0.0f;np4[4] = 0.0f;
                 }
             }
@@ -233,8 +233,8 @@ extern "C" void main_cuda()
 	        //fprintf(stderr, "Depo	: time = %2.8f	(s)		rate = %g	(%)\n",	gputime_deposit * 0.001, gputime_deposit * 100 / time_sum);
 	        //fprintf(stderr, "------------------------------------------------------------------------------\n");
             //break; 
-            //exit(1);
-        //}    
+            exit(1);
+        }    
         if(isnan(*dot_result) || isinf(*dot_result)){
             printf("\n");
             cudaMemcpy(Host_G_sp, dev_G_sp, nsp * Gsize * sizeof(GPG),cudaMemcpyDeviceToHost);

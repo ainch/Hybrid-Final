@@ -62,5 +62,22 @@ __device__ void ArO2_O_ion(int Gsize, int ngy, int TID, int nvel, float *vsave, 
 __device__ void ArO2_O_negative(int Gsize, int ngy, int TID, int nvel, float *vsave, curandState *states, 
 											Species *info, GPG *data, GCP *sp, int N_LOGX, float idLOGX, 
 											MCC_sigmav *sigv, CollF *info_CX, ArO2CollD *CX, int TnRct,float *MCCR, GGA *BG);
+											__device__ void  ArO2_Collision_Check(int Gsize, int Csize, int ngy, int TID, float dt, int MCCn, float dtm, float dx, float dy,
+                                        curandState *states, Species *info, GPG *data, GCP *sp, MCC_sigmav *sigv, GGA *BG, GFC *Fluid);
+__device__ void ArO2_Electron_TEST(int Gsize, int ngy, int TID, int nvel, float *vsave, curandState *states, 
+											Species *info, GPG *data, GCP *sp, int N_LOGX, float idLOGX, 
+											MCC_sigmav *sigv, CollF *info_CX, ArO2CollD *CX, int TnRct,float *MCCR, GGA *BG);
+__device__ void ArO2_Ar_ion_TEST(int Gsize, int ngy, int TID, int nvel, float *vsave, curandState *states, 
+											Species *info, GPG *data, GCP *sp, int N_LOGX, float idLOGX, 
+											MCC_sigmav *sigv, CollF *info_CX, ArO2CollD *CX, int TnRct,float *MCCR, GGA *BG);
+__device__ void ArO2_O2_ion_TEST(int Gsize, int ngy, int TID, int nvel, float *vsave, curandState *states, 
+											Species *info, GPG *data, GCP *sp, int N_LOGX, float idLOGX, 
+											MCC_sigmav *sigv, CollF *info_CX, ArO2CollD *CX, int TnRct,float *MCCR, GGA *BG);										   
+__device__ void ArO2_O_ion_TEST(int Gsize, int ngy, int TID, int nvel, float *vsave, curandState *states, 
+											Species *info, GPG *data, GCP *sp, int N_LOGX, float idLOGX, 
+											MCC_sigmav *sigv, CollF *info_CX, ArO2CollD *CX, int TnRct,float *MCCR, GGA *BG);
+__device__ void ArO2_O_negative_TEST(int Gsize, int ngy, int TID, int nvel, float *vsave, curandState *states, 
+											Species *info, GPG *data, GCP *sp, int N_LOGX, float idLOGX, 
+											MCC_sigmav *sigv, CollF *info_CX, ArO2CollD *CX, int TnRct,float *MCCR, GGA *BG);
 __device__ float ArO2_CrossSection(int R, float engy, int N_LOGX, float idLOGX, ArO2CollD *data);                                
 #endif

@@ -232,8 +232,8 @@ __device__ void Ar_Collision_Check(int Gsize, int Csize, int ngy, int TID, float
     switch (isp){
     case 0: // Electron
 		Prob1 = 1.0f - exp(-1*dtm*sigv[0].val*BG[ID].BackDen1);  // E + Ar
-		Prob2 = 1.0f - exp(-1*dtm*sigv[1].val*Fluid[CID].ave_den);  // E + Ar*
-	    Tprob = Prob1 + Prob2; 
+		Prob2 = Prob1 + 1.0f - exp(-1*dtm*sigv[1].val*Fluid[CID].ave_den);  // E + Ar*
+	    Tprob = Prob2; 
 		Randn = MCCn;
         break;
 	case 1: // Ar+
@@ -357,6 +357,8 @@ __device__ void Ar_Electron(int Gsize, int ngy, int TID, int nvel, float *vsave,
 					engy-=rengy;
 					vel = sqrt(fabs(rengy)/info[0].Escale);
 					vel2 = sqrt(fabs(engy)/info[0].Escale);
+					Iz_isp1 = 0;
+					Iz_isp2 = 1;
 					MCCR[TID*TnRct+4]++;
 				}else{
 					Colltype = 0;

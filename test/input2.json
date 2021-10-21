@@ -48,11 +48,11 @@
         "ChargeSpecies":{
             "Loadtype":0,
             "LoadPosition(m)": {"X0":0.00,"X1":0.05,"Y0":0.003,"Y1":0.019},
-            "Electron":{"S_ID":0,"Density":1.00e+16,"Temp(eV)":1.0,"np2c":8e7,"Ratio":1,"Max_np":10e7},
-            "Ar+":{"S_ID":1,"Density":1.00e+16,"Temp(eV)":0.026,"np2c":8e7,"Ratio":1,"Max_np":10e7},
-            "O2+":{"S_ID":2,"Density":1.00e+16,"Temp(eV)":0.026,"np2c":8e7,"Ratio":1,"Max_np":10e7},
-            "O+":{"S_ID":3,"Density":0.50e+16,"Temp(eV)":0.026,"np2c":8e7,"Ratio":1,"Max_np":10e7},
-            "O-":{"S_ID":4,"Density":1.50e+16,"Temp(eV)":0.026,"np2c":8e7,"Ratio":1,"Max_np":10e7}
+            "Electron":{"S_ID":0,"Density":1.00e+16,"Temp(eV)":1.0,"np2c":2e7,"Ratio":1,"Max_np":10e7},
+            "Ar+":{"S_ID":1,"Density":1.00e+16,"Temp(eV)":0.026,"np2c":2e7,"Ratio":1,"Max_np":10e7},
+            "O2+":{"S_ID":2,"Density":1.00e+16,"Temp(eV)":0.026,"np2c":2e7,"Ratio":1,"Max_np":10e7},
+            "O+":{"S_ID":3,"Density":0.50e+16,"Temp(eV)":0.026,"np2c":2e7,"Ratio":1,"Max_np":10e7},
+            "O-":{"S_ID":4,"Density":1.50e+16,"Temp(eV)":0.026,"np2c":2e7,"Ratio":1,"Max_np":10e7}
         }
     },
     "SimulationMethod":
@@ -121,8 +121,8 @@
             "Tecplot2D":0,
             "Tec_Movie":0,
             "Tec_Movie_FrameNum":200,
-            "Tec_Particle_Movie":1,
-            "Tec_Particle_Movie_FrameNum":200,
+            "Tec_Particle_Movie":100,
+            "Tec_Particle_Movie_FrameNum":100,
             "Tec_Ave_Movie":0,
             "Tec_Ave_Movie_Interval":1,
             "Tec_Ave_Movie_num":100

@@ -330,7 +330,7 @@ __device__ void O2_Electron(int Gsize, int ngy, int TID, int nvel, float *vsave,
         case 2: // 2 : Attachment using maxwellv
 			oldPNC = atomicAdd(&data[TID+3*Gsize].PtNumInCell,1);
 			index = info[3].St_num + TID + oldPNC*Gsize;
-			sp[index].CellID = TID;
+			sp[index].CellID = TID+3*Gsize;
 			sp[index].x = sp[i].x;
 			sp[index].y = sp[i].y;
 			n = (nvel-1)*curand_uniform(&LocalStates);
@@ -558,7 +558,7 @@ __device__ void O2_O2_ion(int Gsize, int ngy, int TID, int nvel, float *vsave, c
         case 3: // 3 : Charge exchange o+
 			oldPNC = atomicAdd(&data[TID+Gsize].PtNumInCell,1);
 			index = info[2].St_num + ID + oldPNC*Gsize;
-			sp[index].CellID = TID;
+			sp[index].CellID = TID+Gsize;
 			sp[index].x = sp[i].x;
 			sp[index].y = sp[i].y;
 			sp[index].vx = vneutx;
@@ -691,7 +691,7 @@ __device__ void O2_O_ion(int Gsize, int ngy, int TID, int nvel, float *vsave, cu
         case 2: // 2 : Charge exchange o2+
 			oldPNC = atomicAdd(&data[TID-Gsize].PtNumInCell,1);
 			index = info[1].St_num + ID + oldPNC*Gsize;
-			sp[index].CellID = TID;
+			sp[index].CellID = TID-Gsize;
 			sp[index].x = sp[i].x;
 			sp[index].y = sp[i].y;
 			sp[index].vx = vneutx;
@@ -888,38 +888,38 @@ __device__ void  O2Collision_Check(int Gsize, int Csize, int ngy, int TID, float
     switch (isp){
     case 0: // Electron
         Prob1 = 1.0f - exp(-1*dtm*sigv[0].val*BG[ID].BackDen1);
-	    Prob2 = 1.0f - exp(-1*dtm*sigv[1].val*Fluid[CID].ave_den);
-        Prob3 = 1.0f - exp(-1*dtm*sigv[2].val*Fluid[CID+Csize].ave_den);
-        Prob4 = 1.0f - exp(-1*dtm*sigv[3].val*data[ID+3*Gsize].den*info[3].np2c*dx*dy);
-        Prob5 = 1.0f - exp(-1*dtm*sigv[4].val*data[ID+Gsize].den*info[1].np2c*dx*dy);
-        Prob6 = 1.0f - exp(-1*dtm*sigv[5].val*Fluid[CID+2*Csize].ave_den);
-        Prob7 = 1.0f - exp(-1*dtm*sigv[6].val*Fluid[CID+3*Csize].ave_den);
-	    Tprob = Prob1 + Prob2 + Prob3 + Prob4 + Prob5 + Prob6 + Prob7;
+	    Prob2 = Prob1 + 1.0f - exp(-1*dtm*sigv[1].val*Fluid[CID].ave_den);
+        Prob3 = Prob2 + 1.0f - exp(-1*dtm*sigv[2].val*Fluid[CID+Csize].ave_den);
+        Prob4 = Prob3 + 1.0f - exp(-1*dtm*sigv[3].val*data[ID+3*Gsize].den*info[3].np2c*dx*dy);
+        Prob5 = Prob4 + 1.0f - exp(-1*dtm*sigv[4].val*data[ID+Gsize].den*info[1].np2c*dx*dy);
+        Prob6 = Prob5 + 1.0f - exp(-1*dtm*sigv[5].val*Fluid[CID+2*Csize].ave_den);
+        Prob7 = Prob6 + 1.0f - exp(-1*dtm*sigv[6].val*Fluid[CID+3*Csize].ave_den);
+	    Tprob = Prob7;
 		Randn = MCCn;
         break;
     case 1: // O2+
         Prob1 = 1.0 - exp(-1*dtm*sigv[12].val*Fluid[CID+2*Csize].ave_den);
-	    Prob2 = 1.0 - exp(-1*dtm*sigv[13].val*BG[ID].BackDen1);
-	    Prob3 = 1.0 - exp(-1*dtm*sigv[14].val*Fluid[CID].ave_den);
-	    Prob4 = 1.0 - exp(-1*dtm*sigv[15].val*Fluid[CID+Csize].ave_den);
-        Tprob = Prob1 + Prob2 + Prob3 + Prob4;
+	    Prob2 = Prob1 + 1.0 - exp(-1*dtm*sigv[13].val*BG[ID].BackDen1);
+	    Prob3 = Prob2 + 1.0 - exp(-1*dtm*sigv[14].val*Fluid[CID].ave_den);
+	    Prob4 = Prob3 + 1.0 - exp(-1*dtm*sigv[15].val*Fluid[CID+Csize].ave_den);
+        Tprob = Prob4;
 		Randn = MCCn;
         break;
     case 2: // O+
         Prob1 = 1.0 - exp(-1*dt*sigv[16].val*BG[ID].BackDen1);
-	    Prob2 = 1.0 - exp(-1*dt*sigv[17].val*Fluid[CID+2*Csize].ave_den);
-	    Prob3 = 1.0 - exp(-1*dt*sigv[18].val*Fluid[CID].ave_den);
-	    Prob4 = 1.0 - exp(-1*dt*sigv[19].val*Fluid[CID+Csize].ave_den);
-	    Tprob = Prob1 + Prob2 + Prob3 + Prob4;
+	    Prob2 = Prob1 + 1.0 - exp(-1*dt*sigv[17].val*Fluid[CID+2*Csize].ave_den);
+	    Prob3 = Prob2 + 1.0 - exp(-1*dt*sigv[18].val*Fluid[CID].ave_den);
+	    Prob4 = Prob3 + 1.0 - exp(-1*dt*sigv[19].val*Fluid[CID+Csize].ave_den);
+	    Tprob = Prob4;
 		Randn = 1;
         break;
     case 3: // O-
         Prob1 = 1.0 - exp(-1*dt*sigv[7].val*BG[ID].BackDen1);
-	    Prob2 = 1.0 - exp(-1*dt*sigv[8].val*Fluid[CID+2*Csize].ave_den);
-	    Prob3 = 1.0 - exp(-1*dt*sigv[9].val*data[ID+Gsize].den*info[1].np2c*dx*dy);
-	    Prob4 = 1.0 - exp(-1*dt*sigv[10].val*data[ID+2*Gsize].den*info[2].np2c*dx*dy);
-	    Prob5 = 1.0 - exp(-1*dt*sigv[11].val*Fluid[CID].ave_den);
-	    Tprob = Prob1 + Prob2 + Prob3 + Prob4 + Prob5;
+	    Prob2 = Prob1 + 1.0 - exp(-1*dt*sigv[8].val*Fluid[CID+2*Csize].ave_den);
+	    Prob3 = Prob2 + 1.0 - exp(-1*dt*sigv[9].val*data[ID+Gsize].den*info[1].np2c*dx*dy);
+	    Prob4 = Prob3 + 1.0 - exp(-1*dt*sigv[10].val*data[ID+2*Gsize].den*info[2].np2c*dx*dy);
+	    Prob5 = Prob4 + 1.0 - exp(-1*dt*sigv[11].val*Fluid[CID].ave_den);
+	    Tprob = Prob5;
 		Randn = 1;
         break;
     default:
