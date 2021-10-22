@@ -11,10 +11,14 @@ extern void Move_cuda();
 extern void (*SORT_BOUNDARY)();
 extern void SortBounndary_cuda();
 extern void (*MCC)();
+extern void MCC_Ar_cuda();
+extern void MCC_O2_cuda();
+extern void MCC_ArO2_cuda();
 extern void (*DEPOSIT)();
 extern void Deposit_cuda();
 extern void (*CONTIEQ)();
 extern void (*DIAG)();
+extern void Diagnostic();
 #ifndef __CUDA_START_CUH__
 #define __CUDA_START_CUH__
 cudaDeviceProp prop;

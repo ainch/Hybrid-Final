@@ -47,7 +47,7 @@ int main(int argc, char *argv[])
 	if(TecplotS_Gsize_Flag) 	Main_Variable_printorSave();
 	if(TecplotS_CX_Flag) 		Cross_Section_data_Save();
 	if(TecplotS_Particle_Flag) 	Initial_Particle_Save(TecplotS_Particle_Num,PtD);
-	if(DumpFlag) DumpRead(argc,argv);	/* DumpFile Read */
+	if(DumpFlag) LoadDumpFile();	/* DumpFile Read */
 	main_cuda();			/* GPU Start */
  	display_finish();
  	return 0;

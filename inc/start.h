@@ -7,7 +7,6 @@ extern int DumpFlag; // Dump File ON,OFF
 extern char InputFile[80]; // INPUT FILE NAME
 extern char DumpFile[80];  // DUMP FILE NAME
 extern char *ConstBFile;  // DUMP FILE NAME
-
 extern void Argon_CrossSectionSET(CollF *CF);
 extern void Oygen_CrossSectionSET(CollF *CF);
 extern void ArO2_CrossSectionSET(CollF *CF);
@@ -88,6 +87,11 @@ int *Ai,*Aj;
 int **A_idx;
 float *MatM,**cond_b,*temp_b;
 //
+int init_dump_num;
+int OVER_dump_order;
+int dump_order;
+int dump_num;
+float *dump_cycle;
 int TecplotS_CX_Flag;
 int TecplotS_Gsize_Flag;
 int TecplotS_Particle_Flag;
@@ -111,7 +115,6 @@ void Geometry_setting();
 float Face_To_Area(int Face);
 void FieldSolverSetting();
 void GasSetting();
-void DumpRead(int argc, char *argv[]);
 int ***TIMalloc(int sizeX,int sizeY,int sizeZ);
 float ***TFMalloc(int sizeX,int sizeY,int sizeZ);
 int **MIMalloc(int sizeX,int sizeY);

@@ -20,7 +20,7 @@ void InputRead() {
    int i,j,isp;
    int buf;
    int IDn, IDchk[100], IDchk1, IDchk2;
-   float fbuf1,fbuf2;
+   float fbuf1,fbuf2,fbuf3;
    PRINT_Flag = 0;
    JSON_Value *InputValue;
    JSON_Object *MainObject;
@@ -769,10 +769,10 @@ void InputRead() {
    SubObject5 = json_object_get_object(MainObject,"Diagnostics");
    Basic_Flag = (int)json_object_get_number(SubObject5,"BasicDiagnostic");
    if(Basic_Flag){
-      printf("\tDiagnostic_ON\n");
-   }else{
-      printf("\tDiagnostic_OFF\n");
+      printf("\tDiagnostic_ON after %d cycle.\n",Basic_Flag);
       printf("\tMinimized Diagnostics mode\n");
+   }else{
+      printf("\tDiagnostic_ON\n");
    }
    BufObject = json_object_get_object(SubObject5,"TecplotSave");
    BufObject2 = json_object_get_object(BufObject,"Initial_Setting");
@@ -783,11 +783,11 @@ void InputRead() {
    TecplotS_2D_Ncycle = (int)json_object_get_number(BufObject,"Tecplot2D");
    if(TecplotS_2D_Ncycle > 0) TecplotS_2D_Flag = 1;
    else if(TecplotS_2D_Ncycle == 0) TecplotS_2D_Flag = 0;
-   TecplotS_Movie_Ncycle = (int)json_object_get_number(BufObject,"Tec_Movie");
+   TecplotS_Movie_Ncycle = (int)json_object_get_number(BufObject,"Tec_1Cycle_Movie_Interval");
    if(TecplotS_Movie_Ncycle > 0) TecplotS_Movie_Flag = 1;
    else if(TecplotS_Movie_Ncycle == 0) TecplotS_Movie_Flag = 0;
    if(TecplotS_Movie_Flag != 0){
-      TecplotS_Movie_Frame = (int)json_object_get_number(BufObject,"Tec_Movie_FrameNum");
+      TecplotS_Movie_Frame = (int)json_object_get_number(BufObject,"Tec_1Cycle_Movie_FrameNum");
       if(TecplotS_Movie_Frame/DT_PIC > 1.0){
          printf(" ERROR : Movie_Frame must be less than TimeStep_PIC.\n");
          exit(1);
@@ -799,10 +799,10 @@ void InputRead() {
    }
    TecplotS_Movie_Count = 0;
 
-   TecplotS_PT_Movie_Ncycle = (int)json_object_get_number(BufObject,"Tec_Particle_Movie");
+   TecplotS_PT_Movie_Ncycle = (int)json_object_get_number(BufObject,"Tec_1Cycle_Movie_PT_Interval");
    if(TecplotS_PT_Movie_Ncycle > 0) TecplotS_PT_Movie_Flag = 1;
    else if(TecplotS_PT_Movie_Ncycle == 0) TecplotS_PT_Movie_Flag = 0;
-   TecplotS_PT_Movie_Frame = (int)json_object_get_number(BufObject,"Tec_Particle_Movie_FrameNum");
+   TecplotS_PT_Movie_Frame = (int)json_object_get_number(BufObject,"Tec_1Cycle_Movie_PT_FrameNum");
    if(TecplotS_PT_Movie_Flag != 0){
       if(TecplotS_PT_Movie_Frame/DT_PIC > 1.0){
          printf(" ERROR : Movie_Frame must be less than TimeStep_PIC.\n");
@@ -817,16 +817,39 @@ void InputRead() {
    //printf("Tec_Ave_Movie = %d\n",(int)json_object_get_number(BufObject,"Tec_Ave_Movie"));
    //printf("Tec_Ave_Movie_Interval = %d\n",(int)json_object_get_number(BufObject,"Tec_Ave_Movie_Interval"));
    //printf("Tec_Ave_Movie_num = %d\n",(int)json_object_get_number(BufObject,"Tec_Ave_Movie_num")); 
-   /*
+   
+   dump_order = 0;
+   dump_num = 0;
+   init_dump_num = 1;
+   OVER_dump_order = 0;
    BufObject = json_object_get_object(SubObject5,"DumpFileSave");
    BufArray = json_object_get_array(BufObject,"Cycle");
    for (i=0;i<json_array_get_count(BufArray);i++){
       BufObject2 = json_array_get_object(BufArray,i);
-      printf("Start = %g,",(float)json_object_get_number(BufObject2,"Start"));
-      printf("End = %g,",(float)json_object_get_number(BufObject2,"End"));
-      printf("Term = %g\n",(float)json_object_get_number(BufObject2,"Term"));
+      fbuf1 = (float)json_object_get_number(BufObject2,"Start");
+      fbuf2 = (float)json_object_get_number(BufObject2,"End");
+      fbuf3 = (float)json_object_get_number(BufObject2,"Term");
+      dump_num += (fbuf2 - fbuf1)/fbuf3;
+      printf("dump_cycle[%d]\n",dump_num);
    }
-   */
+   dump_num++;
+   dump_cycle = (float *) malloc(dump_num  * sizeof(float));
+   j = 0;
+   for (i=0;i<json_array_get_count(BufArray);i++){
+      BufObject2 = json_array_get_object(BufArray,i);
+      fbuf1 = (float)json_object_get_number(BufObject2,"Start");
+      fbuf2 = (float)json_object_get_number(BufObject2,"End");
+      fbuf3 = (float)json_object_get_number(BufObject2,"Term");
+         dump_cycle[j] = fbuf1;
+         while(fbuf1<fbuf2){
+            j++;
+            fbuf1 += fbuf3;
+            dump_cycle[j] = fbuf1;
+         }
+   }
+   for(i=0;i<dump_num;i++){
+      dump_cycle[i] = DT_PIC*dump_cycle[i] + 1;
+   }
    /*
    BufObject = json_object_get_object(SubObject5,"ElectronRefection");
    printf("BD_Flag = %d\n",(int)json_object_get_number(BufObject,"Flag"));
@@ -1997,10 +2020,6 @@ void GasSetting(){
          }
       }
    }
-}
-void DumpRead(int argc, char *argv[]) {
-   printf("Not yet\n");
-   exit(1);
 }
 float Face_To_Area(int Face){
    if(Face ==LEFT){

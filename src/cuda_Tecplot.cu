@@ -5,6 +5,7 @@ void Tecplot_save(){
     int sum;
     static int Movie_Init = 1;
     static int PTMovie_Init = 1;
+    
     if(TecplotS_2D_Flag){
         if(cstep == 1){
             Tecplot_2D();
@@ -12,22 +13,23 @@ void Tecplot_save(){
             Tecplot_2D();
         }
     }
-    if(TecplotS_Movie_Flag){
+    if(TecplotS_Movie_Flag){ // Creates one cycle movie at regular intervals.
         if((cstep%TecplotS_Movie_Ncycle == 0)){
             TecplotS_Movie_Count++;
             if(TecplotS_Movie_SCYCLE == TecplotS_Movie_Count){
                 cudaMemcpy(Host_G_sp, dev_G_sp, nsp * Gsize * sizeof(GPG),cudaMemcpyDeviceToHost);
                 cudaMemcpy(vec_G, dev_GvecSet, Gsize * sizeof(GGA),cudaMemcpyDeviceToHost);
-                if(Movie_Init){
+                if(Movie_Init == 1)
                     Tecplot_Gsize_Movie(Movie_Init);
-                    Movie_Init--;
-                }
-                Tecplot_Gsize_Movie(Movie_Init);
+                else
+                    Tecplot_Gsize_Movie(Movie_Init);
+                Movie_Init++;
                 TecplotS_Movie_Count = 0;
+                if(TecplotS_Movie_Frame == Movie_Init) Movie_Init = 1;
             }
         }
     }
-    if(TecplotS_PT_Movie_Flag){
+    if(TecplotS_PT_Movie_Flag){ // Creates one cycle particle movie at regular intervals.
         if((cstep%TecplotS_PT_Movie_Ncycle == 0)){
             TecplotS_PT_Movie_Count++;
             if(TecplotS_PT_Movie_SCYCLE == TecplotS_PT_Movie_Count){
@@ -41,12 +43,13 @@ void Tecplot_save(){
                 cudaMemcpy(Host_sp, dev_sp, Total_maxnp * sizeof(GCP),cudaMemcpyDeviceToHost);
                 checkCudaErrors(cudaMemcpy(dev_info_sp, SP, nsp * sizeof(Species), cudaMemcpyHostToDevice));
                 Copy_GCPtoHCP(SP, Host_sp, PtD, Host_G_sp);
-                if(PTMovie_Init){
+                if(PTMovie_Init == 1)
                     for(isp=0;isp<nsp;isp++) Tecplot_PT_Movie(PTMovie_Init,isp);
-                    PTMovie_Init--;
-                }
-                for(isp=0;isp<nsp;isp++) Tecplot_PT_Movie(PTMovie_Init,isp);
+                else
+                    for(isp=0;isp<nsp;isp++) Tecplot_PT_Movie(PTMovie_Init,isp);
+                PTMovie_Init++;
                 TecplotS_PT_Movie_Count = 0;
+                if(TecplotS_PT_Movie_Frame == PTMovie_Init) PTMovie_Init = 1;
             }
         }  
     }

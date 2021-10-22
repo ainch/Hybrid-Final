@@ -70,7 +70,6 @@ __device__ void ArO2_Electron(int Gsize, int ngy, int TID, int nvel, float *vsav
 					Colltype = 0;
 					Null++;
 				}
-				
 				break;
 			}
 			case 1:{ // E + Ar*

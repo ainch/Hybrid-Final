@@ -100,7 +100,7 @@ void PCG_SOLVER(){
 	for (i = 0; i < Gsize; i++) if (vec_G[i].CondID) Pois_SIG_Sol[vec_G[i].CondID - 1] += Host_G_buf[i] * vec_G[i].Area;
 }
 void PCG_SOLVER_Laplace(){
-    int i,j,k;
+    int j,k;
     cudaEvent_t start, stop; // SPEED TEST
     float gputime; // SPEED TEST
     void *kernelArgs[] = {
@@ -273,7 +273,6 @@ __device__ void Mat_x_Vec(int *I, int *J, float *val, int nnz, int num_rows, flo
     for (int i=grid.thread_rank(); i < num_rows; i+= grid.size())    {
         int row_elem = I[i];
         int next_row_elem = I[i+1];
-        int num_elems_this_row = next_row_elem - row_elem;
         float output = 0.0;
         for (int j=row_elem-1; j < next_row_elem-1; j++){
             //if(i==0) printf("val[%d][]\n",j);

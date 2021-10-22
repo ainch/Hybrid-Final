@@ -2,6 +2,7 @@
 extern double t;  // real time
 extern int tstep; // number of time step
 extern int cstep; // Number of Cycle step
+extern int Basic_Flag;
 extern float dt;   // timestsep for PIC
 extern int CYCLE_NUM; // Minimum frequency number of cycle
 extern int ngx,ngy,Gsize;
@@ -34,7 +35,7 @@ extern void Set_MatrixPCG_cuda();
 extern void Set_Particle_cuda();
 extern void Set_Fluid_cuda();
 extern void Set_NullCollisionTime_cuda();
-extern void Set_DiagParameter_cuda();
+extern void Set_Diagnostic_cuda();
 extern void Set_SortBoundary_cuda();
 extern void PCG_Laplace_TEST();
 extern void PCG_SOLVER_Laplace();
@@ -48,13 +49,16 @@ extern void MCC_Ar_cuda();
 extern void MCC_O2_cuda();
 extern void MCC_ArO2_cuda();
 extern void Tecplot_save();
+extern void SaveDumpFile(int KEY2,int KEY1,int KEY0);
+extern void Diagnostic();
 #ifndef __CUDA_MAIN_CUH__
 #define __CUDA_MAIN_CUH__
 float time_sum;
 float gputime;
+cudaEvent_t start, stop;
 float 	totaltime,gputime_field,gputime_efield;
 float 	gputime_move,gputime_mcc,gputime_deposit;
-float 	gputime_diag,gputime_sort,gputime_trace;
+float 	gputime_diag,gputime_sort,gputime_Tec;
 float 	gputime_continue,gputime_dump;
 int		TotalT_D;
 int		TotalT_H;

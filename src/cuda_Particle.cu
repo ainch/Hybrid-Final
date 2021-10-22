@@ -5,7 +5,7 @@ void Set_Particle_cuda(){
     // 1. dev_info_sp [Species] - [nsp]
     // 2. dev_sp [GCP] - [nsp * Sum of MAXNP]
     // 3. dev_G_sp [GPG] - [nsp * Gsize]
-    int isp,i;
+    int isp;
     printf(" Particle copy CPU to GPU. --> ");
     for(isp=0;isp<nsp;isp++){
         Total_maxnp += SP[isp].MAXNP;
@@ -71,7 +71,7 @@ void Copy_GCPtoHCP(Species *info, GCP *A, HCP *B, GPG *C){
     // INPUT : A[nsp * MAXNP]
     // OUTPUT : B[isp][NP_LIM], C[Gsize*nsp]
     int isp,i,j,k;
-    int CID,BID,AID;
+    int CID,AID;
     int XID,YID;
     for(isp=0;isp<nsp;isp++){
         k=0;
@@ -92,6 +92,7 @@ void Copy_GCPtoHCP(Species *info, GCP *A, HCP *B, GPG *C){
                 k++;
             }
         }
+        info[isp].np = k;
     }
     //exit(1);
 }

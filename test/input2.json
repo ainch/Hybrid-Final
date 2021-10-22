@@ -1,6 +1,6 @@
 {
     "GPU_Device_Number": {
-        "GPUDevice": 2
+        "GPUDevice": 1
     },
     "Geometry": {
         "SystemSpec": {
@@ -109,7 +109,7 @@
     },
     "Diagnostics":
     {
-        "BasicDiagnostic":0,
+        "BasicDiagnostic":150,
         "TecplotSave":
         {
             "Initial_Setting":{
@@ -119,10 +119,10 @@
                 "Init_Particle_Num":500000
             },
             "Tecplot2D":0,
-            "Tec_Movie":0,
-            "Tec_Movie_FrameNum":200,
-            "Tec_Particle_Movie":100,
-            "Tec_Particle_Movie_FrameNum":100,
+            "Tec_1Cycle_Movie_Interval":0,
+            "Tec_1Cycle_Movie_FrameNum":50,
+            "Tec_1Cycle_Movie_PT_Interval":0,
+            "Tec_1Cycle_Movie_PT_FrameNum":50,
             "Tec_Ave_Movie":0,
             "Tec_Ave_Movie_Interval":1,
             "Tec_Ave_Movie_num":100
@@ -131,10 +131,10 @@
         {
             "Cycle":
             [
-                {"Start":0.25,"End":1.0,"Term":0.25},
-                {"Start":1.0,"End":135.0,"Term":10.0},
-                {"Start":135.0,"End":1356.0,"Term":100.0},
-                {"Start":1356.0,"End":13560.0,"Term":200.0}
+                {"Start":0.0,"End":1.0,"Term":0.25},
+                {"Start":1.0,"End":141.0,"Term":10.0},
+                {"Start":141.0,"End":1641.0,"Term":100.0},
+                {"Start":1641.0,"End":13341.0,"Term":100.0}
             ]
         },
         "ElectronRefection":

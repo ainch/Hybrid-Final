@@ -1,14 +1,6 @@
 #include "cuda_Init.cuh"
 #define THREADS_PER_BLOCK 512   
 
-void Set_DiagParameter_cuda(){
-    
-    // Host BUF VECTOR
-    Host_G_buf = VFMalloc(Gsize);
-    Host_C_buf = VFMalloc(Csize);
-    VFInit(Host_G_buf,0.0,Gsize);
-    VFInit(Host_C_buf,0.0,Csize);
-}
 void Set_Device_Parameter(){
     int grid,block;
     int mingrid;
@@ -71,42 +63,11 @@ void Set_Device_Parameter(){
     printf(" - MCC module : [%d][%d]\n",grid,block);
     MCC_GRID = dim3(grid, 1, 1);
     MCC_BLOCK = dim3(block, 1, 1);
-
-    // Example : Find good grid and block size
-    int Search_Occupancy_Flag = 0;
-    if(Search_Occupancy_Flag){
-        //Example
-        int *array;
-        int blockSize;      // The launch configurator returned block size
-        int minGridSize;    // The minimum grid size needed to achieve the
-                            // maximum occupancy for a full device
-                            // launch
-        int gridSize;       // The actual grid size needed, based on input
-                            // size
-        cudaDeviceProp prop;
-        int numBlocks;       // Occupancy in terms of active blocks
-        int activeWarps;
-        int maxWarps;
-        cudaGetDevice(&device_num);
-        cudaGetDeviceProperties(&prop, device_num);
-        cudaMalloc((void**) &array, Gsize * sizeof(int));
-        cudaMemset((void *) array, 0, Gsize * sizeof(int));
-        // Get MiniGridSize and blockSize
-        cudaOccupancyMaxPotentialBlockSize(&minGridSize,&blockSize,(void*)MyKernel,0,Gsize); 
-        // Get Occupancy
-        cudaOccupancyMaxActiveBlocksPerMultiprocessor(&numBlocks,MyKernel,blockSize,0);
-        activeWarps = numBlocks * blockSize / prop.warpSize;
-        maxWarps = prop.maxThreadsPerMultiProcessor / prop.warpSize;
-        printf("Occupancy: = %3.0f %\n",(double)activeWarps / maxWarps * 100);
-        printf("maxWarps = %d\n",maxWarps);
-        // Round up according to array size
-        gridSize = (Gsize + blockSize - 1) / blockSize;
-        printf("minGridSize = %d\n",minGridSize);
-        printf("blockSize = %d\n",blockSize);
-        printf("gridSize = %d\n",gridSize);
-        MyKernel<<<gridSize, blockSize>>>(array, Gsize);
-        cudaDeviceSynchronize();
-    }
+    // time setting
+    gputime_field	=0.0;	gputime_efield	=0.0;	gputime_diag	=0.0;	gputime_move	=0.0;
+	gputime_mcc		=0.0;	gputime_continue=0.0;	gputime_deposit	=0.0;	gputime_sort	=0.0;
+	gputime_Tec	    =0.0;	gputime_dump	=0.0;	totaltime		=0.0;	TotalT_D		=0;
+	TotalT_H		=0;	TotalT_M		=0;	TotalT_S		=0;
 }
 __global__ void SetSeed(curandState *state,long int seed,int num)
 {
@@ -114,24 +75,4 @@ __global__ void SetSeed(curandState *state,long int seed,int num)
 	if(TID>=num) return;
     /* Each thread gets same seed, a different sequence number, no offset */
     curand_init(seed, TID, 0, &state[TID]);
-}
-/*
-__global__ void SetSeed_Coorperative(curandState *state,long int seed,int num){
-    cg::thread_block cta = cg::this_thread_block();
-    cg::grid_group grid = cg::this_grid();
-    Curand_initialized(seed,num,state,grid);
-    cg::sync(grid);
-}
-__device__ void Curand_initialized(long int seed, int num, curandState *state, const cg::grid_group &grid){
-	for (int i=grid.thread_rank(); i < num; i+= grid.size()){
-        curand_init(seed, i, 0, &state[i]);
-	} 
-}
-*/
-__global__ void MyKernel(int *array, int arrayCount)
-{
-    int idx = threadIdx.x + blockIdx.x * blockDim.x;
-    if (idx < arrayCount) {
-        array[idx] *= array[idx];
-    }
 }

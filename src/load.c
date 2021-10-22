@@ -1,5 +1,51 @@
 #include "load.h"
+void V000_LoadDUMP(FILE *LF){
+    int buf0,isp,i;
+    float buf1;
+    // Time
+    fread(&t, 8, 1, LF);
+    fread(&tstep, 4, 1, LF);
+    fread(&cstep, 4, 1, LF);
+    // Gas info
+    fread(&buf0, 4, 1, LF); // MainGas
+    if(buf0 != MainGas){
+        printf(" - Error! : Gas species do not match. input[%d] != dump[%d]\n",MainGas,buf0);
+        exit(1);
+    }
+    for(isp=0;isp<nsp;isp++){
+        fread(&buf1, 4, 1, LF); // NP2C
+        if(buf1 != SP[isp].np2c){
+            printf(" - Warning! : %s np2c do not match. input[%g] != dump[%g]\n",buf1,SP[isp].np2c);
+        }
+        SP[isp].np2c = buf1;
+        fread(&SP[isp].np, 4, 1, LF); // NP
+        for (i = 0; i < SP[isp].np; i++) {
+            fread(&PtD[isp].CellID[i], 4, 1, LF);
+            fread(&PtD[isp].x[i], 4, 1, LF);
+            fread(&PtD[isp].y[i], 4, 1, LF);
+            fread(&PtD[isp].vx[i], 4, 1, LF);
+            fread(&PtD[isp].vy[i], 4, 1, LF);
+            fread(&PtD[isp].vz[i], 4, 1, LF);
+        }
+    }
+}
+void V001_LoadDUMP(FILE *LF){
 
+}
+void LoadDumpFile(){
+    FILE *DumpDeck;
+    int KEY2, KEY1, KEY0;
+    printf("Read The Dump file.\n");
+    DumpDeck = fopen(DumpFile, "r+b");
+    fread(&KEY2, 4, 1, DumpDeck);
+    fread(&KEY1, 4, 1, DumpDeck);
+    fread(&KEY0, 4, 1, DumpDeck);
+    printf(" - Dump Version : [%d].[%d].[%d]\n",KEY2, KEY1, KEY0);
+    if(KEY2==0 && KEY2==0 && KEY2==0)       V000_LoadDUMP(DumpDeck);
+    else if(KEY2==0 && KEY2==0 && KEY2==1)  V001_LoadDUMP(DumpDeck);
+    fclose(DumpDeck);
+    printf("Dump file read complete.\n");
+}
 void CG_Matrix_Setting(float *A, int *Ai, int *Aj, float **b, float *M, float *Atemp, float *btemp) {
 	int i, j, k, x1, y1, x2, y2;
 	int m_count, l_count;

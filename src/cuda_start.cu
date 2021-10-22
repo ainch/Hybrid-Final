@@ -68,21 +68,21 @@ void start_cuda(){
 		MOVE = Move_cuda;
 	}
 	SORT_BOUNDARY = SortBounndary_cuda;
-	
+
 	switch(MainGas){
 	case ARGON:
-		//MCC	= ArMccDiag_cuda;
-		//CONTIEQ = Ar_solve_continuity_eqn;
+		MCC	= MCC_Ar_cuda;
+		CONTIEQ = NULL;
 		break;
 	case OXYGEN:
-		//MCC		= OxyMccDiag_cuda;
-		//CONTIEQ = Oxy_solve_continuity_eqn;
+		MCC		= MCC_O2_cuda;
+		CONTIEQ = NULL;
 		break;
 	case ARO2:
-		//MCC		= ArO2_MccDiag_cuda;
-		//CONTIEQ = ArO2_solve_continuity_eqn;
+		MCC		= MCC_ArO2_cuda;
+		CONTIEQ = NULL;
 		break;
 	}
-		//DIAG    = Diagnostic;
-
+	DEPOSIT = Deposit_cuda;
+	DIAG    = Diagnostic;
 }

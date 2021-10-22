@@ -107,7 +107,7 @@
     },
     "Diagnostics":
     {
-        "BasicDiagnostic":0,
+        "BasicDiagnostic":150,
         "TecplotSave":
         {
             "Initial_Setting":{

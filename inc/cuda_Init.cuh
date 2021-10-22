@@ -22,6 +22,14 @@ extern __global__ void MCC_Ar_Basic(int Gsize, int Csize, int ngy, int nsp, floa
 											curandState *states, int N_LOGX, float idLOGX, MCC_sigmav *sigv, CollF *CollP, ArCollD *CX,  int TnRct, float*MCCR,
 											Fluid *infoF, GFC *Fluid, GGA *BG, Species *info, GPG *data, GCP *sp);
 namespace cg = cooperative_groups;
+extern float 	totaltime,gputime_field,gputime_efield;
+extern float 	gputime_move,gputime_mcc,gputime_deposit;
+extern float 	gputime_diag,gputime_sort,gputime_Tec;
+extern float 	gputime_continue,gputime_dump;
+extern int		TotalT_D;
+extern int		TotalT_H;
+extern int		TotalT_M;
+extern int		TotalT_S;
 #ifndef __CUDA_INIT_CUH__
 #define __CUDA_INIT_CUH__
 curandState *devStates;
@@ -35,9 +43,7 @@ dim3 EFIELD_GRID,EFIELD_BLOCK;
 dim3 MOVE_GRID, MOVE_BLOCK;
 dim3 SORT_GRID, SORT_BLOCK;
 dim3 MCC_GRID, MCC_BLOCK;
-float *Host_G_buf, *Host_C_buf;
 void Set_Device_Parameter();
-void Set_DiagParameter_cuda();
 __global__ void SetSeed(curandState *state,long int seed,int num);
 __global__ void MyKernel(int *array, int arrayCount);
 #endif

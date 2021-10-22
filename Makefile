@@ -38,12 +38,9 @@ CU_OBJS = $(OBJ_DIR)/cuda_main.o \
           $(OBJ_DIR)/cuda_Sortboundary.o \
           $(OBJ_DIR)/cuda_Combination.o \
           $(OBJ_DIR)/cuda_Tecplot.o \
-          $(OBJ_DIR)/cuda_Fluid.o
-#          $(OBJ_DIR)/cuda_run.o \
-#          $(OBJ_DIR)/cuda_rand.o \
-#          $(OBJ_DIR)/cuda_mccAr_cell.o \
-#          $(OBJ_DIR)/cuda_diag.o \
-#          $(OBJ_DIR)/cuda_beam.o
+          $(OBJ_DIR)/cuda_Fluid.o \
+          $(OBJ_DIR)/cuda_Diagnostic.o \
+          $(OBJ_DIR)/cuda_SaveDump.o 
 
 C_H_FILES = inc/xypic.h \
             inc/main.h \
@@ -71,6 +68,8 @@ CU_H_FILES = inc/xypic.cuh \
              inc/cuda_Combination.cuh \
              inc/cuda_Tecplot.cuh \
              inc/cuda_Fluid.cuh \
+             inc/cuda_Diagnostic.cuh \
+             inc/cuda_SaveDump.cuh \
              inc/helper_cuda.h \
              inc/main.h \
              inc/interop.cuh \

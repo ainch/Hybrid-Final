@@ -5,12 +5,12 @@ __device__ void Direct_Argon_Electron(int Gsize, int ngy, int ID, int MCCn, floa
 	int i,j,k,n,index;
 	int CID,PNC,Null,PNC2;
 	int nx,ny,ngx;
-	int Target,oldPNC;
+	int Target;
 	int Colltype;
 	float Tprob,Prob1,Prob2;
     int Randn,AddPt1;
 	float R1,R2;
-	float VX,VY,VZ,VX_buf,VY_buf,VZ_buf;
+	float VX,VY,VZ;
 	float dum,vel,vel2,engy,rengy;
 	float SumSigma,SumEngyLoss;
 	PNC = data[ID].PtNumInCell;
@@ -150,7 +150,7 @@ __device__ void Direct_Argon_Electron(int Gsize, int ngy, int ID, int MCCn, floa
 __device__ void Direct_Argon_ArIon(int Gsize, int ngy, int ID, int MCCn, float dt, int nvel, float *vsave, curandState *states, 
 											Species *info, GPG *data, GCP *sp, int N_LOGX, float idLOGX, 
 											MCC_sigmav *sigv, CollF *info_CX, ArCollD *CX, int TnRct, float*MCCR, GGA *BG, GFC *Fluid){
-	int i,j,k,n,index;
+	int i,k,n;
 	int PNC,Null;
 	float Prob;
 	float R1;
@@ -282,11 +282,11 @@ __device__ void Ar_Collision_Check(int Gsize, int Csize, int ngy, int TID, float
 __device__ void Ar_Electron(int Gsize, int ngy, int TID, int nvel, float *vsave, curandState *states, 
 											Species *info, GPG *data, GCP *sp, int N_LOGX, float idLOGX, 
 											MCC_sigmav *sigv, CollF *info_CX, ArCollD *CX, int TnRct,float *MCCR, GGA *BG){
-	int i,j,k,n,index,index2,index3;
+	int i,k,n,index;
 	int PNMC,MPNC,Null,Flag;
-	int Target,oldPNC;
+	int oldPNC;
 	int Colltype;
-	float mofm,R1,R2;
+	float mofm,R1;
 	float VX,VY,VZ;
 	float rengy,engy,dum,vel,vel2;
 	int Iz_isp1,Iz_isp2;		
@@ -445,11 +445,11 @@ __device__ void Ar_Electron(int Gsize, int ngy, int TID, int nvel, float *vsave,
 __device__ void Ar_Ar_ion(int Gsize, int ngy, int TID, int nvel, float *vsave, curandState *states, 
 											Species *info, GPG *data, GCP *sp, int N_LOGX, float idLOGX, 
 											MCC_sigmav *sigv, CollF *info_CX, ArCollD *CX, int TnRct,float *MCCR, GGA *BG){
-	int i,j,k,n,index,index2,index3;
-	int ID,PNMC,MPNC,Null,Flag;
-	int Target,oldPNC;
+	int i,k,n,index;
+	int ID,PNMC,MPNC,Null;
+	int oldPNC;
 	int Colltype;
-	float mofm,R1,R2;
+	float R1;
 	float VX,VY,VZ;
 	float engy,dum,vel;	
 	float SumSigma,SumEngyLoss;
@@ -478,7 +478,6 @@ __device__ void Ar_Ar_ion(int Gsize, int ngy, int TID, int nvel, float *vsave, c
         // 0 : Null collision
         // 1 : Scattering
         // 2 : Charge exchange 
-		mofm = info_CX[5].mofM;
         R1 = curand_uniform(&LocalStates)*sigv[2].val / vel;
 		if(engy > info_CX[5].Th_e &&R1<=(SumSigma=Argon_CrossSection(5, engy, N_LOGX, idLOGX, CX))){
 			Colltype = 2; 
