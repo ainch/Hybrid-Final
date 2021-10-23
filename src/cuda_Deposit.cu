@@ -240,9 +240,12 @@ __global__ void DepositAtom(int Gsize, int ngy, Species *info, GCP *sp, GPG *dat
 	atomicAdd(&data[TID+1].den,WN);
 	atomicAdd(&data[TID+ngy].den,ES);
 	atomicAdd(&data[TID+ngy+1].den,EN); 
+	atomicAdd(&info[isp].np,PNC); 
 }
 __global__ void DepositInitDensity(int Gsize, Species *info, GPG *data){
     int TID = threadIdx.x + blockIdx.x * blockDim.x;
     if(TID>=Gsize*info[0].spnum) return;
+	int isp = (int)TID/Gsize;
     data[TID].den = 0.0;
+	info[isp].np = 0;
 }

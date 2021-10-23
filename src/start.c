@@ -363,6 +363,7 @@ void InputRead() {
       FG[0].Temp = (float)json_object_get_number(BufObject2,"Temp(eV)");
       FG[0].mass = 39.950 * AMU;
       FG[0].Vel = sqrt(FG[0].Temp*1.38e-23/FG[0].mass);
+      FG[0].Gamma1 = (float)json_object_get_number(BufObject2,"Quenching");
       BufObject = json_object_get_object(SubObject3,"ChargeSpecies");
       SP[0].Loadtype = (int)json_object_get_number(BufObject,"Loadtype");
       BufObject2 = json_object_get_object(BufObject,"LoadPosition(m)");
@@ -448,24 +449,32 @@ void InputRead() {
       FG[0].Temp = (float)json_object_get_number(BufObject2,"Temp(eV)");
       FG[0].mass = 32.0000 * AMU;
       FG[0].Vel = sqrt(FG[0].Temp*1.38e-23/FG[0].mass);
+      FG[0].Gamma1 = (float)json_object_get_number(BufObject2,"Quenching");
+      
       BufObject2 = json_object_get_object(BufObject,"O2B");
       strcpy(FG[1].name,"O2B");
       FG[1].InitDens =(float)json_object_get_number(BufObject2,"Density");
       FG[1].Temp = (float)json_object_get_number(BufObject2,"Temp(eV)");
       FG[1].mass = 32.0000 * AMU;
       FG[1].Vel = sqrt(FG[1].Temp*1.38e-23/FG[1].mass);
+      FG[1].Gamma1 = (float)json_object_get_number(BufObject2,"Quenching");
+
       BufObject2 = json_object_get_object(BufObject,"OP");
       strcpy(FG[2].name,"OP");
       FG[2].InitDens =(float)json_object_get_number(BufObject2,"Density");
       FG[2].Temp = (float)json_object_get_number(BufObject2,"Temp(eV)");
       FG[2].mass = 16.0000 * AMU;
       FG[2].Vel = sqrt(FG[2].Temp*1.38e-23/FG[2].mass);
+      FG[2].Gamma1 = (float)json_object_get_number(BufObject2,"Quenching");
+
       BufObject2 = json_object_get_object(BufObject,"OD");
       strcpy(FG[3].name,"OD");
       FG[3].InitDens =(float)json_object_get_number(BufObject2,"Density");
       FG[3].Temp = (float)json_object_get_number(BufObject2,"Temp(eV)");
       FG[3].mass = 16.0000 * AMU;
       FG[3].Vel = sqrt(FG[3].Temp*1.38e-23/FG[3].mass);
+      FG[3].Gamma1 = (float)json_object_get_number(BufObject2,"Quenching");
+
       BufObject = json_object_get_object(SubObject3,"ChargeSpecies");
       SP[0].Loadtype = (int)json_object_get_number(BufObject,"Loadtype");
       BufObject2 = json_object_get_object(BufObject,"LoadPosition(m)");
@@ -593,30 +602,40 @@ void InputRead() {
       FG[0].Temp = (float)json_object_get_number(BufObject2,"Temp(eV)");
       FG[0].mass = 39.950 * AMU;
       FG[0].Vel = sqrt(FG[0].Temp*1.38e-23/FG[0].mass);
-      BufObject2 = json_object_get_object(BufObject,"OP");
+      FG[0].Gamma1 = (float)json_object_get_number(BufObject2,"Quenching");
+      
+      BufObject2 = json_object_get_object(BufObject,"O2A");
       strcpy(FG[1].name,"O2A");
       FG[1].InitDens =(float)json_object_get_number(BufObject2,"Density");
       FG[1].Temp = (float)json_object_get_number(BufObject2,"Temp(eV)");
       FG[1].mass = 32.0000 * AMU;
       FG[1].Vel = sqrt(FG[1].Temp*1.38e-23/FG[1].mass);
+      FG[1].Gamma1 = (float)json_object_get_number(BufObject2,"Quenching");
+      
       BufObject2 = json_object_get_object(BufObject,"O2B");
       strcpy(FG[2].name,"O2B");
       FG[2].InitDens =(float)json_object_get_number(BufObject2,"Density");
       FG[2].Temp = (float)json_object_get_number(BufObject2,"Temp(eV)");
       FG[2].mass = 32.0000 * AMU;
       FG[2].Vel = sqrt(FG[2].Temp*1.38e-23/FG[2].mass);
+      FG[2].Gamma1 = (float)json_object_get_number(BufObject2,"Quenching");
+      
+      BufObject2 = json_object_get_object(BufObject,"OP");
       strcpy(FG[3].name,"OP");
       FG[3].InitDens =(float)json_object_get_number(BufObject2,"Density");
       FG[3].Temp = (float)json_object_get_number(BufObject2,"Temp(eV)");
       FG[3].mass = 16.0000 * AMU;
       FG[3].Vel = sqrt(FG[3].Temp*1.38e-23/FG[3].mass);
+      FG[3].Gamma1 = (float)json_object_get_number(BufObject2,"Quenching");
+      
       BufObject2 = json_object_get_object(BufObject,"OD");
       strcpy(FG[4].name,"OD");
       FG[4].InitDens =(float)json_object_get_number(BufObject2,"Density");
       FG[4].Temp = (float)json_object_get_number(BufObject2,"Temp(eV)");
       FG[4].mass = 16.0000 * AMU;
       FG[4].Vel = sqrt(FG[4].Temp*1.38e-23/FG[4].mass);
-      BufObject2 = json_object_get_object(BufObject,"O2A");
+      FG[4].Gamma1 = (float)json_object_get_number(BufObject2,"Quenching");
+     
       BufObject = json_object_get_object(SubObject3,"ChargeSpecies");
       SP[0].Loadtype = (int)json_object_get_number(BufObject,"Loadtype");
       BufObject2 = json_object_get_object(BufObject,"LoadPosition(m)");
@@ -1990,6 +2009,7 @@ void GasSetting(){
       exit(1);
    }
    for(isp=0;isp<nfsp;isp++){
+      FG[isp].ave_Den = 0;
       for(i=0;i<Csize;i++){
          CID = isp*Csize + i;
          Host_C_F[CID].D = 0.0f;
@@ -2016,6 +2036,7 @@ void GasSetting(){
 				      Host_C_F[CID].den = FG[isp].InitDens * wv;
 				      Host_C_F[CID].ave_den = FG[isp].InitDens * wv;
                }
+               FG[isp].ave_Den += Host_C_F[CID].den;
             }
          }
       }

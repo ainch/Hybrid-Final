@@ -15,12 +15,14 @@ extern float dx,dy;
 extern int nsp;
 extern float PCGtol2;
 extern Species *SP;// particle species
+extern Species *dev_info_sp;// particle species
 extern GPG *Host_G_sp;
 extern GPG *dev_G_sp;
 extern GGA *vec_G;
 extern int Lap_Field_Solver_Test,Lap_Field_Solver_Flag,Lap_Field_Solver_Save;
 extern double *dot_result;
 extern int *FIter;
+extern int Conti_Flag;
 extern void (*MOVE)();
 extern void (*SORT_BOUNDARY)();
 extern void (*MCC)();

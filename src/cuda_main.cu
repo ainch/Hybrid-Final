@@ -27,8 +27,8 @@ extern "C" void main_cuda()
         Move_cuda();
         SortBounndary_cuda();
         if(MainGas == ARGON) MCC_Ar_cuda();
-        if(MainGas == OXYGEN) MCC_O2_cuda();
-        if(MainGas == ARO2) MCC_ArO2_cuda();
+        else if(MainGas == OXYGEN) MCC_O2_cuda();
+        else if(MainGas == ARO2) MCC_ArO2_cuda();
         Deposit_cuda();
         SaveDumpFile(0,0,0);
         printf("TIME = %1.4e (s), Iter = %3d, res = %1.3e\r",t,*FIter,*dot_result);
@@ -38,7 +38,7 @@ extern "C" void main_cuda()
         }
     }
     KEY2 = 0, KEY1 = 0, KEY0 = 0; // Save DumpFile version setting; 
-    while(1){
+    while(t<1e-3){
         t+=dt; // real time
         tstep++; // step
         if((tstep%CYCLE_NUM) == 0) cstep++;
@@ -100,7 +100,7 @@ extern "C" void main_cuda()
         ///////////////////////////////////////////////////////////////////////////
         cudaEventCreate(&start); cudaEventCreate(&stop);
 		cudaEventRecord( start, 0 );
-		//(*CONTIEQ)();
+		if(Conti_Flag) (*CONTIEQ)();
 		cudaEventRecord( stop, 0 ); cudaEventSynchronize( stop );
 		cudaEventElapsedTime( &gputime, start, stop );
 		cudaEventDestroy( start );cudaEventDestroy( stop );
@@ -135,25 +135,8 @@ extern "C" void main_cuda()
 		totaltime+=gputime;
         ///////////////////////////////////////////////////////////////////////////  
         if(isnan(*dot_result) || isinf(*dot_result)){
-            printf("\n");
-            cudaMemcpy(Host_G_sp, dev_G_sp, nsp * Gsize * sizeof(GPG),cudaMemcpyDeviceToHost);
-            for(isp=0;isp<nsp;isp++){
-                sum = 0;
-                dsum = 0.0;
-                dsum2 = 0.0;
-                k = 0;
-                for(i=0;i<Gsize;i++){
-                    if(vec_G[i].DensRegion){
-                        k++;
-                        sum += Host_G_sp[isp*Gsize+i].PtNumInCell;
-                        dsum += Host_G_sp[isp*Gsize+i].den * SP[isp].np2c/dx/dy;
-                        dsum2 += Host_G_sp[isp*Gsize+i].sigma;
-                    }
-                }
-                printf("\tNP - %s : %d, %g, %g\n",SP[isp].name,sum,dsum/k,dsum2/k);
-            }
+            printf("\nField solver Error!\n");
             exit(1);
         }
-        if(t>1e-3) break; 
     }
 }

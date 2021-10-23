@@ -5,7 +5,7 @@ extern int MainGas;
 extern int ngx,ngy;
 extern int Gsize;
 extern int Csize;
-extern int nsp;
+extern int nsp,nfsp;
 extern int device_num;
 extern int CondNUMR;
 extern cudaDeviceProp prop;
@@ -21,6 +21,7 @@ extern __global__ void SortBoundary_Basic(int Gsize,int ngy,float dt_dx,float dt
 extern __global__ void MCC_Ar_Basic(int Gsize, int Csize, int ngy, int nsp, float dt, int MCCn, float dtm,float idx,float idy, int nvel, float *vsave,
 											curandState *states, int N_LOGX, float idLOGX, MCC_sigmav *sigv, CollF *CollP, ArCollD *CX,  int TnRct, float*MCCR,
 											Fluid *infoF, GFC *Fluid, GGA *BG, Species *info, GPG *data, GCP *sp);
+extern __global__ void Cal_D_Argon(int nfsp, int ncy, int Csize, float press, GCA *vec_C, GGA *vec_G, GFC *data);
 namespace cg = cooperative_groups;
 extern float 	totaltime,gputime_field,gputime_efield;
 extern float 	gputime_move,gputime_mcc,gputime_deposit;
@@ -43,6 +44,7 @@ dim3 EFIELD_GRID,EFIELD_BLOCK;
 dim3 MOVE_GRID, MOVE_BLOCK;
 dim3 SORT_GRID, SORT_BLOCK;
 dim3 MCC_GRID, MCC_BLOCK;
+dim3 CONTI_GRID,CONTI_BLOCK;
 void Set_Device_Parameter();
 __global__ void SetSeed(curandState *state,long int seed,int num);
 __global__ void MyKernel(int *array, int arrayCount);

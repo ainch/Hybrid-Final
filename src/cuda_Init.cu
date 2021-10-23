@@ -63,6 +63,13 @@ void Set_Device_Parameter(){
     printf(" - MCC module : [%d][%d]\n",grid,block);
     MCC_GRID = dim3(grid, 1, 1);
     MCC_BLOCK = dim3(block, 1, 1);
+    // Continuity
+    size = nfsp * Csize;
+    cudaOccupancyMaxPotentialBlockSize(&mingrid,&block,(void*)Cal_D_Argon,0,size); 
+    grid = (size + block - 1) / block;
+    printf(" - CONTI module : [%d][%d]\n",grid,block);
+    CONTI_GRID = dim3(grid, 1, 1);
+    CONTI_BLOCK = dim3(block, 1, 1);
     // time setting
     gputime_field	=0.0;	gputime_efield	=0.0;	gputime_diag	=0.0;	gputime_move	=0.0;
 	gputime_mcc		=0.0;	gputime_continue=0.0;	gputime_deposit	=0.0;	gputime_sort	=0.0;

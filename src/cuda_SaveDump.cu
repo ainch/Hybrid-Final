@@ -62,7 +62,7 @@ void SaveDumpFile(int KEY2,int KEY1,int KEY0){
     //  KEY1 : 0~9 If you just add and remove the storage variable
     //  KEY2 : When there is a change in a significant calculation module
     // Version History
-    //  Ver.0.0.0 : Particle information, np2c, Number of particle,
+    //  Ver.0.0.0 : Time, Particle information, np2c, Number of particle,
     //
     /// Open Dump File
 	fprintf(stderr,"\n-------------------------Dumping File Ver.[%d][%d][%d]---------------------------\n",KEY2,KEY1,KEY0);
