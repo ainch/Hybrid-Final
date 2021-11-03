@@ -9,9 +9,9 @@ void V000_DUMP(FILE *SF){
     fwrite(&tstep, 4, 1, SF);
     fwrite(&cstep, 4, 1, SF);
     // Particle Data gpu >> cpu
-    checkCudaErrors(cudaMemcpy(SP, dev_info_sp,  nsp * sizeof(Species), cudaMemcpyDeviceToHost));
-    checkCudaErrors(cudaMemcpy(Host_sp, dev_sp, Total_maxnp * sizeof(GCP), cudaMemcpyDeviceToHost));
-    checkCudaErrors(cudaMemcpy(Host_G_sp, dev_G_sp, Gsize * nsp * sizeof(GPG), cudaMemcpyDeviceToHost));
+    cudaMemcpy(SP, dev_info_sp,  nsp * sizeof(Species), cudaMemcpyDeviceToHost);
+    cudaMemcpy(Host_sp, dev_sp, Total_maxnp * sizeof(GCP), cudaMemcpyDeviceToHost);
+    cudaMemcpy(Host_G_sp, dev_G_sp, nsp * Gsize * sizeof(GPG), cudaMemcpyDeviceToHost);
     Copy_GCPtoHCP(SP, Host_sp, PtD, Host_G_sp);
     // Gas info
     fwrite(&MainGas, 4, 1, SF);
@@ -28,10 +28,36 @@ void V000_DUMP(FILE *SF){
             fwrite(&PtD[isp].vz[i], 4, 1, SF);
         }
     }
+    // History data
+    fwrite(&hist_count, 4, 1, SF);
+    fwrite(&dHIST, 4, 1, SF);
+	fwrite(t_array, 4, hist_count, SF);
+	for (isp = 0; isp < nsp; isp++) {
+		fwrite(HistPt[isp].np, 4, hist_count, SF);
+	}
+	fwrite(iter_array, 4, hist_count, SF);
+    // 2D data
+    for (i = 0; i < nsp*Gsize; i++) {
+        fwrite(&Host_G_sp[i].den, 4, 1, SF);    // pt density : GPG
+        fwrite(&Host_G_sp[i].ave_den, 4, 1, SF); // pt Ave_density : GPG
+        fwrite(&Host_G_sp[i].sigma, 4, 1, SF); // pt sigma
+    }
+    cudaMemcpy(vec_G, dev_GvecSet, Gsize * sizeof(GGA), cudaMemcpyDeviceToHost);
+    for (i = 0; i < Gsize; i++) {
+        fwrite(&vec_G[i].Temp, 4, 1, SF); // BG density,Tem,vel : GGA
+        fwrite(&vec_G[i].BackVel1, 4, 1, SF); // BG density,Tem,vel : GGA
+        fwrite(&vec_G[i].BackDen1, 4, 1, SF); // BG density,Tem,vel : GGA
+        fwrite(&vec_G[i].BackVel2, 4, 1, SF); // BG density,Tem,vel : GGA
+        fwrite(&vec_G[i].BackDen2, 4, 1, SF); // BG density,Tem,vel : GGA
+        fwrite(&vec_G[i].Lap_Pot, 4, 1, SF); // BG Lap_Pot
+        fwrite(&vec_G[i].Pois_Pot, 4, 1, SF); // BG Pois_Pot
+        fwrite(&vec_G[i].Ex, 4, 1, SF); // BG Ex
+        fwrite(&vec_G[i].Ey, 4, 1, SF); // BG Ey
+    } 
 }
 void SaveDumpFile(int KEY2,int KEY1,int KEY0){
     FILE *SaveFile;
-	char filename[512];
+	char FileName[512];
     int isp;
     float time_sum;
     /////// Function access management ///////
@@ -66,8 +92,8 @@ void SaveDumpFile(int KEY2,int KEY1,int KEY0){
     //
     /// Open Dump File
 	fprintf(stderr,"\n-------------------------Dumping File Ver.[%d][%d][%d]---------------------------\n",KEY2,KEY1,KEY0);
-	sprintf(filename, "%s.dmp%d", InputFile, dump_order);
-	if ((SaveFile = fopen(filename, "w")) == NULL) {
+    sprintf(FileName, "%s.dmp%d", InputFile, dump_order);
+	if ((SaveFile = fopen(FileName, "w")) == NULL) {
 		puts("Dump: open failed");
 		exit(-1);
 	}
@@ -97,7 +123,7 @@ void SaveDumpFile(int KEY2,int KEY1,int KEY0){
 			TotalT_D++;
 			TotalT_H -= 24;
 	}
-    fprintf(stderr, "Dump at t=%1.5e(s),Step[%d]Cycle[%d] %s\n", t,tstep,cstep,filename);
+    fprintf(stderr, "Dump at t=%1.5e(s),Step[%d]Cycle[%d] %s\n", t,tstep,cstep,FileName);
 	for (isp = 0; isp < nsp; isp++){
 		fprintf(stderr, "%s : %d,  ", SP[isp].name, SP[isp].np);
 	}fprintf(stderr, "\n");

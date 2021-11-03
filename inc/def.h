@@ -12,6 +12,7 @@
 #define NperTORR   8.3221e20
 #define AMU		1.66053e-27
 #define NVTS    3.3
+#define MAX_VIEW_NP 1000000
 #define N_MAX 100
 #define THREADS_PER_BLOCK 512   
 #endif
@@ -134,6 +135,7 @@ typedef struct __Global_Particle_Gsize_Data
 	int PtNullMCCInCell;
     float den;
 	float smt_den;
+    float sum_den;
 	float ave_den;
 	float sigma;
 }GPG;
@@ -225,6 +227,10 @@ typedef struct __Global_CondNUMR_Array{
 	//SIZE = nsp * CondNUMR
     float Charge;
 }GCondA;
+typedef struct __Host_History{
+	//SIZE = nsp or nfsp
+    float *np;
+}Hist;
 typedef struct __Global_MCC_sigmav
 {
 	// Size[] = Ar:3, O2:20, ArO2=25

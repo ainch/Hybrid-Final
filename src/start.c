@@ -142,6 +142,10 @@ void InputRead() {
    CondY0 = VIMalloc(CondNUM);
    CondY1 = VIMalloc(CondNUM);
    CondTEMP = VFMalloc(CondNUM);
+   CondR = VFMalloc(CondNUM);
+   CondL = VFMalloc(CondNUM);
+   CondC = VFMalloc(CondNUM);
+   External_Flag = 0;
    for (i=0;i<CondNUM;i++){
       BufObject = json_array_get_object(BufArray,i);
       CondM_ID[i] = (int)json_object_get_number(BufObject,"M_ID");
@@ -166,6 +170,14 @@ void InputRead() {
          exit(1);
       }
       CondTEMP[i] = (float)json_object_get_number(BufObject,"Temp");
+      CondR[i] = (float)json_object_get_number(BufObject,"R(Ohm)");
+      CondL[i] = (float)json_object_get_number(BufObject,"L(H)");
+      CondC[i] = (float)json_object_get_number(BufObject,"C(F)");
+      if(CondL[i]<1e-30 && CondR[i]<1e-30 && CondC[i] >= 1 && External_Flag != 1){
+         External_Flag = 0;
+      }else{
+         External_Flag = 1;
+      }
    }
    BufArray = json_object_get_array(SubObject2,"Source");
    SrcNUM = (int)json_array_get_count(BufArray);
@@ -175,13 +187,11 @@ void InputRead() {
    SrcPOWER = VFMalloc(SrcNUM);
    SrcAC = VFMalloc(SrcNUM);
    SrcFREQ = VFMalloc(SrcNUM);
+   Src2piFREQ = VFMalloc(SrcNUM);
    SrcPHASE = VFMalloc(SrcNUM);
-   SrcR = VFMalloc(SrcNUM);
-   SrcL = VFMalloc(SrcNUM);
-   SrcC = VFMalloc(SrcNUM);
+   SrcRPHASE = VFMalloc(SrcNUM);
    Min_FREQ = 1e200;
    Max_FREQ = 0.0;
-   External_Flag = 0;
    for (i=0;i<SrcNUM;i++){
       buf = 0;
       BufObject = json_array_get_object(BufArray,i);
@@ -198,18 +208,12 @@ void InputRead() {
       SrcPOWER[i] = (float)json_object_get_number(BufObject,"Power(W)");
       SrcAC[i] = (float)json_object_get_number(BufObject,"AC(V)");
       SrcFREQ[i] = (float)json_object_get_number(BufObject,"Freq(1/s)");
+      Src2piFREQ[i] = 2*M_PI*SrcFREQ[i];
       SrcPHASE[i] = (float)json_object_get_number(BufObject,"Phase(deg)");
-      SrcR[i] = (float)json_object_get_number(BufObject,"R(Ohm)");
-      SrcL[i] = (float)json_object_get_number(BufObject,"L(H)");
-      SrcC[i] = (float)json_object_get_number(BufObject,"C(F)");
-      if(SrcL[i]<1e-30 && SrcR[i]<1e-30 && SrcC[i] >= 1 && External_Flag != 1){
-         External_Flag = 0;
-      }else{
-         External_Flag = 1;
-      }
+      SrcRPHASE[i] = M_PI/180*SrcPHASE[i];
       if(SrcFREQ[i] != 0){
          Max_FREQ = max(Max_FREQ,SrcFREQ[i]);
-         if(SrcFREQ[i]<Min_FREQ)
+         if(SrcFREQ[i] != 0.0f && SrcFREQ[i]<Min_FREQ)
             Min_FREQ  = SrcFREQ[i];
       }
       if(SrcDC[i] == 0 && SrcPOWER[i] == 0 && SrcAC[i] == 0){
@@ -1385,24 +1389,6 @@ void InputRead() {
    }
    printf("Finish parsing \"%s\"\n",InputFile); 
 }
-void Source_setting(){
-   printf("Initial Source setting\n"); 
-   dt = 1.0 / Max_FREQ / (float)DT_PIC;
-   dtc = dt * (float)DT_CONTI;
-   CYCLE_NUM = Max_FREQ / Min_FREQ * DT_PIC;
-   DT_MCCn = 0;
-   dt_mcc = 0.0;
-   dt_dx = dt/dx;
-   dt_dy = dt/dy;
-   printf("\tPIC TimeStep = %g (s)\n",dt);
-   printf("\tContinuity TimeStep = %g (s)\n",dtc);
-   printf("\tMinimum Freq Cycle step # = %d (#)\n",CYCLE_NUM);
-   if(CYCLE_NUM == 0){
-      printf("Error : Minimum Freq Cycle step.\n");
-      exit(1);
-   }
-   
-}
 void Geometry_setting() {
    int i,j,k,ID,CID,SID;
    printf("Initial Geometry setting\n"); 
@@ -1431,6 +1417,10 @@ void Geometry_setting() {
    for(i=0;i<ngx;i++) x_Garray[i]=i*dx;
    y_Garray=VFMalloc(ngy);
    for(i=0;i<ngy;i++) y_Garray[i]=i*dy;
+   x_Carray=VFMalloc(ncx);
+   for(i=0;i<ncx;i++) x_Carray[i]=i*dx;
+   y_Carray=VFMalloc(ncy);
+   for(i=0;i<ncy;i++) y_Carray[i]=i*dy;
    //
    vec_G = (GGA *) malloc(Gsize * sizeof(GGA));
    for(i=0;i<Gsize;i++){
@@ -1995,6 +1985,7 @@ void GasSetting(){
          Host_G_sp[isp*Gsize+i].PtNullMCCInCell = 0;
          Host_G_sp[isp*Gsize+i].den = 0.0;
          Host_G_sp[isp*Gsize+i].smt_den = 0.0;
+         Host_G_sp[isp*Gsize+i].sum_den = 0.0;
          Host_G_sp[isp*Gsize+i].ave_den = 0.0;
          Host_G_sp[isp*Gsize+i].sigma = 0.0;
       }

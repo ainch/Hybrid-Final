@@ -3,67 +3,62 @@
 void Efield_cuda(){
     // Function
     int i,j,isp;
-    float a0, a1, a2, a3, a4;
     float K_t;
     float q_conv;
-    float R,L,C;
-    R = 0.0; L = 0.0; C = 1.0;
+
     VFInit(V_t,0.0,CondNUMR);
     VFInit(b_t,0.0,CondNUMR);
     VFInit(phi_cond,0.0,CondNUMR);
+	cudaMemcpy(host_CondVec, dev_CondVec, nsp * CondNUMR * sizeof(GCondA),cudaMemcpyDeviceToHost);
+    GCondAInit<<<EFIELD_GRID,EFIELD_BLOCK>>>(CondNUMR, nsp, 0.0, dev_CondVec);
     if(External_Flag){
-        cudaMemcpy(host_CondVec, dev_CondVec, nsp * CondNUMR * sizeof(GCondA),cudaMemcpyDeviceToHost);
-        GCondAInit<<<EFIELD_GRID,EFIELD_BLOCK>>>(CondNUMR, nsp, 0.0, dev_CondVec);
         // Get voltage 
-        for(i=0;i<CondNUMR;i++) {
-            V_t[i] = 0.0;
-            for(j=0;j<SrcNUM;j++){
+    for(i=0;i<CondNUMR;i++) {
+		if(Efield_Flag[i]){
+			for(j=0;j<SrcNUM;j++){
                 if(SrcM_ID[j] == i+1){
-                    V_t[i] += SrcDC[j] + SrcAC[j]*sin(2*M_PI*SrcFREQ[j]*t+M_PI/180*SrcPHASE[j]);
-                    R = SrcR[j];
-                    L = SrcL[j];
-                    C = SrcC[j];
+                    V_t[i] += SrcDC[j] + SrcAC[j]*sin(Src2piFREQ[j]*t+SrcRPHASE[j]);
                 }
             }
-            a0 = 2.25*L/dt/dt + 1.5*R/dt + 1/C;
-		    a1 = -6*L/dt/dt - 2*R/dt;
-		    a2 = 5.5*L/dt/dt + .5*R/dt;
-		    a3 = -2*L/dt/dt;
-		    a4 = .25*L/dt/dt;
-		    K_t = (a1*extq[i] + a2*extq_1[i] + a3*extq_2[i] + a4*extq_3[i]);
-            //convective charge
-		    q_conv=0;
-		    for(isp=0;isp<nsp;isp++) {
-			    q_conv-=SP[isp].q_density*host_CondVec[isp*CondNUMR+i].Charge;
-		    }
-            b_t[i]=(V_t[i]-K_t)/a0 - extq[i] - q_conv + Surf_charge[i] - Pois_SIG_Sol[i];
-		    for(j=0;j<CondNUMR;j++){
-			    if(i==j) AM[i][j] = Lap_SIG_Sol[j][i]+1/a0;
-			    else AM[i][j] = Lap_SIG_Sol[j][i];
-		    }
-        }
-        cofactor(AM, CondNUMR);
-        for (i = 0; i < CondNUMR; i++) {
-		    phi_cond[i] = 0.0;
-		    for (j = 0; j < CondNUMR; j++) {
-			    phi_cond[i] += AM[i][j] * b_t[j];
-		    }
-            extq_3[i] = extq_2[i];
-		    extq_2[i] = extq_1[i];
-		    extq_1[i] = extq[i];
-		    extq[i] = (V_t[i] - phi_cond[i]) / a0 - K_t;
-        }
+		}else{
+			V_t[i] = 0.0;
+		}
+		K_t = (CC_a[i][1]*extq[i] + CC_a[i][2]*extq_1[i] + CC_a[i][3]*extq_2[i] + CC_a[i][4]*extq_3[i])/CC_a[i][0];
+        //convective charge
+		q_conv=0;
+		for(isp=0;isp<nsp;isp++) {
+			q_conv-=SP[isp].q_density*host_CondVec[isp*CondNUMR+i].Charge;
+		}
+        b_t[i]=(V_t[i]-K_t)/CC_a[i][0] - extq[i] - q_conv + Surf_charge[i] - Pois_SIG_Sol[i];
+		for(j=0;j<CondNUMR;j++){
+			if(i==j) AM[i][j] = Lap_SIG_Sol[j][i]+1/CC_a[i][0];
+			else AM[i][j] = Lap_SIG_Sol[j][i];
+		}
+    }
+    cofactor(AM, CondNUMR);
+    for (i = 0; i < CondNUMR; i++) {
+		phi_cond[i] = 0.0;
+		for (j = 0; j < CondNUMR; j++) {
+			phi_cond[i] += AM[i][j] * b_t[j];
+		}
+        extq_3[i] = extq_2[i];
+		extq_2[i] = extq_1[i];
+		extq_1[i] = extq[i];
+		extq[i] = (V_t[i] - phi_cond[i]) / CC_a[i][0] - K_t;
+    }
     }else{ 
         // Get voltage 
-        for(i=0;i<CondNUMR;i++) {
-            phi_cond[i] = 0.0;
-            for(j=0;j<SrcNUM;j++){
+    for(i=0;i<CondNUMR;i++) {
+		if(Efield_Flag[i]){
+			for(j=0;j<SrcNUM;j++){
                 if(SrcM_ID[j] == i+1){
-                    phi_cond[i] += SrcDC[j] + SrcAC[j]*sin(2*M_PI*SrcFREQ[j]*t+M_PI/180*SrcPHASE[j]);
+                    phi_cond[i] += SrcDC[j] + SrcAC[j]*sin(Src2piFREQ[j]*t+SrcRPHASE[j]);
                 }
             }
-			//printf("Cond [%d] = %g V\n",i+1, phi_cond[i]);
-        }
+		}else{
+			phi_cond[i] = 0.0f;
+		}
+    }
     }
     // Potential summation
 	cudaMemset((void *) TotPotential, 0.0, Gsize * sizeof(float));

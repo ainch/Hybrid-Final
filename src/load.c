@@ -28,6 +28,39 @@ void V000_LoadDUMP(FILE *LF){
             fread(&PtD[isp].vz[i], 4, 1, LF);
         }
     }
+    // History data
+    fread(&hist_count, 4, 1, LF);
+    fread(&dHIST, 4, 1, LF);
+	fread(t_array, 4, hist_count, LF);
+	for (isp = 0; isp < nsp; isp++) {
+		fread(HistPt[isp].np, 4, hist_count, LF);
+	}
+	fread(iter_array, 4, hist_count, LF);
+    // 2D data
+    for (i = 0; i < nsp*Gsize; i++) {
+        fread(&Host_G_sp[i].den, 4, 1, LF);    // pt density : GPG
+        fread(&Host_G_sp[i].ave_den, 4, 1, LF); // pt Ave_density : GPG
+        fread(&Host_G_sp[i].sigma, 4, 1, LF); // pt sigma
+    }
+    for (i = 0; i < Gsize; i++) {
+        if(DumpFlag){
+            fread(&vec_G[i].Temp, 4, 1, LF); // BG Tem : GGA
+            fread(&vec_G[i].BackVel1, 4, 1, LF); // BG vel : GGA
+            fread(&vec_G[i].BackDen1, 4, 1, LF); // BG density : GGA
+            fread(&vec_G[i].BackVel2, 4, 1, LF); // BG vel : GGA
+            fread(&vec_G[i].BackDen2, 4, 1, LF); // BG density : GGA
+        }else{
+            fread(&buf1, 4, 1, LF); // BG Tem : GGA
+            fread(&buf1, 4, 1, LF); // BG vel : GGA
+            fread(&buf1, 4, 1, LF); // BG density : GGA
+            fread(&buf1, 4, 1, LF); // BG vel : GGA
+            fread(&buf1, 4, 1, LF); // BG density : GGA
+        }
+        fread(&vec_G[i].Lap_Pot, 4, 1, LF); // BG Lap_Pot
+        fread(&vec_G[i].Pois_Pot, 4, 1, LF); // BG Pois_Pot
+        fread(&vec_G[i].Ex, 4, 1, LF); // BG Ex
+        fread(&vec_G[i].Ey, 4, 1, LF); // BG Ey
+    } 
 }
 void V001_LoadDUMP(FILE *LF){
 

@@ -1,6 +1,8 @@
 #include "xypic.h"
 
 extern double t;  // real time
+extern float dt;   // timestsep for PIC
+extern float dtc; // time step for continuity equationex
 extern int tstep; // number of time step
 extern int cstep; // Number of Cycle step
 extern int DumpFlag; // Dump File ON,OFF
@@ -25,15 +27,16 @@ float idx,idy,dx2,dy2,dxdy2,hdx,hdy,r_eps0;
 float dt_dx, dt_dy;
 float fncx,fncy,fngx,fngy;
 float *x_Garray,*y_Garray;
+float *x_Carray,*y_Carray;
 int BoundaryNUM;
 int *BoundaryX0,*BoundaryY0,*BoundaryX1,*BoundaryY1,*BoundaryBC;
 float *BoundaryTEMP;
 int CondNUM,CondNUMR;  // CondNUMR is Real Conductor number
 int*CondM_ID, *CondX0,*CondX1,*CondY0,*CondY1;
-float *CondTEMP;
+float *CondTEMP,*CondR,*CondL,*CondC;
 int SrcNUM;
 int *SrcM_ID;
-float *SrcDC, *SrcPOWER, *SrcAC, *SrcFREQ, *SrcPHASE, *SrcR, *SrcL, *SrcC;
+float *SrcDC, *SrcPOWER, *SrcAC, *SrcFREQ, *Src2piFREQ, *SrcPHASE, *SrcRPHASE;
 int External_Flag; // 0 : Voltage driven, 1: Power driven
 float Min_FREQ, Max_FREQ;
 int DielNUM,DielNUMR;
@@ -56,11 +59,6 @@ float Total_Pressure;
 //
 int DT_PIC;  // Number of 1 cycle step
 int DT_CONTI; // How many times PIC dt?
-float dt;   // timestsep for PIC
-float dtc; // time step for continuity equation
-int DT_MCCn; // mcc count for each step
-float dt_mcc; // timestsep for MCC Module
-int CYCLE_NUM; // Minimum frequency number of cycle
 int Lap_Field_Solver_Test,Lap_Field_Solver_Flag,Lap_Field_Solver_Save;
 float PCGtol;
 float PCGtol2;
@@ -110,7 +108,6 @@ int TecplotS_PT_Movie_SCYCLE;
 int TecplotS_PT_Movie_Count;
 //
 void InputRead();
-void Source_setting();
 void Geometry_setting();
 float Face_To_Area(int Face);
 void FieldSolverSetting();

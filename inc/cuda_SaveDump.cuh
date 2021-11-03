@@ -1,4 +1,6 @@
 #include "xypic.cuh"
+extern char InputFile[80]; // INPUT FILE NAME
+extern char DumpFile[80]; // DUMP FILE NAME
 extern double t;  // real time
 extern int tstep; // number of time step
 extern int cstep; // Number of Cycle step
@@ -14,11 +16,25 @@ extern Species *SP; // particle species
 extern Species *dev_info_sp;// particle species
 extern HCP *PtD;
 extern GCP *Host_sp, *dev_sp;
-extern GPG *Host_G_sp;
-extern GPG *dev_G_sp;
+extern GPG *Host_G_sp, *dev_G_sp;
+extern GFC *Host_C_F, *dev_C_F;
+extern GFG *Host_G_F, *dev_G_F;
+extern GGA *vec_G, *dev_GvecSet;
+extern float *MCC_rate, *ave_MCC_rate, *dev_ave_MCC_rate;
+extern float *RCstack, *dev_RCstack;
 extern int MainGas;
-extern int nsp;
+extern int nsp,nfsp;
 extern int Gsize,ngx,ngy;
+extern int Csize,ncx,ncy;
+extern int TnRct;
+extern int HISTMAX;
+extern int dHIST;
+extern int Hcount;
+extern int hist_count;
+extern Hist *HistPt,*HistFG;
+extern float *t_array;  
+extern float *iter_array;  
+extern int Basic_Flag;
 extern float 	totaltime,gputime_field,gputime_efield;
 extern float 	gputime_move,gputime_mcc,gputime_deposit;
 extern float 	gputime_diag,gputime_sort,gputime_Tec;

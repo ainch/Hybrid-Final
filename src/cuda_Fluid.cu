@@ -69,10 +69,8 @@ void Set_Fluid_cuda(){
     // Calculate Tridiagonal A matrix 
     // tridiag size 3 * ncx * Conti_xnum
     // tridiag size 3 * ncy * Conti_ynum
-
-
     cudaDeviceSynchronize();
-    exit(1);
+    //exit(1);
 }
 __global__ void calculate_gummel_coef_x(int nfsp, int size, int ngy, int Gsize,int Csize, float dx, Con_RegionX *val, Fluid *info, GFC *Cdata, GFG *Gdata){
     int TID = threadIdx.x + blockIdx.x * blockDim.x;
@@ -92,7 +90,7 @@ __global__ void calculate_gummel_coef_x(int nfsp, int size, int ngy, int Gsize,i
 		bb=(Cdata[isp*Csize + (i-1)*(ngy-1)+yy].D + Cdata[isp*Csize + i*(ngy-1)+yy].D)/2;
 		Gdata[isp*Gsize + i*ngy+yy].Gummel_ax=bb/dx;
 		Gdata[isp*Gsize + i*ngy+yy].Gummel_bx=bb/dx;
-        printf("%g ",bb/dx);
+        //printf("%g ",bb/dx);
 	}
     Gdata[isp*Gsize + (x2+1)*ngy+yy].Gummel_bx = 0;
     Gdata[isp*Gsize + (x2+1)*ngy+yy].Gummel_ax =- val[TID].fg2*(0.25*info[isp].Vel);

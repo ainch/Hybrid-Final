@@ -14,7 +14,9 @@ extern int CondNUMR;
 extern int External_Flag; // 0 : Voltage driven, 1: Power driven
 extern int SrcNUM;
 extern int *SrcM_ID;
-extern float *SrcDC, *SrcPOWER, *SrcAC, *SrcFREQ, *SrcPHASE, *SrcR, *SrcL, *SrcC;
+extern float *SrcDC, *SrcPOWER, *SrcAC, *SrcFREQ, *Src2piFREQ, *SrcPHASE, *SrcRPHASE;
+extern int *Efield_Flag;
+extern float **CC_a; //Circuit_Const a
 extern int Lap_Field_Solver_Test,Lap_Field_Solver_Flag,Lap_Field_Solver_Save;
 extern int Preconditioner_Flag;
 extern int FieldIter;

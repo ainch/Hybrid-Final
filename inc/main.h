@@ -14,6 +14,7 @@ extern void GasSetting();
 extern void Main_Variable_printorSave();
 extern void Cross_Section_data_Save();
 extern void Initial_Particle_Save(int size,HCP *PtData);
+extern void Diagnostic_Setting();
 extern void LoadDumpFile();
 extern void main_cuda();
 

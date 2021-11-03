@@ -30,6 +30,7 @@ extern "C" void main_cuda()
         else if(MainGas == OXYGEN) MCC_O2_cuda();
         else if(MainGas == ARO2) MCC_ArO2_cuda();
         Deposit_cuda();
+        Diagnostic();
         SaveDumpFile(0,0,0);
         printf("TIME = %1.4e (s), Iter = %3d, res = %1.3e\r",t,*FIter,*dot_result);
         if(isnan(*dot_result) || isinf(*dot_result)){
@@ -51,7 +52,7 @@ extern "C" void main_cuda()
 	    cudaEventDestroy( start );cudaEventDestroy( stop );
         gputime_field+=gputime;
 		totaltime+=gputime;
-        printf("TIME = %1.4e (s),[%3d][%3d], Iter = %3d, res = %1.3e\r",t,tstep,cstep,*FIter,*dot_result);
+        fprintf(stderr,"TIME = %1.4e (s),[%3d][%3d], Iter = %3d, res = %1.3e\r",t,tstep,cstep,*FIter,*dot_result);
         ///////////////////////////////////////////////////////////////////////////
         cudaEventCreate(&start); cudaEventCreate(&stop);
 	    cudaEventRecord( start, 0 );

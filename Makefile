@@ -20,6 +20,8 @@ C_OBJS = $(OBJ_DIR)/main.o \
           $(OBJ_DIR)/start.o \
           $(OBJ_DIR)/PhysicsData.o \
           $(OBJ_DIR)/load.o \
+          $(OBJ_DIR)/Efield.o \
+          $(OBJ_DIR)/Diagnostics.o \
           $(OBJ_DIR)/Tecplot.o \
           $(OBJ_DIR)/Particle.o
 
@@ -48,6 +50,8 @@ C_H_FILES = inc/xypic.h \
             inc/def.h \
             inc/PhysicsData.h \
             inc/load.h \
+            inc/Efield.h \
+            inc/Diagnostics.h \
             inc/Tecplot.h \
             inc/Particle.h
 
