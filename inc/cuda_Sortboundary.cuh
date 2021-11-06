@@ -1,6 +1,7 @@
 #include "xypic.cuh"
 extern int ncx,ncy;
 extern int Gsize,ngy;
+extern int CondNUMR;
 extern float dt_dx,dt_dy;
 extern Species *dev_info_sp;// particle species
 extern GCP *dev_sp;
@@ -15,5 +16,5 @@ int *dev_StructureIndex;
 int *dev_ReArgFlag;
 void Set_SortBoundary_cuda();
 void SortBounndary_cuda();
-__global__ void SortBoundary_Basic(int Gsize,int ngy,float dt_dx,float dt_dy,int *StructureIndex, Species *info, GCP *sp, GPG *data, GGA *Field, GCondA *Cond, int *ReArgFlag);
+__global__ void SortBoundary_Basic(int Gsize,int ngy,int CondNum, float dt_dx,float dt_dy,int *StructureIndex, Species *info, GCP *sp, GPG *data, GGA *Field, GCondA *Cond, int *ReArgFlag);
 #endif

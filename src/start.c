@@ -806,9 +806,12 @@ void InputRead() {
    TecplotS_2D_Ncycle = (int)json_object_get_number(BufObject,"Tecplot2D");
    if(TecplotS_2D_Ncycle > 0) TecplotS_2D_Flag = 1;
    else if(TecplotS_2D_Ncycle == 0) TecplotS_2D_Flag = 0;
+   //
    TecplotS_Movie_Ncycle = (int)json_object_get_number(BufObject,"Tec_1Cycle_Movie_Interval");
-   if(TecplotS_Movie_Ncycle > 0) TecplotS_Movie_Flag = 1;
-   else if(TecplotS_Movie_Ncycle == 0) TecplotS_Movie_Flag = 0;
+   if(TecplotS_Movie_Ncycle > 0){
+      TecplotS_Movie_Flag = 1;
+      TecplotS_Movie_Ncycle++;
+   }else TecplotS_Movie_Flag = 0;
    if(TecplotS_Movie_Flag != 0){
       TecplotS_Movie_Frame = (int)json_object_get_number(BufObject,"Tec_1Cycle_Movie_FrameNum");
       if(TecplotS_Movie_Frame/DT_PIC > 1.0){
@@ -821,10 +824,12 @@ void InputRead() {
       if(TecplotS_Movie_Frame !=0) TecplotS_Movie_SCYCLE = (int)(DT_PIC/TecplotS_Movie_Frame);
    }
    TecplotS_Movie_Count = 0;
-
+   //
    TecplotS_PT_Movie_Ncycle = (int)json_object_get_number(BufObject,"Tec_1Cycle_Movie_PT_Interval");
-   if(TecplotS_PT_Movie_Ncycle > 0) TecplotS_PT_Movie_Flag = 1;
-   else if(TecplotS_PT_Movie_Ncycle == 0) TecplotS_PT_Movie_Flag = 0;
+   if(TecplotS_PT_Movie_Ncycle > 0){
+      TecplotS_PT_Movie_Flag = 1;
+      TecplotS_PT_Movie_Ncycle++;
+   }else TecplotS_PT_Movie_Flag = 0;
    TecplotS_PT_Movie_Frame = (int)json_object_get_number(BufObject,"Tec_1Cycle_Movie_PT_FrameNum");
    if(TecplotS_PT_Movie_Flag != 0){
       if(TecplotS_PT_Movie_Frame/DT_PIC > 1.0){
@@ -837,6 +842,14 @@ void InputRead() {
       if(TecplotS_PT_Movie_Frame !=0) TecplotS_PT_Movie_SCYCLE = (int)(DT_PIC/TecplotS_PT_Movie_Frame);
    }
    TecplotS_PT_Movie_Count = 0;
+   //
+   int TecplotS_M_Flag,TecplotS_M_Term,TecplotS_M_NperC,TecplotS_M_Inter;
+   BufObject2 = json_object_get_object(BufObject,"Tec_Movie");
+   TecplotS_M_Flag = (int)json_object_get_number(BufObject2,"Flag");
+   TecplotS_M_Term = (int)json_object_get_number(BufObject2,"Term");
+   TecplotS_M_NperC = (int)json_object_get_number(BufObject2,"FrameNum_per_Cycle");
+   TecplotS_M_Inter = (int)json_object_get_number(BufObject2,"Interval");
+   //
    //printf("Tec_Ave_Movie = %d\n",(int)json_object_get_number(BufObject,"Tec_Ave_Movie"));
    //printf("Tec_Ave_Movie_Interval = %d\n",(int)json_object_get_number(BufObject,"Tec_Ave_Movie_Interval"));
    //printf("Tec_Ave_Movie_num = %d\n",(int)json_object_get_number(BufObject,"Tec_Ave_Movie_num")); 

@@ -21,7 +21,23 @@ extern float *t_array;
 extern float *iter_array;  
 extern int *FIter;
 extern int nave_count;
+extern dim3 FIELD_GRID,FIELD_BLOCK;
+extern dim3 FIELD_GRID2,FIELD_BLOCK2;
+extern dim3 DEPOSIT_GRID,DEPOSIT_BLOCK;
+extern dim3 EFIELD_GRID,EFIELD_BLOCK;
+extern dim3 MOVE_GRID, MOVE_BLOCK;
+extern dim3 SORT_GRID, SORT_BLOCK;
 extern dim3 MCC_GRID, MCC_BLOCK;
+extern dim3 CONTI_GRID,CONTI_BLOCK;
+extern float *TotPotential;
+extern float *dev_Source;
+extern float *dev_Sigma;
+extern float *vec_Potential, *sum_Potential, *ave_Potential; // [Gsize] potential
+extern float *vec_Source, *sum_Source, *ave_Source; // [Gsize] Charge density 
+extern float *vec_Sigma, *sum_Sigma, *ave_Sigma; // [Gsize] [Dielectric] surface charge density, [Conductor] Surface current
+extern float *sum_Ex, *ave_Ex, *sum_Ey, *ave_Ey;
+extern GGA *vec_G,*dev_GvecSet;
+extern GCA *vec_C,*dev_CvecSet;
 #ifndef __CUDA_DIAGNOSTIC_CUH__
 #define __CUDA_DIAGNOSTIC_CUH__
 float *Host_G_buf, *Host_C_buf;

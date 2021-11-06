@@ -3,38 +3,35 @@ __device__ void Direct_Argon_Electron(int Gsize, int ngy, int ID, int MCCn, floa
 											Species *info, GPG *data, GCP *sp, int N_LOGX, float idLOGX, 
 											MCC_sigmav *sigv, CollF *info_CX, ArCollD *CX, int TnRct, float*MCCR, GGA *BG, GFC *Fluid){
 	int i,j,k,n,index;
-	int CID,PNC,Null,PNC2;
+	int PNC,PNC2;
 	int nx,ny,ngx;
 	int Target;
 	int Colltype;
-	float Tprob,Prob1,Prob2;
-    int Randn,AddPt1;
+	float Prob1,Prob2;
+    int AddPt;
 	float R1,R2;
 	float VX,VY,VZ;
-	float dum,vel,vel2,engy,rengy;
+	float dum,vel,vel2,engy,rengy,massRatio;
 	float SumSigma,SumEngyLoss;
 	PNC = data[ID].PtNumInCell;
     PNC2 = data[ID+Gsize].PtNumInCell;
-	Null = 0;
 	curandState LocalStates = states[ID];
     nx = ID/ngy;
 	ny = ID%ngy;
 	ngx = Gsize/ngy;
 	if(nx == ngx-1) nx--;
 	if(ny == ngy-1) ny--;
-	CID = ny + (ngy-1)*nx;
 	Prob1 = 1.0f - exp(-1*dtm*sigv[0].val*BG[ID].BackDen1);
-	Prob2 = 1.0f - exp(-1*dtm*sigv[1].val*Fluid[CID].ave_den);
-	Tprob = Prob1 + Prob2;
+	Prob2 = Prob1 + 1.0f - exp(-1*dtm*sigv[1].val*Fluid[ny + (ngy-1)*nx].ave_den);
     // Calculate total Collision probability.
-	Randn = MCCn;
-    AddPt1 = 0;
+    AddPt = 0;
+	massRatio = info_CX[4].mofM;
 	i = info[0].St_num + ID;
 	for(k=0;k<PNC;k++){
         Colltype = 0;
-		for(j=0;j<Randn;j++){
+		for(j=0;j<MCCn;j++){
 			R1 = curand_uniform(&LocalStates);
-			if(R1<Tprob){
+			if(R1<Prob2){
                 Colltype = 1;
                 break;
             }
@@ -53,7 +50,6 @@ __device__ void Direct_Argon_Electron(int Gsize, int ngy, int ID, int MCCn, floa
 		vel = sqrt(dum);
 		VX/=vel; VY/=vel; VZ/=vel;
 		engy = info[0].Escale * dum;
-        Colltype = 2;
         switch(Target){
 			case 0:{
                 R2 = curand_uniform(&LocalStates) * sigv[0].val / vel;
@@ -61,29 +57,28 @@ __device__ void Direct_Argon_Electron(int Gsize, int ngy, int ID, int MCCn, floa
 				SumSigma = Argon_CrossSection(0, engy, N_LOGX, idLOGX, CX);
 				if(R2<=SumSigma){
 				// 1. e + Ar > e + Ar* 			Excitation to Total Excited state
+					Colltype = 0;
 					MCCR[ID*TnRct]++;
 				}else if(engy > info_CX[1].Th_e && R2<=(SumSigma += Argon_CrossSection(1, engy, N_LOGX, idLOGX, CX))){
+					Colltype = 0;
 					engy-=info_CX[1].Th_e;
 					vel=sqrt(fabs(engy)/info[0].Escale);
 					MCCR[ID*TnRct+1]++;
 				// 2. e + Ar > e + Ar* 			Excitation to AR4SM
 				}else if(engy > info_CX[2].Th_e && R2<=(SumSigma += Argon_CrossSection(2, engy, N_LOGX, idLOGX, CX))){
+					Colltype = 0;
 					engy-=info_CX[2].Th_e;
 					vel=sqrt(fabs(engy)/info[0].Escale);
 					MCCR[ID*TnRct+2]++;
 				// 3. e + Ar > e + e + Ar^		Direct ionization
 				}else if(engy > info_CX[3].Th_e && R2<=(SumSigma += Argon_CrossSection(3, engy, N_LOGX, idLOGX, CX))){
-					Colltype = 3;
+					Colltype = 2;
 					engy-=info_CX[3].Th_e;
 					rengy=10.0*__tanf(curand_uniform(&LocalStates)*atan(engy/20.0));
 					engy-=rengy;
 					vel = sqrt(fabs(rengy)/info[0].Escale);
 					vel2 = sqrt(fabs(engy)/info[0].Escale);
-					AddPt1++;
 					MCCR[ID*TnRct+3]++;
-				}else{
-					Colltype = 1;
-					Null++;
 				}
 				break;
 			}
@@ -92,60 +87,57 @@ __device__ void Direct_Argon_Electron(int Gsize, int ngy, int ID, int MCCn, floa
 				// 4. e + Ar* > e + e + Ar^		step ionization
 				SumSigma = Argon_CrossSection(4, engy, N_LOGX, idLOGX, CX);
 				if(engy > info_CX[4].Th_e && R2<=SumSigma){
-					Colltype = 3;
+					Colltype = 2;
 					engy-=info_CX[4].Th_e;
 					rengy=10.0*__tanf(curand_uniform(&LocalStates)*atan(engy/20.0));
 					engy-=rengy;
 					vel = sqrt(fabs(rengy)/info[0].Escale);
 					vel2 = sqrt(fabs(engy)/info[0].Escale);
-					AddPt1++;
 					MCCR[ID*TnRct+4]++;
-				}else{
-					Colltype = 1;
-					Null++;
 				}
 				break;
 			}
 		}
-        if(Colltype == 2){ // Just energy loss
-			dev_anewvel(engy,vel,&VX,&VY,&VZ,0,info_CX[4].mofM,curand_uniform(&LocalStates),curand_uniform(&LocalStates));
+        if(Colltype == 0){ // Just energy loss
+			dev_anewvel(engy,vel,&VX,&VY,&VZ,0,massRatio,curand_uniform(&LocalStates),curand_uniform(&LocalStates));
 			sp[i].vx = VX;
 			sp[i].vy = VY;
 			sp[i].vz = VZ;
-		}else if(Colltype == 3){ //ionization 
+		}else if(Colltype == 2){ //ionization 
 			//printf("Ionization 1 ! \n");
             ///// scatter the created electron
-			index = info[0].St_num + ID + (PNC + AddPt1 - 1) * Gsize; 
-			sp[index].CellID = sp[i].CellID;
+			index = info[0].St_num + ID + (PNC + AddPt) * Gsize; 
+			sp[index].CellID = ID;
 			sp[index].x = sp[i].x;
 			sp[index].y = sp[i].y;
 			sp[index].vx = VX;
 			sp[index].vy = VY;
 			sp[index].vz = VZ;
-            dev_anewvel(rengy,vel,&sp[index].vx,&sp[index].vy,&sp[index].vz,0,info_CX[4].mofM,curand_uniform(&LocalStates),curand_uniform(&LocalStates));
+           	dev_anewvel(rengy,vel,&sp[index].vx,&sp[index].vy,&sp[index].vz,0,massRatio,curand_uniform(&LocalStates),curand_uniform(&LocalStates));
             ///// assign velocities to the created ion
-            index = info[1].St_num + ID + (PNC2 + AddPt1 - 1) * Gsize; 
-            sp[index].CellID = sp[i].CellID + Gsize;
+            index = info[1].St_num + ID + (PNC2 + AddPt) * Gsize; 
+            sp[index].CellID = ID + Gsize;
             sp[index].x = sp[i].x;
 			sp[index].y = sp[i].y;
             sp[index].vx = VX;
 			sp[index].vy = VY;
 			sp[index].vz = VZ;
+			//printf("\n[%d][%d] ionization \n",ID,ID+Gsize);
             n = (nvel-1)*curand_uniform(&LocalStates);
 			dev_maxwellv(&sp[index].vx,&sp[index].vy,&sp[index].vz,vsave[n],BG[ID].BackVel1,curand_uniform(&LocalStates),curand_uniform(&LocalStates));
 			///// scatter the incident electron
-			dev_anewvel(engy,vel2,&VX,&VY,&VZ,0,info_CX[4].mofM,curand_uniform(&LocalStates),curand_uniform(&LocalStates));
+			dev_anewvel(engy,vel2,&VX,&VY,&VZ,0,massRatio,curand_uniform(&LocalStates),curand_uniform(&LocalStates));
             sp[i].vx = VX;
 			sp[i].vy = VY;
 			sp[i].vz = VZ;
-			//AddPt1--;
+			AddPt++;
 		}
 		i+=Gsize;
 	}
-    data[ID].PtNumInCell = PNC + AddPt1;
-    data[ID+Gsize].PtNumInCell = PNC2 + AddPt1;
+	//if(AddPt != 0) printf("[%d] PNC[%d] addpt[%d]\n",ID,PNC,AddPt);
+    data[ID].PtNumInCell = PNC +AddPt;
+    data[ID+Gsize].PtNumInCell = PNC2+AddPt;
 	states[ID]=LocalStates;
-	data[ID].PtNullMCCInCell = Null;
 }
 __device__ void Direct_Argon_ArIon(int Gsize, int ngy, int ID, int MCCn, float dt, int nvel, float *vsave, curandState *states, 
 											Species *info, GPG *data, GCP *sp, int N_LOGX, float idLOGX, 
@@ -162,7 +154,6 @@ __device__ void Direct_Argon_ArIon(int Gsize, int ngy, int ID, int MCCn, float d
     PNC = data[ID+Gsize].PtNumInCell;
 	curandState LocalStates = states[ID];
 	Prob = 1.0f - exp(-1*dt*sigv[2].val*BG[ID].BackDen1);
-	Null = 0;
     // Calculate total Collision probability.
 	i = info[1].St_num + ID;
 	for(k=0;k<PNC;k++){
@@ -198,7 +189,6 @@ __device__ void Direct_Argon_ArIon(int Gsize, int ngy, int ID, int MCCn, float d
 			VX_buf = sp[i].vx;
 			VY_buf = sp[i].vy;
 			VZ_buf = sp[i].vz;
-			Null++;
 		}
 		sp[i].vx = VX_buf;
 		sp[i].vy = VY_buf;
@@ -206,7 +196,6 @@ __device__ void Direct_Argon_ArIon(int Gsize, int ngy, int ID, int MCCn, float d
 		i+=Gsize;
 	}
 	states[ID]=LocalStates;
-	data[ID].PtNullMCCInCell = Null;
 }
 __device__ void Ar_Collision_Check(int Gsize, int Csize, int ngy, int TID, float dt, int MCCn, float dtm, float dx, float dy,
                                         curandState *states, Species *info, GPG *data, GCP *sp, MCC_sigmav *sigv, GGA *BG, GFC *Fluid){

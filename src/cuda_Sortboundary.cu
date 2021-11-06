@@ -2,7 +2,7 @@
 
 
 void SortBounndary_cuda(){
-	SortBoundary_Basic<<<SORT_GRID, SORT_BLOCK>>>(Gsize,ngy,dt_dx,dt_dy, dev_StructureIndex, dev_info_sp, dev_sp, dev_G_sp, dev_GvecSet, dev_CondVec, dev_ReArgFlag);
+	SortBoundary_Basic<<<SORT_GRID, SORT_BLOCK>>>(Gsize,ngy,CondNUMR,dt_dx,dt_dy, dev_StructureIndex, dev_info_sp, dev_sp, dev_G_sp, dev_GvecSet, dev_CondVec, dev_ReArgFlag);
 	cudaDeviceSynchronize();
 }
 void Set_SortBoundary_cuda(){
@@ -14,7 +14,7 @@ void Set_SortBoundary_cuda(){
 	checkCudaErrors(cudaMalloc((void**) &dev_ReArgFlag, sizeof(int)));
 	checkCudaErrors(cudaMemset((void *) dev_ReArgFlag, 0, sizeof(int)));
 }	
-__global__ void SortBoundary_Basic(int Gsize,int ngy,float dt_dx,float dt_dy,int *StructureIndex, Species *info, GCP *sp, GPG *data, GGA *Field, GCondA *Cond, int *ReArgFlag){
+__global__ void SortBoundary_Basic(int Gsize,int ngy, int CondNum, float dt_dx,float dt_dy,int *StructureIndex, Species *info, GCP *sp, GPG *data, GGA *Field, GCondA *Cond, int *ReArgFlag){
 	int TID = threadIdx.x + blockIdx.x * blockDim.x;
 	int isp,ID;
     if(TID>=Gsize*info[0].spnum) return;
@@ -213,28 +213,6 @@ __global__ void SortBoundary_Basic(int Gsize,int ngy,float dt_dx,float dt_dy,int
 		}
 		if(Flag_type==0){
 			atomicAdd(&data[del_pa].sigma,del_a);
-			/*
-			if(del_pa == 79){
-				printf("79[%d][%d]sigma[%g],vx[%g],vy[%g],MCID[%d]=",i,isp,data[del_pa].sigma,sp[i].vx,sp[i].vy,MCID);
-				printf("del_pa[%d]=[%g],del_pb[%d]=[%g]\n",del_pa,del_a,del_pb,del_b);
-			}
-			if(del_pa == 90){
-				printf("90[%d][%d]sigma[%g],vx[%g],vy[%g],MCID[%d]=",i,isp,data[del_pa].sigma,sp[i].vx,sp[i].vy,MCID);
-				printf("del_pa[%d]=[%g],del_pb[%d]=[%g]\n",del_pa,del_a,del_pb,del_b);
-			}
-			if(del_pa == 92){
-				printf("92[%d][%d]sigma[%g],vx[%g],vy[%g],MCID[%d]=",i,isp,data[del_pa].sigma,sp[i].vx,sp[i].vy,MCID);
-				printf("del_pa[%d]=[%g],del_pb[%d]=[%g]\n",del_pa,del_a,del_pb,del_b);
-			}
-			if(del_pa == 103){
-				printf("103[%d][%d]sigma[%g],vx[%g],vy[%g],MCID[%d]=",i,isp,data[del_pa].sigma,sp[i].vx,sp[i].vy,MCID);
-				printf("del_pa[%d]=[%g],del_pb[%d]=[%g]\n",del_pa,del_a,del_pb,del_b);
-			}
-			if(del_pa == 114){
-				printf("114[%d][%d]sigma[%g],vx[%g],vy[%g],MCID[%d]=",i,isp,data[del_pa].sigma,sp[i].vx,sp[i].vy,MCID);
-				printf("del_pa[%d]=[%g],del_pb[%d]=[%g]\n",del_pa,del_a,del_pb,del_b);
-			}
-			*/
 			atomicAdd(&data[del_pb].sigma,del_b);
 		}else if(Flag_type==1){
 			CID+=Sum_CID;
@@ -250,7 +228,7 @@ __global__ void SortBoundary_Basic(int Gsize,int ngy,float dt_dx,float dt_dy,int
 			sp[index].vy = Flag_vy * sp[i].vy;
 			sp[index].vz = sp[i].vz;
 		}else if(Flag_type==2){
-			atomicAdd(&Cond[isp*index].Charge,1.0);
+			atomicAdd(&Cond[isp*CondNum + index].Charge,1.0);
 		}
 		i-=Gsize;
 	}		

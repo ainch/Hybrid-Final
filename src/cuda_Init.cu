@@ -57,7 +57,7 @@ void Set_Device_Parameter(){
     SORT_GRID = dim3(grid, 1, 1);
     SORT_BLOCK = dim3(block, 1, 1);
     // MCC
-    size = nsp * Gsize;
+    size = Gsize;
     cudaOccupancyMaxPotentialBlockSize(&mingrid,&block,(void*)MCC_Ar_Basic,0,size); 
     grid = (size + block - 1) / block;
     printf(" - MCC module : [%d][%d]\n",grid,block);

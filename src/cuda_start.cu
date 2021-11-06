@@ -1,4 +1,30 @@
 #include "cuda_start.cuh"
+void start_cuda(){
+	/*** Move ***/
+	if(ConstB_Flag){
+		//MOVE = MoveB_cuda;
+	}else {
+		MOVE = Move_cuda;
+	}
+	SORT_BOUNDARY = SortBounndary_cuda;
+
+	switch(MainGas){
+	case ARGON:
+		MCC	= MCC_Ar_cuda;
+		CONTIEQ = NULL;
+		break;
+	case OXYGEN:
+		MCC		= MCC_O2_cuda;
+		CONTIEQ = NULL;
+		break;
+	case ARO2:
+		MCC		= MCC_ArO2_cuda;
+		CONTIEQ = NULL;
+		break;
+	}
+	DEPOSIT = Deposit_cuda;
+	DIAG    = Diagnostic;
+}
 
 void info_Device()
 {
@@ -59,30 +85,4 @@ void info_Device()
 		printf(" You should reduce MaxNP.\n");
 		exit(1);
 	}
-}
-void start_cuda(){
-	/*** Move ***/
-	if(ConstB_Flag){
-		//MOVE = MoveB_cuda;
-	}else {
-		MOVE = Move_cuda;
-	}
-	SORT_BOUNDARY = SortBounndary_cuda;
-
-	switch(MainGas){
-	case ARGON:
-		MCC	= MCC_Ar_cuda;
-		CONTIEQ = NULL;
-		break;
-	case OXYGEN:
-		MCC		= MCC_O2_cuda;
-		CONTIEQ = NULL;
-		break;
-	case ARO2:
-		MCC		= MCC_ArO2_cuda;
-		CONTIEQ = NULL;
-		break;
-	}
-	DEPOSIT = Deposit_cuda;
-	DIAG    = Diagnostic;
 }

@@ -6,22 +6,18 @@ void Efield_cuda(){
     float K_t;
     float q_conv;
 
-    VFInit(V_t,0.0,CondNUMR);
-    VFInit(b_t,0.0,CondNUMR);
-    VFInit(phi_cond,0.0,CondNUMR);
 	cudaMemcpy(host_CondVec, dev_CondVec, nsp * CondNUMR * sizeof(GCondA),cudaMemcpyDeviceToHost);
     GCondAInit<<<EFIELD_GRID,EFIELD_BLOCK>>>(CondNUMR, nsp, 0.0, dev_CondVec);
     if(External_Flag){
         // Get voltage 
     for(i=0;i<CondNUMR;i++) {
+		V_t[i] = 0.0;
 		if(Efield_Flag[i]){
 			for(j=0;j<SrcNUM;j++){
                 if(SrcM_ID[j] == i+1){
                     V_t[i] += SrcDC[j] + SrcAC[j]*sin(Src2piFREQ[j]*t+SrcRPHASE[j]);
                 }
             }
-		}else{
-			V_t[i] = 0.0;
 		}
 		K_t = (CC_a[i][1]*extq[i] + CC_a[i][2]*extq_1[i] + CC_a[i][3]*extq_2[i] + CC_a[i][4]*extq_3[i])/CC_a[i][0];
         //convective charge
@@ -49,14 +45,13 @@ void Efield_cuda(){
     }else{ 
         // Get voltage 
     for(i=0;i<CondNUMR;i++) {
+		phi_cond[i] = 0.0f;
 		if(Efield_Flag[i]){
 			for(j=0;j<SrcNUM;j++){
                 if(SrcM_ID[j] == i+1){
                     phi_cond[i] += SrcDC[j] + SrcAC[j]*sin(Src2piFREQ[j]*t+SrcRPHASE[j]);
                 }
             }
-		}else{
-			phi_cond[i] = 0.0f;
 		}
     }
     }
@@ -67,8 +62,13 @@ void Efield_cuda(){
 		VectorSum<<<FIELD_GRID2, FIELD_BLOCK2>>>(Gsize, TotPotential, phi_cond[i], dev_phi_buf);
 		cudaDeviceSynchronize();
     }
+	// TotPotential = laplace * votage
     cudaMemcpy(LapPotential, TotPotential, Gsize * sizeof(float),cudaMemcpyDeviceToDevice);
+	// TotPotential = laplace * votage 
+	// LapPotential = laplace * votage 
 	VectorSum<<<FIELD_GRID2, FIELD_BLOCK2>>>(Gsize, TotPotential, 1, dev_phi);
+	// TotPotential = laplace * votage + Poisson's
+	// LapPotential = laplace * votage 
 	cudaDeviceSynchronize();
     GGACopy_Potential<<<FIELD_GRID2, FIELD_BLOCK2>>>(Gsize, dev_GvecSet, LapPotential, dev_phi);
     VtoEfield<<<FIELD_GRID2, FIELD_BLOCK2>>>(ngx,ngy,dx,dy,hdx,hdy,idx,idy, dev_Sigma, TotPotential, dev_G_sp, dev_CvecSet, dev_GvecSet);
@@ -216,8 +216,8 @@ void Set_MatrixPCG_cuda(){
     // dev_Sigma, dev_Source, TotPotential
     checkCudaErrors(cudaMalloc((void**) &dev_Sigma, Gsize * sizeof(float)));
 	checkCudaErrors(cudaMemset((void *) dev_Sigma, 0, Gsize * sizeof(float)));
-    checkCudaErrors(cudaMalloc((void**) &dev_Source, Gsize * sizeof(float)));
-	checkCudaErrors(cudaMemset((void *) dev_Source, 0, Gsize * sizeof(float)));
+    checkCudaErrors(cudaMalloc((void**) &dev_Source, Gsize * sizeof(float))); // Total charge --> dev_b or dev_R
+	checkCudaErrors(cudaMemset((void *) dev_Source, 0, Gsize * sizeof(float))); // Total charge --> dev_b or dev_R
     checkCudaErrors(cudaMalloc((void**) &TotPotential, Gsize * sizeof(float)));
 	checkCudaErrors(cudaMemset((void *) TotPotential, 0, Gsize * sizeof(float)));
     checkCudaErrors(cudaMalloc((void**) &LapPotential, Gsize * sizeof(float)));

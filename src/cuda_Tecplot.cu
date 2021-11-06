@@ -6,10 +6,10 @@ void Tecplot_save(){
     static int Movie_Init = 1;
     static int PTMovie_Init = 1;
     
-    if(TecplotS_2D_Flag){
+    if(TecplotS_2D_Flag){ // 2D value is overwritten and saved every designated period.
         if(cstep == 1){
             Tecplot_2D();
-        }else if(cstep >= 1 &&(cstep/TecplotS_2D_Ncycle == 1.0f)){
+        }else if(cstep >= 1 &&(cstep%TecplotS_2D_Ncycle == 0)){
             Tecplot_2D();
         }
     }
@@ -25,8 +25,10 @@ void Tecplot_save(){
                     Tecplot_Gsize_Movie(Movie_Init);
                 Movie_Init++;
                 TecplotS_Movie_Count = 0;
-                if(TecplotS_Movie_Frame == Movie_Init) Movie_Init = 1;
             }
+        }else{
+            Movie_Init = 1;
+            TecplotS_Movie_Count = 0;
         }
     }
     if(TecplotS_PT_Movie_Flag){ // Creates one cycle particle movie at regular intervals.
@@ -34,14 +36,7 @@ void Tecplot_save(){
             TecplotS_PT_Movie_Count++;
             if(TecplotS_PT_Movie_SCYCLE == TecplotS_PT_Movie_Count){
                 cudaMemcpy(Host_G_sp, dev_G_sp, nsp * Gsize * sizeof(GPG),cudaMemcpyDeviceToHost);
-                for(isp=0;isp<nsp;isp++){
-                    sum = 0;
-                    for(i=0;i<Gsize;i++)
-                        sum += Host_G_sp[isp*Gsize + i].PtNumInCell;
-                    SP[isp].np = sum;
-                }
                 cudaMemcpy(Host_sp, dev_sp, Total_maxnp * sizeof(GCP),cudaMemcpyDeviceToHost);
-                checkCudaErrors(cudaMemcpy(dev_info_sp, SP, nsp * sizeof(Species), cudaMemcpyHostToDevice));
                 Copy_GCPtoHCP(SP, Host_sp, PtD, Host_G_sp);
                 if(PTMovie_Init == 1)
                     for(isp=0;isp<nsp;isp++) Tecplot_PT_Movie(PTMovie_Init,isp);
@@ -49,8 +44,10 @@ void Tecplot_save(){
                     for(isp=0;isp<nsp;isp++) Tecplot_PT_Movie(PTMovie_Init,isp);
                 PTMovie_Init++;
                 TecplotS_PT_Movie_Count = 0;
-                if(TecplotS_PT_Movie_Frame == PTMovie_Init) PTMovie_Init = 1;
             }
+        }else{
+            PTMovie_Init = 1;
+            TecplotS_PT_Movie_Count = 0;
         }  
     }
 }

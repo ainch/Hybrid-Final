@@ -2,21 +2,20 @@
 
 void Deposit_cuda(){
     int i;
+
     // DepositAtom - Particle > density
 	DepositInitDensity<<<DEPOSIT_GRID,DEPOSIT_BLOCK>>>(Gsize,dev_info_sp,dev_G_sp);
 	//start plot Gsize values
-	cudaDeviceSynchronize();
     DepositAtom<<<DEPOSIT_GRID,DEPOSIT_BLOCK>>>(Gsize,ngy,dev_info_sp,dev_sp,dev_G_sp);
-	cudaDeviceSynchronize();
     DepositBoundary<<<DEPOSIT_GRID,DEPOSIT_BLOCK>>>(Gsize,ngy,nsp,dev_GvecSet,dev_G_sp);
     // Smoothing
     for(i=0;i<N_smt;i++){
-        Smooth_121_A<<<DEPOSIT_GRID,DEPOSIT_BLOCK>>>(ngx, ngy, nsp, dev_GvecSet, dev_G_sp);
-        Smooth_121_B<<<DEPOSIT_GRID,DEPOSIT_BLOCK>>>(ngx, ngy, nsp, dev_GvecSet, dev_G_sp);
+        Smooth_121_x<<<DEPOSIT_GRID,DEPOSIT_BLOCK>>>(ngx, ngy, nsp, dev_GvecSet, dev_G_sp);
+        Smooth_121_y<<<DEPOSIT_GRID,DEPOSIT_BLOCK>>>(ngx, ngy, nsp, dev_GvecSet, dev_G_sp);
     }
     // charge density cal --> dev_Source
-    SumSource<<<DEPOSIT_GRID,DEPOSIT_BLOCK>>>(ngx, ngy, dev_info_sp, dev_GvecSet, dev_G_sp, dev_Sigma, dev_Source);
-    // dev_Source --> dev_b  (PCG setting)
+    SumSource<<<DEPOSIT_GRID,DEPOSIT_BLOCK>>>(nsp, Gsize, ngx, ngy, dev_info_sp, dev_GvecSet, dev_G_sp, dev_Sigma, dev_Source);
+	// dev_Source --> dev_b  (PCG setting)
     PCG_Set<<<DEPOSIT_GRID,DEPOSIT_BLOCK>>>(Gsize,dev_A_idx, dev_GvecSet, dev_Source, dev_R);
 	cudaDeviceSynchronize();
 }
@@ -25,9 +24,9 @@ __global__ void PCG_Set(int Gsize, int *IDX, GGA *vecSet, float *Source, float *
 	if(TID>=Gsize) return;
 	if(IDX[TID]) B[IDX[TID]-1]=Source[TID];
 }
-__global__ void SumSource(int ngx, int ngy, Species *info, GGA *vecSet, GPG *data, float *Sigma, float *Source){
+__global__ void SumSource(int nsp, int Gsize, int ngx,int ngy, Species *info, GGA *vecSet, GPG *data, float *Sigma, float *Source){
      int TID = threadIdx.x + blockIdx.x * blockDim.x;
-     if(TID>=ngx*ngy) return;
+     if(TID>=Gsize) return;
      int i;
      int x,y;
      x=TID/ngy; y=TID%ngy;
@@ -36,64 +35,122 @@ __global__ void SumSource(int ngx, int ngy, Species *info, GGA *vecSet, GPG *dat
      
 	if(x==0) {
 		if(vecSet[TID+ngy].Boundary==DIELECTRIC) {
-            for(i=0;i<info[0].spnum;i++) SumSig += data[TID + i*ngx*ngy].sigma * info[i].q_density;
+            for(i=0;i<nsp;i++) SumSig += data[TID + i*Gsize].sigma * info[i].q_density;
 			Sigma[TID] = 2 * SumSig/vecSet[TID].Area;
 		    SD = SumSig;
 		}
 		else if(vecSet[TID+ngy].Boundary==CONDUCTOR) {
-               for(i=0;i<info[0].spnum;i++) data[TID + i*ngx*ngy].sigma = 0;
+               for(i=0;i<nsp;i++) data[TID + i*Gsize].sigma = 0;
 			SD=0;
 		}
 	}
 	else if(x==ngx-1) {
 		if(vecSet[TID-ngy].Boundary==DIELECTRIC) {
-			for(i=0;i<info[0].spnum;i++) SumSig += data[TID + i*ngx*ngy].sigma * info[i].q_density;
+			for(i=0;i<nsp;i++) SumSig += data[TID + i*Gsize].sigma * info[i].q_density;
 			Sigma[TID] = 2 * SumSig/vecSet[TID].Area;
 		    SD = SumSig;
 		}
 		else if(vecSet[TID-ngy].Boundary==CONDUCTOR) {
-			for(i=0;i<info[0].spnum;i++) data[TID + i*ngx*ngy].sigma = 0;
+			for(i=0;i<nsp;i++) data[TID + i*Gsize].sigma = 0;
 			SD=0;
 		}
 	}
 	else if(y==0) {
 		if(vecSet[TID+1].Boundary==DIELECTRIC) {
-			for(i=0;i<info[0].spnum;i++) SumSig += data[TID + i*ngx*ngy].sigma * info[i].q_density;
+			for(i=0;i<nsp;i++) SumSig += data[TID + i*Gsize].sigma * info[i].q_density;
 			Sigma[TID] = 2 * SumSig/vecSet[TID].Area;
 		    SD = SumSig;
 		}
 		else if(vecSet[TID+1].Boundary==CONDUCTOR) {
-			for(i=0;i<info[0].spnum;i++) data[TID + i*ngx*ngy].sigma = 0;
+			for(i=0;i<nsp;i++) data[TID + i*Gsize].sigma = 0;
 			SD=0;
 		}
 	}
 	else if(y==ngy-1) {
 		if(vecSet[TID-1].Boundary==DIELECTRIC) {
-			for(i=0;i<info[0].spnum;i++) SumSig += data[TID + i*ngx*ngy].sigma * info[i].q_density;
+			for(i=0;i<nsp;i++) SumSig += data[TID + i*Gsize].sigma * info[i].q_density;
 			Sigma[TID] = 2 * SumSig/vecSet[TID].Area;
 		    SD = SumSig;
 		}
 		else if(vecSet[TID-1].Boundary==CONDUCTOR) {
-			for(i=0;i<info[0].spnum;i++) data[TID + i*ngx*ngy].sigma = 0;
+			for(i=0;i<nsp;i++) data[TID + i*Gsize].sigma = 0;
 			SD=0;
 		}
 	}
 	else if(vecSet[TID].Boundary==DIELECTRIC) {
-		for(i=0;i<info[0].spnum;i++) SumSig += data[TID + i*ngx*ngy].sigma * info[i].q_density;
+		for(i=0;i<nsp;i++) SumSig += data[TID + i*Gsize].sigma * info[i].q_density;
 		Sigma[TID] = SumSig/vecSet[TID].Area;
 		SD = SumSig;
 	}
 	else if(vecSet[TID].Boundary==CONDUCTOR) {
-		for(i=0;i<info[0].spnum;i++) data[TID + i*ngx*ngy].sigma = 0;
+		for(i=0;i<nsp;i++) data[TID + i*Gsize].sigma = 0;
 		SD=0;
 	}
 	else {
 		SD=0;
 	}
     SumSig = 0.0;
-    for(i=0;i<info[0].spnum;i++) SumSig += data[TID + i*ngx*ngy].den * info[i].q_density;
+    for(i=0;i<nsp;i++) SumSig += data[TID + i*ngx*ngy].den * info[i].q_density;
 	sum=(SumSig + SD)/EPS0;
 	Source[TID]=sum;
+}
+__global__ void Smooth_121_y(int ngx, int ngy, int nsp, GGA *vecSet, GPG *data){
+    int TID = threadIdx.x + blockIdx.x * blockDim.x;
+    if(TID>=ngx*ngy*nsp) return;
+    int Gsize = ngx*ngy;
+    int ID;
+    int y,a1,a2,a3;
+    ID = (int)TID%(Gsize);
+    y=ID%ngy;
+	// a1,a2,a3
+	if(vecSet[ID].DensRegion){
+		if(y == 0){
+			a1 = 0; 		a2 = 1; 		a3 = 2;
+		}else if(y == ngy-1){
+			a1 = 2; 		a2 = 1; 		a3 = 0;
+		}else if(vecSet[ID-1].DensRegion == 0 && vecSet[ID+1].DensRegion != 0){
+			a1 = 0; 		a2 = 1; 		a3 = 2;
+		}else if(vecSet[ID-1].DensRegion != 0 && vecSet[ID+1].DensRegion == 0){
+			a1 = 2; 		a2 = 1; 		a3 = 0;
+		}else if(vecSet[ID-1].DensRegion == 0 && vecSet[ID+1].DensRegion == 0){
+			a1 = 0; 		a2 = 4; 		a3 = 0;
+		}else{
+			a1 = 1; 		a2 = 1; 		a3 = 1;
+		}
+	}else{
+		a1 = 0; 		a2 = 0; 		a3 = 0;
+	}
+	// smt_den >> den at t direction
+	data[TID].den = 0.25 * (a1 * data[TID-1].smt_den + 2 * a2 * data[TID].smt_den + a3 * data[TID+1].smt_den);
+}
+__global__ void Smooth_121_x(int ngx, int ngy, int nsp, GGA *vecSet, GPG *data){
+    int TID = threadIdx.x + blockIdx.x * blockDim.x;
+    if(TID>=ngx*ngy*nsp) return;
+    int Gsize = ngx*ngy;
+    int ID;
+    int x,a1,a2,a3;
+    ID = (int)TID%(Gsize);
+    x=ID/ngy;
+	// a1,a2,a3
+	if(vecSet[ID].DensRegion){
+		if(x == 0){
+			a1 = 0; 		a2 = 1; 		a3 = 2;
+		}else if(x == ngx-1){
+			a1 = 2; 		a2 = 1; 		a3 = 0;
+		}else if(vecSet[ID-ngy].DensRegion == 0 && vecSet[ID+ngy].DensRegion != 0){
+			a1 = 0; 		a2 = 1; 		a3 = 2;
+		}else if(vecSet[ID-ngy].DensRegion != 0 && vecSet[ID+ngy].DensRegion == 0){
+			a1 = 2; 		a2 = 1; 		a3 = 0;
+		}else if(vecSet[ID-ngy].DensRegion == 0 && vecSet[ID+ngy].DensRegion == 0){
+			a1 = 0; 		a2 = 4; 		a3 = 0;
+		}else{
+			a1 = 1; 		a2 = 1; 		a3 = 1;
+		}
+	}else{
+		a1 = 0; 		a2 = 0; 		a3 = 0;
+	}
+	// den >> smt_den at x direction
+	data[TID].smt_den = 0.25 * (a1 * data[TID-ngy].den + 2 * a2 * data[TID].den + a3 * data[TID+ngy].den);
 }
 __global__ void Smooth_121_A(int ngx, int ngy, int nsp, GGA *vecSet, GPG *data){
     int TID = threadIdx.x + blockIdx.x * blockDim.x;
@@ -104,7 +161,7 @@ __global__ void Smooth_121_A(int ngx, int ngy, int nsp, GGA *vecSet, GPG *data){
     ID = (int)TID%(ngx*ngy);
     x=ID/ngy; y=ID%ngy;
     // den >> smt_den at x direction
-     if(vecSet[ID].Boundary==0){
+    if(vecSet[ID].Boundary==0){
         data[TID].smt_den = 0.25 * (data[TID-ngy].den + 2  *data[TID].den + data[TID+ngy].den);
 	}else if(vecSet[ID].Boundary==CONDUCTOR || vecSet[ID].Boundary==DIELECTRIC) {
 		if(vecSet[ID].Face==LEFT || vecSet[ID].Face==UL_CORN || vecSet[ID].Face==LL_CORN) 
@@ -246,6 +303,8 @@ __global__ void DepositInitDensity(int Gsize, Species *info, GPG *data){
     int TID = threadIdx.x + blockIdx.x * blockDim.x;
     if(TID>=Gsize*info[0].spnum) return;
 	int isp = (int)TID/Gsize;
+
     data[TID].den = 0.0;
+	//if(TID == 0) printf("\nnp[%d] = %d\n",isp,info[isp].np);
 	info[isp].np = 0;
 }

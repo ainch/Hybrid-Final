@@ -101,8 +101,8 @@ void SaveDumpFile(int KEY2,int KEY1,int KEY0){
     fwrite(&KEY2, 4, 1, SaveFile);
     fwrite(&KEY1, 4, 1, SaveFile);
     fwrite(&KEY0, 4, 1, SaveFile);
-    if(KEY2==0 && KEY2==0 && KEY2==0)       V000_DUMP(SaveFile);
-    else if(KEY2==0 && KEY2==0 && KEY2==1)  V001_DUMP(SaveFile);
+    if(KEY2>=0 && KEY1>=0 && KEY0>=0)  V000_DUMP(SaveFile);
+    if(KEY2>=0 && KEY1>=0 && KEY0>=1)  V001_DUMP(SaveFile);
     //Save End
     fclose(SaveFile);
 

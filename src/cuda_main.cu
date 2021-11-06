@@ -1,5 +1,13 @@
 #include "cuda_main.cuh"
-
+#define gpuErrchk(ans) { gpuAssert((ans), __FILE__, __LINE__); }
+inline void gpuAssert(cudaError_t code, const char *file, int line, bool abort=true)
+{
+   if (code != cudaSuccess) 
+   {
+      fprintf(stderr,"\nGPUassert: %s %s %d\n", cudaGetErrorString(code), file, line);
+      if (abort) exit(code);
+   }
+}
 extern "C" void main_cuda()
 {
     int isp,i,k,sum;
@@ -51,7 +59,9 @@ extern "C" void main_cuda()
 	    cudaEventElapsedTime( &gputime, start, stop );
 	    cudaEventDestroy( start );cudaEventDestroy( stop );
         gputime_field+=gputime;
-		totaltime+=gputime;
+		totaltime+=gputime;        
+        gpuErrchk( cudaPeekAtLastError() );
+        gpuErrchk( cudaDeviceSynchronize() );
         fprintf(stderr,"TIME = %1.4e (s),[%3d][%3d], Iter = %3d, res = %1.3e\r",t,tstep,cstep,*FIter,*dot_result);
         ///////////////////////////////////////////////////////////////////////////
         cudaEventCreate(&start); cudaEventCreate(&stop);
@@ -61,7 +71,9 @@ extern "C" void main_cuda()
 	    cudaEventElapsedTime( &gputime, start, stop );
 	    cudaEventDestroy( start );cudaEventDestroy( stop );
         gputime_efield+=gputime;
-		totaltime+=gputime;
+		totaltime+=gputime;        
+        gpuErrchk( cudaPeekAtLastError() );
+        gpuErrchk( cudaDeviceSynchronize() );
         ///////////////////////////////////////////////////////////////////////////
         cudaEventCreate(&start); cudaEventCreate(&stop);
 	    cudaEventRecord( start, 0 );
@@ -70,7 +82,9 @@ extern "C" void main_cuda()
 	    cudaEventElapsedTime( &gputime, start, stop );
 	    cudaEventDestroy( start );cudaEventDestroy( stop );
         gputime_move+=gputime;
-		totaltime+=gputime;
+		totaltime+=gputime;        
+        gpuErrchk( cudaPeekAtLastError() );
+        gpuErrchk( cudaDeviceSynchronize() );
         ///////////////////////////////////////////////////////////////////////////
         cudaEventCreate(&start); cudaEventCreate(&stop);
 	    cudaEventRecord( start, 0 );
@@ -79,7 +93,9 @@ extern "C" void main_cuda()
 	    cudaEventElapsedTime( &gputime, start, stop );
 	    cudaEventDestroy( start );cudaEventDestroy( stop );
         gputime_sort+=gputime;
-		totaltime+=gputime;
+		totaltime+=gputime;        
+        gpuErrchk( cudaPeekAtLastError() );
+        gpuErrchk( cudaDeviceSynchronize() );
         ///////////////////////////////////////////////////////////////////////////
         cudaEventCreate(&start); cudaEventCreate(&stop);
 	    cudaEventRecord( start, 0 );
@@ -88,7 +104,9 @@ extern "C" void main_cuda()
 	    cudaEventElapsedTime( &gputime, start, stop );
 	    cudaEventDestroy( start );cudaEventDestroy( stop );
         gputime_mcc+=gputime;
-		totaltime+=gputime;
+		totaltime+=gputime;        
+        gpuErrchk( cudaPeekAtLastError() );
+        gpuErrchk( cudaDeviceSynchronize() );
         ///////////////////////////////////////////////////////////////////////////
         cudaEventCreate(&start); cudaEventCreate(&stop);
 	    cudaEventRecord( start, 0 );
@@ -97,11 +115,13 @@ extern "C" void main_cuda()
 	    cudaEventElapsedTime( &gputime, start, stop );
 	    cudaEventDestroy( start );cudaEventDestroy( stop );
         gputime_deposit+=gputime;
-		totaltime+=gputime;
+		totaltime+=gputime;        
+        gpuErrchk( cudaPeekAtLastError() );
+        gpuErrchk( cudaDeviceSynchronize() );
         ///////////////////////////////////////////////////////////////////////////
         cudaEventCreate(&start); cudaEventCreate(&stop);
 		cudaEventRecord( start, 0 );
-		if(Conti_Flag) (*CONTIEQ)();
+		//if(Conti_Flag) (*CONTIEQ)();
 		cudaEventRecord( stop, 0 ); cudaEventSynchronize( stop );
 		cudaEventElapsedTime( &gputime, start, stop );
 		cudaEventDestroy( start );cudaEventDestroy( stop );
@@ -115,7 +135,9 @@ extern "C" void main_cuda()
 	    cudaEventElapsedTime( &gputime, start, stop );
 	    cudaEventDestroy( start );cudaEventDestroy( stop );
         gputime_diag+=gputime;
-		totaltime+=gputime;
+		totaltime+=gputime;        
+        gpuErrchk( cudaPeekAtLastError() );
+        gpuErrchk( cudaDeviceSynchronize() );
         ///////////////////////////////////////////////////////////////////////////
         cudaEventCreate(&start); cudaEventCreate(&stop);
 	    cudaEventRecord( start, 0 );
@@ -124,7 +146,9 @@ extern "C" void main_cuda()
 	    cudaEventElapsedTime( &gputime, start, stop );
 	    cudaEventDestroy( start );cudaEventDestroy( stop );
         gputime_Tec+=gputime;
-		totaltime+=gputime;
+		totaltime+=gputime;        
+        gpuErrchk( cudaPeekAtLastError() );
+        gpuErrchk( cudaDeviceSynchronize() );
         ///////////////////////////////////////////////////////////////////////////
         cudaEventCreate(&start); cudaEventCreate(&stop);
 		cudaEventRecord( start, 0 );
@@ -133,11 +157,14 @@ extern "C" void main_cuda()
 		cudaEventElapsedTime( &gputime, start, stop );
 		cudaEventDestroy( start );cudaEventDestroy( stop );
 		gputime_dump+=gputime;
-		totaltime+=gputime;
+		totaltime+=gputime;        
+        gpuErrchk( cudaPeekAtLastError() );
+        gpuErrchk( cudaDeviceSynchronize() );
         ///////////////////////////////////////////////////////////////////////////  
         if(isnan(*dot_result) || isinf(*dot_result)){
             printf("\nField solver Error!\n");
             exit(1);
         }
+        //if(tstep > 3) exit(1);
     }
 }
