@@ -24,7 +24,7 @@ void SetParticleLoad(int isp, float Ninit, int load_type, float x_left,float x_r
 		for (i = 0; i < ncx; i++) {
 			for (j = 0; j < ncy; j++) {
 				if (vec_C[i*ncy+j].PlasmaRegion == 1) {
-					if (i >= x0 && i < x1 && j >= y0 && j < y1){
+					if (i >= x0 && i <= x1 && j >= y0 && j <= y1){
 						Num = n_per_cell;
                     }else{
                         Num = 0;

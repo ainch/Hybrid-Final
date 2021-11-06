@@ -62,7 +62,8 @@ extern "C" void main_cuda()
 		totaltime+=gputime;        
         gpuErrchk( cudaPeekAtLastError() );
         gpuErrchk( cudaDeviceSynchronize() );
-        fprintf(stderr,"TIME = %1.4e (s),[%3d][%3d], Iter = %3d, res = %1.3e\r",t,tstep,cstep,*FIter,*dot_result);
+        fprintf(stderr,"TIME = %1.4e (s),[%3d][%3d], Iter = %3d, Field Solve time=%2.4f (ms)\r",t,tstep,cstep,*FIter,gputime);
+        exit(1);
         ///////////////////////////////////////////////////////////////////////////
         cudaEventCreate(&start); cudaEventCreate(&stop);
 	    cudaEventRecord( start, 0 );

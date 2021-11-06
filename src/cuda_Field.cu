@@ -84,6 +84,23 @@ void PCG_SOLVER(){
         (void*)&dev_Z, (void*)&N,     (void*)&nz,   (void*)&PCGtol2,
         (void*)&FIter, (void*)&dot_result,
     };
+	/* TEST
+	float *test;
+	int j;
+	test = (float *)malloc(A_size*sizeof(float));
+	checkCudaErrors(cudaMemset((void *) dev_AP, 0, N * sizeof(float)));
+	checkCudaErrors(cudaMemset((void *) dev_P, 0, N * sizeof(float)));
+	checkCudaErrors(cudaMemset((void *) dev_Z, 0, N * sizeof(float)));
+	checkCudaErrors(cudaMemset((void *) dev_X, 0, N * sizeof(float)));
+	cudaMemcpy(test, dev_R, A_size * sizeof(float),cudaMemcpyDeviceToHost);
+	for (i = 0; i < ngx; i++) {
+		for (j = 0; j < ngy; j++) {
+			if (A_idx[i][j] != 0){
+            	if(test[A_idx[i][j]] !=0) fprintf(stderr,"x[%d]y[%d]i[%d] = %g \n",i,j,A_idx[i][j],test[A_idx[i][j]]);
+			}
+		}
+	}
+	*/
     cudaLaunchCooperativeKernel((void *)PCG,FIELD_GRID,FIELD_BLOCK, kernelArgs, sMemSize, NULL);
     cudaDeviceSynchronize();
     PCG_Deposit<<<FIELD_GRID2,FIELD_BLOCK2>>>(Gsize, dev_A_idx, dev_GvecSet, dev_X, dev_phi);
@@ -139,6 +156,7 @@ void PCG_SOLVER_Laplace(){
 	printf(" - Iter = %d, rsold^2 = %g\n",*FIter,*dot_result);
 	printf("/*******************************************************/\n");
     PCG_Deposit_Temp<<<FIELD_GRID2,FIELD_BLOCK2>>>(Gsize, dev_A_idx, dev_X, dev_GvecSet);
+	checkCudaErrors(cudaMemset((void *) dev_X, 0, N * sizeof(float)));
     if(MainGas == ARGON || MainGas == OXYGEN) Calculate_1GasPara<<<FIELD_GRID2,FIELD_BLOCK2>>>(Gsize, BG[0].mass, BG[0].Pres, dev_GvecSet); 
     else if(MainGas == ARO2) Calculate_2GasPara<<<FIELD_GRID2,FIELD_BLOCK2>>>(Gsize, BG[0].mass, BG[0].Pres, BG[1].mass, BG[1].Pres, dev_GvecSet);
     checkCudaErrors(cudaMemcpy(vec_G, dev_GvecSet, Gsize * sizeof(GGA), cudaMemcpyDeviceToHost));
@@ -340,13 +358,10 @@ __global__ void PCG(int *I, int *J, float *val, float *x, float *M, float *Ax, f
     A_x_X_p_Y(na, Ax, r, N, grid); 
     Vec_x_Vec(M, r, Z, N, cta, grid);
     CopyVector(Z, p, N, grid);
-    //if(r[TID] !=0) printf("r[%d] = %g\n",TID,r[TID]);
     cg::sync(grid);
     Vec_Dot_Sum(r, Z, d_result, N, cta, grid); 
     cg::sync(grid);
     rsold = *d_result;
-    //if(threadIdx.x == 0 && blockIdx.x == 0) printf("First:rsold = %g N = %d, nnz = %d\n",rsold,N,nnz);
-    //return;
     while (rsold > tol2 && *Iter <= max_iter){
         Mat_x_Vec(I, J, val, nnz, N, a, p, Ax, cta, grid);
         if (threadIdx.x == 0 && blockIdx.x == 0){
@@ -354,13 +369,11 @@ __global__ void PCG(int *I, int *J, float *val, float *x, float *M, float *Ax, f
             *d_result = 0.0;  
         } 
         cg::sync(grid);
-        //if(Ax[TID] !=0) printf("Ax[%d] = %g\n",TID,Ax[TID]);
         Vec_Dot_Sum(p, Ax, d_result, N, cta, grid);
         cg::sync(grid);
         Temp = *d_result;
-        //if(threadIdx.x == 0 && blockIdx.x == 0) printf("Temp = %g\n",Temp);
-        //return;
         alpha = (Temp)? rsold/Temp:0.0f;
+		if(threadIdx.x == 0 && blockIdx.x == 0) printf("Iter = %d, temp = %g,  Res = %g AL = %g\n",*Iter,Temp,rsold,alpha);
         A_x_X_p_Y(alpha, p, x, N, grid);
         nalpha = -alpha;
         A_x_X_p_Y(nalpha, Ax, r, N, grid);
@@ -375,8 +388,7 @@ __global__ void PCG(int *I, int *J, float *val, float *x, float *M, float *Ax, f
         beta = (rsold) ? rnew/rsold: 0.0f;
         A_x_Y_p_X(beta, Z, p, N, grid);
         rsold = rnew;
-        rnew = 0.0;
-        //if(threadIdx.x == 0 && blockIdx.x == 0 && k<20) printf("Iter = %d, temp = %g,  AL = %g, BE = %g Res = %g\n",k,Temp,alpha,beta,rsold);
+        //rnew = 0.0;
     }
     //if(threadIdx.x == 0 && blockIdx.x == 0 ) printf("End Iter = %d, Res = %g, b = %g, a = %g\n",*Iter,Temp,alpha,beta,rsold);
 }
