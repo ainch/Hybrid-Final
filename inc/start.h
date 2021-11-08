@@ -71,6 +71,9 @@ int ConstB_Flag; // Magnetic field
 int PD_intv;
 float PD_Ratio;
 //
+float EndTime;
+float Margin_ave_np;
+int Flag_ave_np, Same_ave_np;
 int Basic_Flag; // 0 : Basic, 1: OTHERS
 //
 int nRct_cx,nRct_rc; // Number of reaction _ cross section or Reaction rate

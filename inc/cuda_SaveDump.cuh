@@ -57,6 +57,10 @@ extern int		TotalT_D;
 extern int		TotalT_H;
 extern int		TotalT_M;
 extern int		TotalT_S;
+extern float EndTime;
+extern float Margin_ave_np;
+extern int Flag_ave_np, Same_ave_np, Stack_ave_np;
+extern int Basic_Flag; // 0 : Basic, 1: OTHERS
 extern void Copy_GCPtoHCP(Species *info, GCP *A, HCP *B, GPG *C);
 #ifndef __CUDA_SAVEDUMP_CUH__
 #define __CUDA_SAVEDUMP_CUH__

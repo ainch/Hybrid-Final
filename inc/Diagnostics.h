@@ -5,6 +5,7 @@ extern int HISTMAX;
 extern int dHIST;
 extern int Gsize;
 extern int CondNUMR;
+extern Species *SP;// particle species
 #ifndef __DIAGNOSTICS_H__
 #define __DIAGNOSTICS_H__
 int Hcount;
@@ -22,6 +23,8 @@ float *vec_Source, *sum_Source, *ave_Source; // [Gsize] Charge density
 float *vec_Sigma, *sum_Sigma, *ave_Sigma; // [Gsize] [Dielectric] surface charge density, [Conductor] Surface current
 float *sum_Ex, *ave_Ex, *sum_Ey, *ave_Ey;
 //
+int *Stack_ave_np, *ave_np;
+float *new_ave_np, *old_ave_np;
 void Diagnostic_Setting();
 #endif
 

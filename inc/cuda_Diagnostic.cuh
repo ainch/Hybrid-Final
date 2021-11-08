@@ -3,6 +3,7 @@ extern float dt;
 extern double t;  // real time
 extern int tstep; // number of time step
 extern int cstep; // Number of Cycle step
+extern int DT_PIC;
 extern int N_ave;
 extern int Gsize,Csize;
 extern int ngx,ngy,ncx,ncy;
@@ -59,6 +60,11 @@ extern float *MCC_rate, *ave_MCC_rate;
 extern float *dev_MCC_rate,*dev_ave_MCC_rate;
 extern GGA *vec_G,*dev_GvecSet;
 extern GCA *vec_C,*dev_CvecSet;
+extern float Margin_ave_np;
+extern int Flag_ave_np, Same_ave_np;
+extern int Basic_Flag; // 0 : Basic, 1: OTHERS
+extern int *Stack_ave_np, *ave_np;
+extern float *new_ave_np, *old_ave_np;
 #ifndef __CUDA_DIAGNOSTIC_CUH__
 #define __CUDA_DIAGNOSTIC_CUH__
 float *Host_G_buf, *Host_C_buf;

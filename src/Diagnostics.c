@@ -29,12 +29,21 @@ void Diagnostic_Setting(){
 	// Source : Total Charge density 
    	// Potential : current potential
 	// Sigma : [Dielectric] surface charge density, [Conductor] Surface current
-   	vec_Potential = VFMalloc(Gsize); VFInit(vec_Potential,0.0,Gsize); // current potential
-   	ave_Potential = VFMalloc(Gsize); VFInit(ave_Potential,0.0,Gsize); // averaged potential
-   	vec_Source = VFMalloc(Gsize); VFInit(vec_Source,0.0,Gsize);
-   	ave_Source = VFMalloc(Gsize); VFInit(ave_Source,0.0,Gsize);
-	vec_Sigma = VFMalloc(Gsize); VFInit(vec_Sigma,0.0,Gsize);
-   	ave_Sigma = VFMalloc(Gsize); VFInit(ave_Sigma,0.0,Gsize);
-   	ave_Ex = VFMalloc(Gsize); VFInit(ave_Ex,0.0,Gsize);
-   	ave_Ey = VFMalloc(Gsize); VFInit(ave_Ey,0.0,Gsize);
+   	vec_Potential = VFMalloc(Gsize); VFInit(vec_Potential,0.0f,Gsize); // current potential
+   	ave_Potential = VFMalloc(Gsize); VFInit(ave_Potential,0.0f,Gsize); // averaged potential
+   	vec_Source = VFMalloc(Gsize); VFInit(vec_Source,0.0f,Gsize);
+   	ave_Source = VFMalloc(Gsize); VFInit(ave_Source,0.0f,Gsize);
+	vec_Sigma = VFMalloc(Gsize); VFInit(vec_Sigma,0.0f,Gsize);
+   	ave_Sigma = VFMalloc(Gsize); VFInit(ave_Sigma,0.0f,Gsize);
+   	ave_Ex = VFMalloc(Gsize); VFInit(ave_Ex,0.0f,Gsize);
+   	ave_Ey = VFMalloc(Gsize); VFInit(ave_Ey,0.0f,Gsize);
+	
+	// average np check
+	ave_np = VIMalloc(nsp); VIInit(ave_np,0,nsp);
+	Stack_ave_np = VIMalloc(nsp); VIInit(Stack_ave_np,0,nsp);
+    new_ave_np = VFMalloc(nsp); VFInit(new_ave_np,0.0f,nsp);
+    old_ave_np = VFMalloc(nsp); VFInit(old_ave_np,0.0f,nsp);
+	for(isp = 0;isp<nsp;isp++){
+        old_ave_np[isp] = SP[isp].np;
+    }
 }

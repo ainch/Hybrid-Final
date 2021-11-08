@@ -3,6 +3,9 @@
 void Diagnostic_Basic(){
     int i, j, k, isp, index;
     static int power_init = 0;
+    float cond_current, dis_current, phi_now, power_total;
+    int buf1=0, now_np;
+    float buf;
     if(nave_count==N_ave){  // average calculate
         Conti_Flag = 1;  
         Average_Particle_Density<<<DIAG_NSPG_GRID, DIAG_NSPG_BLOCK>>>(nsp, Gsize, N_ave, dev_info_sp, dev_G_sp);
@@ -26,7 +29,39 @@ void Diagnostic_Basic(){
         Accomulate_Field_Data<<<DIAG_G_GRID, DIAG_G_BLOCK>>>(Gsize,TotPotential,dev_Source,dev_Sigma,dev_GvecSet
                         ,dev_sum_Potential,dev_sum_Source,dev_sum_Sigma,dev_sum_Ex,dev_sum_Ey);
         nave_count++;
+    }  
+    // Steady-state check
+    if(Flag_ave_np){
+        for(isp = 0;isp<nsp;isp++){
+            cudaMemcpy(&now_np, &dev_info_sp[isp].np, sizeof(int),cudaMemcpyDeviceToHost);
+            ave_np[isp] += now_np;
+        }
+        if(tstep%DT_PIC == 0){
+            buf1 = 0;
+            printf("\n diff persent : ");  
+            for(isp = 0;isp<nsp;isp++){
+                new_ave_np[isp] = (float)ave_np[isp] / (float)DT_PIC;
+                ave_np[isp] = 0;
+                buf = 100.0f * fabs((new_ave_np[isp]-old_ave_np[isp])/new_ave_np[isp]);
+                printf("%s = %2.3g % [new = %g, old = %g]\n",SP[isp].name,buf,new_ave_np[isp],old_ave_np[isp]);               
+                old_ave_np[isp] = new_ave_np[isp];
+                if(buf < Margin_ave_np){
+                    Stack_ave_np[isp]++;
+                }else{
+                    Stack_ave_np[isp] = 0;
+                }
+                if(Stack_ave_np[isp] >= Same_ave_np){
+                    buf1++;
+                }
+            }
+            printf("\n");  
+            if(buf1>=nsp){
+                Flag_ave_np = 0;
+                Basic_Flag = 0;
+            }
+        }
     }
+    if(Basic_Flag<-1) if(cstep > abs(Basic_Flag)) Basic_Flag = 0;
     // Calculate Current for Power driven or External circuit 
     cudaMemcpy(Host_G_buf, dev_Sigma, Gsize * sizeof(float),	cudaMemcpyDeviceToHost);
 	for (i = 0; i < CondNUMR; i++) {
@@ -41,7 +76,6 @@ void Diagnostic_Basic(){
 		}
 	}
     // Power driven and Dual frequency;
-    float cond_current, dis_current, phi_now, power_total;
     cudaMemcpy(CondCharge, dev_CondCharge, nsp * CondNUMR * sizeof(float),cudaMemcpyDeviceToHost);
     power_total = 0;
     for (i = 0; i < CondNUMR; i++) {
@@ -106,9 +140,9 @@ void Diagnostic_Basic(){
     if((--Hcount)==0){
         t_array[hist_count] = (float) t;
         iter_array[hist_count] = (float) *FIter;
-        cudaMemcpy(SP, dev_info_sp, nsp * sizeof(Species), cudaMemcpyDeviceToHost);
         for (isp = 0; isp < nsp; isp++) {
-            HistPt[isp].np[hist_count] = SP[isp].np;
+            cudaMemcpy(&now_np, &dev_info_sp[isp].np, sizeof(int),cudaMemcpyDeviceToHost);
+            HistPt[isp].np[hist_count] = now_np;
         }
         for (i = 0; i < CondNUMR; i++) {
             Current_hist[i][hist_count] = Current_Now[i];

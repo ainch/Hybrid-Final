@@ -778,23 +778,31 @@ void InputRead() {
    if(PD_intv == 0) PD_intv = 5 * DT_PIC;
    PD_Ratio = (float)json_object_get_number(BufObject,"VoltageUpDownRatio");
    if(PD_Ratio == 0.0f) PD_Ratio = 0.05;  
-   /*
+   
    BufObject = json_object_get_object(SubObject4,"SimulationStop");
-   printf("EndTime(s) = %g\n",(float)json_object_get_number(BufObject,"EndTime(s)"));
-   BufObject2 = json_object_get_object(BufObject,"AutoSaturation");
-   printf("Flag = %d\n",(int)json_object_get_number(BufObject2,"Flag"));
-   printf("AveMargin(%) = %g\n",(float)json_object_get_number(BufObject2,"AveMargin(%)"));
-   printf("SatGoal = %d\n",(int)json_object_get_number(BufObject2,"SatGoal"));
-   */
+   EndTime = (float)json_object_get_number(BufObject,"EndTime(s)");
+   BufObject2 = json_object_get_object(BufObject,"SteadyStatePrint");
+   Flag_ave_np = (int)json_object_get_number(BufObject2,"Flag");
+   Margin_ave_np = (float)json_object_get_number(BufObject2,"AveMargin(%)");
+   Same_ave_np = (int)json_object_get_number(BufObject2,"SatGoal");
    //-------------------------//
    //-------Diagnostics-------//
    //-------------------------//
    if(PRINT_Flag) printf("Read Diagnostics\n");
    SubObject5 = json_object_get_object(MainObject,"Diagnostics");
    Basic_Flag = (int)json_object_get_number(SubObject5,"BasicDiagnostic");
-   if(Basic_Flag){
+   if(Basic_Flag > 0){
       printf("\tDiagnostic_ON after %d cycle.\n",Basic_Flag);
       printf("\tMinimized Diagnostics mode\n");
+   }else if(Basic_Flag == -1){
+      printf("\tAutomatic Diagnostic mode.\n");
+      printf("\t[If the Ave_np value is less than %g %, and it repeats %d cycles,]\n",Margin_ave_np,Same_ave_np);
+      printf("\t[Major Diagnostics calculation will be start.\n");
+   }else if(Basic_Flag < -1){
+      printf("\tAutomatic Diagnostic mode.\n");
+      printf("\t[If the Ave_np value is less than %g %, and it repeats %d cycles,]\n",Margin_ave_np,Same_ave_np);
+      printf("\t[Major Diagnostics calculation will be start.\n");
+      printf("\t[No Diagnostic until Cycle < abs(Basic_Flag)");
    }else{
       printf("\tDiagnostic_ON\n");
    }

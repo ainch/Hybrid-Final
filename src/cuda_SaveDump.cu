@@ -83,6 +83,7 @@ void V000_DUMP(FILE *SF){
 void SaveDumpFile(int KEY2,int KEY1,int KEY0){
     FILE *SaveFile;
 	char FileName[512];
+    char Steadstate[512];
     int isp;
     float time_sum;
     /////// Function access management ///////
@@ -148,23 +149,32 @@ void SaveDumpFile(int KEY2,int KEY1,int KEY0){
 			TotalT_D++;
 			TotalT_H -= 24;
 	}
+    //
+    if(Flag_ave_np){
+        sprintf(Steadstate, "Not yet]--");
+    }else{
+        sprintf(Steadstate, "Ok or Function Off]--");
+    }
+    //
     fprintf(stderr, "Dump at t=%1.5e(s),Step[%d]Cycle[%d] %s\n", t,tstep,cstep,FileName);
 	for (isp = 0; isp < nsp; isp++){
 		fprintf(stderr, "%s : %d,  ", SP[isp].name, SP[isp].np);
 	}fprintf(stderr, "\n");
-	fprintf(stderr, "Domain size : %d X %d =%d,  ", ngx, ngy, ngx * ngy);
-	fprintf(stderr, "Time: %d(d), %d(h), %d(m), %d(s)\n",TotalT_D,TotalT_H,TotalT_M,TotalT_S);
-	time_sum = gputime_field+gputime_efield+gputime_move+gputime_sort+gputime_mcc+gputime_continue+gputime_deposit+gputime_diag+gputime_Tec+gputime_dump;
-	fprintf(stderr, "Total : time = %2.8f	(s)\n", time_sum * 0.001);
-	fprintf(stderr, "Field	: time = %2.8f	(s)		rate = %g	(%)\n",	gputime_field * 0.001, gputime_field * 100 / time_sum);
-	fprintf(stderr, "Efield	: time = %2.8f	(s)		rate = %g	(%)\n",	gputime_efield * 0.001, gputime_efield * 100 / time_sum);
-	fprintf(stderr, "Move	: time = %2.8f	(s)		rate = %g	(%)\n",	gputime_move * 0.001, gputime_move * 100 / time_sum);
-	fprintf(stderr, "Sort	: time = %2.8f	(s)		rate = %g	(%)\n",	gputime_sort * 0.001, gputime_sort * 100 / time_sum);
-	fprintf(stderr, "Mcc	: time = %2.8f	(s)		rate = %g	(%)\n",	gputime_mcc * 0.001, gputime_mcc * 100 / time_sum);
-	fprintf(stderr, "CONTI	: time = %2.8f	(s)		rate = %g	(%)\n",	gputime_continue * 0.001, gputime_continue * 100 / time_sum);
-	fprintf(stderr, "Depo	: time = %2.8f	(s)		rate = %g	(%)\n",	gputime_deposit * 0.001, gputime_deposit * 100 / time_sum);
-	fprintf(stderr, "Diag	: time = %2.8f	(s)		rate = %g	(%)\n",	gputime_diag * 0.001, gputime_diag * 100 / time_sum);
-	fprintf(stderr, "Tecplot: time = %2.8f	(s)		rate = %g	(%)\n",	gputime_Tec * 0.001, gputime_Tec * 100 / time_sum);
-	fprintf(stderr, "Dump	: time = %2.8f	(s)		rate = %g	(%)\n",	gputime_dump * 0.001, gputime_dump * 100 / time_sum);
-	fprintf(stderr, "------------------------------------------------------------------------------\n");
+    fprintf(stderr, "Domain size : %d X %d =%d,   --[Steady-State Check : %s\n", ngx, ngy, ngx * ngy,Steadstate);
+    if((cstep<Basic_Flag || Basic_Flag < 0) == 0){
+        time_sum = gputime_field+gputime_efield+gputime_move+gputime_sort+gputime_mcc+gputime_continue+gputime_deposit+gputime_diag+gputime_Tec+gputime_dump;
+	    fprintf(stderr, "Total : Time = %2.8f (s) = ", time_sum * 0.001);
+        fprintf(stderr, "Time: %d(d), %d(h), %d(m), %d(s)\n",TotalT_D,TotalT_H,TotalT_M,TotalT_S);
+        fprintf(stderr, "Field	: time = %2.8f	(s)		rate = %g	(%)\n",	gputime_field * 0.001, gputime_field * 100 / time_sum);
+	    fprintf(stderr, "Efield	: time = %2.8f	(s)		rate = %g	(%)\n",	gputime_efield * 0.001, gputime_efield * 100 / time_sum);
+	    fprintf(stderr, "Move	: time = %2.8f	(s)		rate = %g	(%)\n",	gputime_move * 0.001, gputime_move * 100 / time_sum);
+	    fprintf(stderr, "Sort	: time = %2.8f	(s)		rate = %g	(%)\n",	gputime_sort * 0.001, gputime_sort * 100 / time_sum);
+	    fprintf(stderr, "Mcc	: time = %2.8f	(s)		rate = %g	(%)\n",	gputime_mcc * 0.001, gputime_mcc * 100 / time_sum);
+	    fprintf(stderr, "CONTI	: time = %2.8f	(s)		rate = %g	(%)\n",	gputime_continue * 0.001, gputime_continue * 100 / time_sum);
+	    fprintf(stderr, "Depo	: time = %2.8f	(s)		rate = %g	(%)\n",	gputime_deposit * 0.001, gputime_deposit * 100 / time_sum);
+	    fprintf(stderr, "Diag	: time = %2.8f	(s)		rate = %g	(%)\n",	gputime_diag * 0.001, gputime_diag * 100 / time_sum);
+	    fprintf(stderr, "Tecplot: time = %2.8f	(s)		rate = %g	(%)\n",	gputime_Tec * 0.001, gputime_Tec * 100 / time_sum);
+	    fprintf(stderr, "Dump	: time = %2.8f	(s)		rate = %g	(%)\n",	gputime_dump * 0.001, gputime_dump * 100 / time_sum);
+    }
+    fprintf(stderr, "------------------------------------------------------------------------------\n");
 }

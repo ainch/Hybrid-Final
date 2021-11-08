@@ -26,11 +26,16 @@ extern "C" void main_cuda()
     PCG_SOLVER_Laplace();
     Set_Fluid_cuda();
 	Deposit_cuda();
-    while(cstep<Basic_Flag){
+    while(cstep<Basic_Flag || Basic_Flag < 0){
         t+=dt; // real time
         tstep++; // step
         if((tstep%CYCLE_NUM) == 0) cstep++;
+        cudaEventCreate(&start); cudaEventCreate(&stop);
+	    cudaEventRecord( start, 0 );
         PCG_SOLVER();
+        cudaEventRecord( stop, 0 ); cudaEventSynchronize( stop );
+	    cudaEventElapsedTime( &gputime, start, stop );
+	    cudaEventDestroy( start );cudaEventDestroy( stop );
         (*EFIELD)();
         Move_cuda();
         SortBounndary_cuda();
@@ -40,7 +45,7 @@ extern "C" void main_cuda()
         Deposit_cuda();
         Diagnostic_Basic();
         SaveDumpFile(0,0,0);
-        printf("TIME = %1.4e (s), Iter = %3d, res = %1.3e\r",t,*FIter,*dot_result);
+        fprintf(stderr,"TIME = %1.4e (s),[%3d][%3d], Iter = %3d, Field Solve time=%2.4f (ms)\r",t,tstep,cstep,*FIter,gputime);
         if(isnan(*dot_result) || isinf(*dot_result)){
             printf("\nField solver Error!\n");
             exit(1);
