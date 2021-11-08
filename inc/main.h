@@ -30,6 +30,7 @@ char DumpFile[80];  // DUMP FILE NAME
 char *ConstBFile;  // DUMP FILE NAME
 void display_title();
 void display_finish();
+void (*EFIELD)();
 void (*MOVE)();
 void (*SORT_BOUNDARY)();
 void (*MCC)();

@@ -1,15 +1,53 @@
 #include "cuda_Field.cuh"
-
-void Efield_cuda(){
+void Efield_cuda_Basic(){ // No circuit
     // Function
     int i,j,isp;
     float K_t;
-    float q_conv;
-
-	cudaMemcpy(host_CondVec, dev_CondVec, nsp * CondNUMR * sizeof(GCondA),cudaMemcpyDeviceToHost);
-    GCondAInit<<<EFIELD_GRID,EFIELD_BLOCK>>>(CondNUMR, nsp, 0.0, dev_CondVec);
-    if(External_Flag){
-        // Get voltage 
+    float q_conv;   
+	cudaMemcpy(CondCharge, dev_CondCharge, nsp * CondNUMR * sizeof(float),cudaMemcpyDeviceToHost);
+	cudaMemset((void *) dev_CondCharge, 0, nsp * CondNUMR * sizeof(float));
+    // Get voltage 
+    for(i=0;i<CondNUMR;i++) {
+		phi_cond[i] = 0.0f;
+		if(Efield_Flag[i]){
+			for(j=0;j<SrcNUM;j++){
+                if(SrcM_ID[j] == i+1){
+                    phi_cond[i] += SrcDC[j] + SrcAC[j]*sin(Src2piFREQ[j]*t+SrcRPHASE[j]);
+					V_t[i] = phi_cond[i];
+                }
+            }
+		}
+    }
+    // Potential summation
+	cudaMemset((void *) TotPotential, 0.0, Gsize * sizeof(float));
+    for(i=0;i<CondNUMR;i++){
+        LoadAT2D<<<FIELD_GRID2,FIELD_BLOCK2>>>(Lap_PHI_Sol, pitch, i, dev_phi_buf, Gsize);
+		VectorSum<<<FIELD_GRID2, FIELD_BLOCK2>>>(Gsize, TotPotential, phi_cond[i], dev_phi_buf);
+		//cudaDeviceSynchronize();
+    }
+	// TotPotential = laplace * votage
+    cudaMemcpy(LapPotential, TotPotential, Gsize * sizeof(float),cudaMemcpyDeviceToDevice);
+	// TotPotential = laplace * votage 
+	// LapPotential = laplace * votage 
+	VectorSum<<<FIELD_GRID2, FIELD_BLOCK2>>>(Gsize, TotPotential, 1, dev_phi);
+	// TotPotential = laplace * votage + Poisson's
+	// LapPotential = laplace * votage 
+    GGACopy_Potential<<<FIELD_GRID2, FIELD_BLOCK2>>>(Gsize, dev_GvecSet, LapPotential, dev_phi);
+	Cond_Sigma<<<FIELD_GRID2,FIELD_BLOCK2>>>(ngx, ngy, hdx, hdy, idxy, zlength, dev_GvecSet, dev_CvecSet, dev_info_sp, dev_G_sp, dev_phi, dev_Sigma);
+	//Cond_Sigma_v2<<<FIELD_GRID2,FIELD_BLOCK2>>>(ngx, ngy, hdx, hdy, idxy, zlength, dev_GvecSet, dev_CvecSet, dev_info_sp, dev_G_sp, dev_phi, dev_Sigma);
+	VtoEfield<<<FIELD_GRID2, FIELD_BLOCK2>>>(ngx,ngy,dx,dy,hdx,hdy,idx,idy, dev_Sigma, TotPotential, dev_G_sp, dev_CvecSet, dev_GvecSet);
+    //cudaMemcpy(vec_G, dev_GvecSet, Gsize * sizeof(GGA), cudaMemcpyDeviceToHost); // for TEST
+    //Main_Variable_printorSave(); // for TEST
+	cudaDeviceSynchronize();
+}
+void Efield_cuda(){ // External circuit
+    // Function
+    int i,j,isp;
+    float K_t;
+    float q_conv;   
+	cudaMemcpy(CondCharge, dev_CondCharge, nsp * CondNUMR * sizeof(float),cudaMemcpyDeviceToHost);
+	cudaMemset((void *) dev_CondCharge, 0, nsp * CondNUMR * sizeof(float));
+    // Get voltage 
     for(i=0;i<CondNUMR;i++) {
 		V_t[i] = 0.0;
 		if(Efield_Flag[i]){
@@ -23,7 +61,7 @@ void Efield_cuda(){
         //convective charge
 		q_conv=0;
 		for(isp=0;isp<nsp;isp++) {
-			q_conv-=SP[isp].q_density*host_CondVec[isp*CondNUMR+i].Charge;
+			q_conv-=SP[isp].q_density*CondCharge[isp*CondNUMR+i];
 		}
         b_t[i]=(V_t[i]-K_t)/CC_a[i][0] - extq[i] - q_conv + Surf_charge[i] - Pois_SIG_Sol[i];
 		for(j=0;j<CondNUMR;j++){
@@ -42,19 +80,6 @@ void Efield_cuda(){
 		extq_1[i] = extq[i];
 		extq[i] = (V_t[i] - phi_cond[i]) / CC_a[i][0] - K_t;
     }
-    }else{ 
-        // Get voltage 
-    for(i=0;i<CondNUMR;i++) {
-		phi_cond[i] = 0.0f;
-		if(Efield_Flag[i]){
-			for(j=0;j<SrcNUM;j++){
-                if(SrcM_ID[j] == i+1){
-                    phi_cond[i] += SrcDC[j] + SrcAC[j]*sin(Src2piFREQ[j]*t+SrcRPHASE[j]);
-                }
-            }
-		}
-    }
-    }
     // Potential summation
 	cudaMemset((void *) TotPotential, 0.0, Gsize * sizeof(float));
     for(i=0;i<CondNUMR;i++){
@@ -69,8 +94,8 @@ void Efield_cuda(){
 	VectorSum<<<FIELD_GRID2, FIELD_BLOCK2>>>(Gsize, TotPotential, 1, dev_phi);
 	// TotPotential = laplace * votage + Poisson's
 	// LapPotential = laplace * votage 
-	cudaDeviceSynchronize();
     GGACopy_Potential<<<FIELD_GRID2, FIELD_BLOCK2>>>(Gsize, dev_GvecSet, LapPotential, dev_phi);
+	Cond_Sigma<<<FIELD_GRID2,FIELD_BLOCK2>>>(ngx, ngy,  hdx, hdy, idxy, zlength, dev_GvecSet, dev_CvecSet, dev_info_sp, dev_G_sp, dev_phi, dev_Sigma);
     VtoEfield<<<FIELD_GRID2, FIELD_BLOCK2>>>(ngx,ngy,dx,dy,hdx,hdy,idx,idy, dev_Sigma, TotPotential, dev_G_sp, dev_CvecSet, dev_GvecSet);
     //cudaMemcpy(vec_G, dev_GvecSet, Gsize * sizeof(GGA), cudaMemcpyDeviceToHost); // for TEST
     //Main_Variable_printorSave(); // for TEST
@@ -78,34 +103,17 @@ void Efield_cuda(){
 }
 void PCG_SOLVER(){
     int i;
-    void *kernelArgs[] = {
+	void *kernelArgs[] = {
         (void*)&dev_Ai,(void*)&dev_Aj,(void*)&dev_A,(void*)&dev_X,
         (void*)&dev_M, (void*)&dev_AP,(void*)&dev_P,(void*)&dev_R,
         (void*)&dev_Z, (void*)&N,     (void*)&nz,   (void*)&PCGtol2,
-        (void*)&FIter, (void*)&dot_result,
+        (void*)&FIter, (void*)&dot_result2,
     };
-	/* TEST
-	float *test;
-	int j;
-	test = (float *)malloc(A_size*sizeof(float));
-	checkCudaErrors(cudaMemset((void *) dev_AP, 0, N * sizeof(float)));
-	checkCudaErrors(cudaMemset((void *) dev_P, 0, N * sizeof(float)));
-	checkCudaErrors(cudaMemset((void *) dev_Z, 0, N * sizeof(float)));
-	checkCudaErrors(cudaMemset((void *) dev_X, 0, N * sizeof(float)));
-	cudaMemcpy(test, dev_R, A_size * sizeof(float),cudaMemcpyDeviceToHost);
-	for (i = 0; i < ngx; i++) {
-		for (j = 0; j < ngy; j++) {
-			if (A_idx[i][j] != 0){
-            	if(test[A_idx[i][j]] !=0) fprintf(stderr,"x[%d]y[%d]i[%d] = %g \n",i,j,A_idx[i][j],test[A_idx[i][j]]);
-			}
-		}
-	}
-	*/
-    cudaLaunchCooperativeKernel((void *)PCG,FIELD_GRID,FIELD_BLOCK, kernelArgs, sMemSize, NULL);
+	cudaLaunchCooperativeKernel((void *)PCG_float,FIELD_GRID,FIELD_BLOCK, kernelArgs, sMemSize, NULL);
     cudaDeviceSynchronize();
     PCG_Deposit<<<FIELD_GRID2,FIELD_BLOCK2>>>(Gsize, dev_A_idx, dev_GvecSet, dev_X, dev_phi);
     cudaMemset((void *) dev_phi_buf, 0.0, Gsize * sizeof(float));
-    Cond_Sigma<<<FIELD_GRID2,FIELD_BLOCK2>>>(ngx, ngy, dx, dy, zlength, dev_GvecSet, dev_CvecSet, dev_info_sp, dev_G_sp, dev_phi, dev_phi_buf);
+    Cond_Sigma<<<FIELD_GRID2,FIELD_BLOCK2>>>(ngx, ngy, hdx, hdy, idxy, zlength, dev_GvecSet, dev_CvecSet, dev_info_sp, dev_G_sp, dev_phi, dev_phi_buf);
 	cudaMemcpy(Host_G_buf, dev_phi_buf, Gsize * sizeof(float),cudaMemcpyDeviceToHost);
 	VFInit(Pois_SIG_Sol,0.0,CondNUMR); 
 	cudaDeviceSynchronize();
@@ -114,12 +122,12 @@ void PCG_SOLVER(){
 void PCG_SOLVER_Laplace(){
     int j,k;
     cudaEvent_t start, stop; // SPEED TEST
-    float gputime; // SPEED TEST
+    float gputime = 0.0f; // SPEED TEST
     void *kernelArgs[] = {
         (void*)&dev_Ai,(void*)&dev_Aj,(void*)&dev_A,(void*)&dev_X,
         (void*)&dev_M, (void*)&dev_AP,(void*)&dev_P,(void*)&dev_R,
         (void*)&dev_Z, (void*)&N,     (void*)&nz,   (void*)&PCGtol2,
-        (void*)&FIter, (void*)&dot_result,
+        (void*)&FIter, (void*)&dot_result2,
     };
     for (k = 0; k < CondNUMR; k++) {
         printf(" Laplace Solution %d",k);
@@ -127,13 +135,13 @@ void PCG_SOLVER_Laplace(){
         checkCudaErrors(cudaMemset((void *) dev_X, 0, N * sizeof(float)));
         cudaEventCreate(&start); cudaEventCreate(&stop);
 	    cudaEventRecord( start, 0 );
-        checkCudaErrors(cudaLaunchCooperativeKernel((void *)PCG,FIELD_GRID,FIELD_BLOCK, kernelArgs, sMemSize, NULL));
+        checkCudaErrors(cudaLaunchCooperativeKernel((void *)PCG_float,FIELD_GRID,FIELD_BLOCK, kernelArgs, sMemSize, NULL));
         checkCudaErrors(cudaDeviceSynchronize());
-        cudaEventRecord( stop, 0 ); 
+        cudaEventRecord( stop, 0 ); cudaEventSynchronize( stop );
 	    cudaEventElapsedTime( &gputime, start, stop );
 	    cudaEventDestroy( start );cudaEventDestroy( stop );
         printf(" : Conductor %d = 1 V, Other CondUCTOR = 0 V\n",k+1);
-        printf(" - Iter = %d, time = %2.3f (ms), rsold^2 = %g\n",*FIter,gputime,*dot_result);
+        printf(" - Iter = %d, time = %2.3g (ms), rsold^2 = %g\n",*FIter,gputime,*dot_result2);
         //
         checkCudaErrors(cudaMemset((void *) dev_phi, 0.0, Gsize * sizeof(float)));
         PCG_Deposit_Lap<<<FIELD_GRID2,FIELD_BLOCK2>>>(Gsize, dev_A_idx, dev_GvecSet, k, dev_X, dev_phi);
@@ -148,18 +156,20 @@ void PCG_SOLVER_Laplace(){
         for (j = 0; j < CondNUMR; j++) printf(" - Lap_SIG_Sol[%d][%d]= %g\n", k, j, Lap_SIG_Sol[k][j]);
         SaveAT2D<<<FIELD_GRID2,FIELD_BLOCK2>>>(Lap_PHI_Sol, pitch, k, dev_phi, Gsize);
     }
-    checkCudaErrors(cudaMemset((void *) dev_phi_buf, 0.0, Gsize * sizeof(float)));
-    printf("/***********Calculate temperature distribution**********/\n");
-    checkCudaErrors(cudaMemcpy(dev_R, dev_Tb, N * sizeof(float),cudaMemcpyDeviceToDevice));
-    checkCudaErrors(cudaMemset((void *) dev_X, 0, N * sizeof(float)));
-	checkCudaErrors(cudaLaunchCooperativeKernel((void *)PCG,FIELD_GRID,FIELD_BLOCK, kernelArgs, sMemSize, NULL));
-	printf(" - Iter = %d, rsold^2 = %g\n",*FIter,*dot_result);
-	printf("/*******************************************************/\n");
-    PCG_Deposit_Temp<<<FIELD_GRID2,FIELD_BLOCK2>>>(Gsize, dev_A_idx, dev_X, dev_GvecSet);
+	checkCudaErrors(cudaMemset((void *) dev_phi_buf, 0.0, Gsize * sizeof(float)));
+	if(DumpFlag == 0){
+    	printf("/***********Calculate temperature distribution**********/\n");
+    	checkCudaErrors(cudaMemcpy(dev_R, dev_Tb, N * sizeof(float),cudaMemcpyDeviceToDevice));
+    	checkCudaErrors(cudaMemset((void *) dev_X, 0, N * sizeof(float)));
+		checkCudaErrors(cudaLaunchCooperativeKernel((void *)PCG_float,FIELD_GRID,FIELD_BLOCK, kernelArgs, sMemSize, NULL));
+		printf(" - Iter = %d, rsold^2 = %g\n",*FIter,*dot_result2);
+		printf("/*******************************************************/\n");
+    	PCG_Deposit_Temp<<<FIELD_GRID2,FIELD_BLOCK2>>>(Gsize, dev_A_idx, dev_X, dev_GvecSet);
+    	if(MainGas == ARGON || MainGas == OXYGEN) Calculate_1GasPara<<<FIELD_GRID2,FIELD_BLOCK2>>>(Gsize, BG[0].mass, BG[0].Pres, dev_GvecSet); 
+    	else if(MainGas == ARO2) Calculate_2GasPara<<<FIELD_GRID2,FIELD_BLOCK2>>>(Gsize, BG[0].mass, BG[0].Pres, BG[1].mass, BG[1].Pres, dev_GvecSet);
+    	checkCudaErrors(cudaMemcpy(vec_G, dev_GvecSet, Gsize * sizeof(GGA), cudaMemcpyDeviceToHost));
+	}
 	checkCudaErrors(cudaMemset((void *) dev_X, 0, N * sizeof(float)));
-    if(MainGas == ARGON || MainGas == OXYGEN) Calculate_1GasPara<<<FIELD_GRID2,FIELD_BLOCK2>>>(Gsize, BG[0].mass, BG[0].Pres, dev_GvecSet); 
-    else if(MainGas == ARO2) Calculate_2GasPara<<<FIELD_GRID2,FIELD_BLOCK2>>>(Gsize, BG[0].mass, BG[0].Pres, BG[1].mass, BG[1].Pres, dev_GvecSet);
-    checkCudaErrors(cudaMemcpy(vec_G, dev_GvecSet, Gsize * sizeof(GGA), cudaMemcpyDeviceToHost));
 }
 void Set_MatrixPCG_cuda(){
     int i,j;
@@ -220,6 +230,8 @@ void Set_MatrixPCG_cuda(){
     //Unified memory value for Field residual
     cudaMallocManaged((void **)&dot_result, sizeof(double));
     *dot_result = 0.0;
+	cudaMallocManaged((void **)&dot_result2, sizeof(float));
+    *dot_result2 = 0.0;
     cudaMallocManaged((void **)&FIter, sizeof(int));
     *FIter = 0;
     //
@@ -240,26 +252,9 @@ void Set_MatrixPCG_cuda(){
 	checkCudaErrors(cudaMemset((void *) TotPotential, 0, Gsize * sizeof(float)));
     checkCudaErrors(cudaMalloc((void**) &LapPotential, Gsize * sizeof(float)));
 	checkCudaErrors(cudaMemset((void *) LapPotential, 0, Gsize * sizeof(float)));
-    // Condunctor 
-    host_CondVec = (GCondA *) malloc(nsp * CondNUMR * sizeof(GCondA));
-    for(i=0;i < nsp * CondNUMR; i++){
-        host_CondVec[i].Charge = 0.0;
-    }
-    checkCudaErrors(cudaMalloc((void**)&dev_CondVec, nsp * CondNUMR * sizeof(GCondA)));
-    GCondAInit<<<EFIELD_GRID,EFIELD_BLOCK>>>(CondNUMR, nsp, 0.0, dev_CondVec);
-    // Efield
-    phi_cond = VFMalloc(CondNUMR);
-    AM = MFMalloc(CondNUMR,CondNUMR);
-    MFDigonal(AM,1.0,0.0,CondNUMR,CondNUMR);
-    V_t = VFMalloc(CondNUMR); VFInit(V_t,0.0,CondNUMR);
-    b_t = VFMalloc(CondNUMR); VFInit(b_t,0.0,CondNUMR);
-    extq = VFMalloc(CondNUMR); VFInit(extq,0.0,CondNUMR);
-    extq_1 = VFMalloc(CondNUMR);VFInit(extq_1,0.0,CondNUMR);
-    extq_2 = VFMalloc(CondNUMR);VFInit(extq_2,0.0,CondNUMR);
-    extq_3 = VFMalloc(CondNUMR);VFInit(extq_3,0.0,CondNUMR);
-    Surf_charge = VFMalloc(CondNUMR); VFInit(Surf_charge,0.0,CondNUMR);
-    Old_Surf_charge = VFMalloc(CondNUMR); VFInit(Old_Surf_charge,0.0,CondNUMR);
-    Old2_Surf_charge = VFMalloc(CondNUMR); VFInit(Old2_Surf_charge,0.0,CondNUMR);
+	// Condunctor 
+	checkCudaErrors(cudaMalloc((void**)&dev_CondCharge, nsp * CondNUMR * sizeof(float)));
+	checkCudaErrors(cudaMemset((void *)dev_CondCharge, 0, nsp * CondNUMR * sizeof(float)));
 }
 __global__ void GGACopy_Potential(int Gsize, GGA *vecG, float *V1, float *V2){
 	int TID = threadIdx.x + blockIdx.x * blockDim.x;
@@ -272,14 +267,6 @@ __global__ void VectorSum(int Gsize,float *TotPhi,float V,float *Phi){
 	if(TID>=Gsize) return;
 	//if(TID<5) printf(" VectorSum:TID[%d]\n",TID);
 	TotPhi[TID]+=V*Phi[TID];
-}
-__global__ void GCondAInit(int CondNUMR, int nsp, float Value, GCondA *data){
-    int TID = threadIdx.x + blockIdx.x * blockDim.x;
-	if(TID>=CondNUMR) return;
-    int i;
-    for(i=0;i<nsp;i++){
-        data[i*CondNUMR+TID].Charge = Value;
-    }
 }
 __device__ void Mat_x_Vec(int *I, int *J, float *val, int nnz, int num_rows, float alpha, float *inputVecX, 
                         float *outputVecY, cg::thread_block &cta, const cg::grid_group &grid){
@@ -373,7 +360,7 @@ __global__ void PCG(int *I, int *J, float *val, float *x, float *M, float *Ax, f
         cg::sync(grid);
         Temp = *d_result;
         alpha = (Temp)? rsold/Temp:0.0f;
-		if(threadIdx.x == 0 && blockIdx.x == 0) printf("Iter = %d, temp = %g,  Res = %g AL = %g\n",*Iter,Temp,rsold,alpha);
+		//if(threadIdx.x == 0 && blockIdx.x == 0) printf("Iter = %d, temp = %g,  Res = %g AL = %g\n",*Iter,Temp,rsold,alpha);
         A_x_X_p_Y(alpha, p, x, N, grid);
         nalpha = -alpha;
         A_x_X_p_Y(nalpha, Ax, r, N, grid);
@@ -444,7 +431,7 @@ __global__ void Cond_Sigma_Lap(int ngx, int ngy, float dx, float dy, float zleng
 		}
 	}
 }
-__global__ void Cond_Sigma(int ngx, int ngy, float dx, float dy, float zlength, 
+__global__ void Cond_Sigma(int ngx, int ngy, float hdx, float hdy, float idxy, float zlength, 
 					GGA *vecG, GCA *vecC, Species *info, GPG *data, float *Phi, float *Sigma)
 {
 	int TID=blockDim.x*(gridDim.x*blockIdx.y+blockIdx.x)+threadIdx.x;
@@ -478,30 +465,110 @@ __global__ void Cond_Sigma(int ngx, int ngy, float dx, float dy, float zlength,
 
 	if((vecG[TID].Boundary==CONDUCTOR || vecG[TID].Boundary==DIRICHLET) && vecG[TID].Face!=NO_FACE) {
 		if(vecG[TID].Face==UP) {
-			Sigma[TID] = 0.5*(vecC[EPS_TID].eps+vecC[EPS_left].eps)*(Phi[TID]-Phi[Phi_up])/dy-0.5*SumSig/dx;
+			Sigma[TID] = hdy*(vecC[EPS_TID].eps+vecC[EPS_left].eps)*(Phi[TID]-Phi[Phi_up])-hdx*SumSig;
 		}
 		else if(vecG[TID].Face==DOWN) {
-			Sigma[TID] = 0.5*(vecC[EPS_down].eps+vecC[EPS_cross].eps)*(Phi[TID]-Phi[Phi_down])/dy-0.5*SumSig/dx;
+			Sigma[TID] = hdy*(vecC[EPS_down].eps+vecC[EPS_cross].eps)*(Phi[TID]-Phi[Phi_down])-hdx*SumSig;
 		}
 		else if(vecG[TID].Face==LEFT) {
-			Sigma[TID] = 0.5*(vecC[EPS_left].eps+vecC[EPS_cross].eps)*(Phi[TID]-Phi[Phi_left])/dx-0.5*SumSig/dx;
+			Sigma[TID] = hdx*(vecC[EPS_left].eps+vecC[EPS_cross].eps)*(Phi[TID]-Phi[Phi_left])-hdy*SumSig;
 		}
 		else if(vecG[TID].Face==RIGHT) {
-			Sigma[TID] = 0.5*(vecC[EPS_TID].eps+vecC[EPS_down].eps)*(Phi[TID]-Phi[Phi_right])/dx-0.5*SumSig/dx;
+			Sigma[TID] = hdx*(vecC[EPS_TID].eps+vecC[EPS_down].eps)*(Phi[TID]-Phi[Phi_right])-hdy*SumSig;
 		}
 		else if(vecG[TID].Face==UL_CORN) {
-			Sigma[TID] = 0.5*(vecC[EPS_TID].eps+vecC[EPS_left].eps)*(Phi[TID]-Phi[Phi_up])/dy+0.5*(vecC[EPS_left].eps+vecC[EPS_cross].eps)*(Phi[TID]-Phi[Phi_left])/dx-1.5*SumSig/(dx+dy);
+			Sigma[TID] = hdy*(vecC[EPS_TID].eps+vecC[EPS_left].eps)*(Phi[TID]-Phi[Phi_up])+hdx*(vecC[EPS_left].eps+vecC[EPS_cross].eps)*(Phi[TID]-Phi[Phi_left])-idxy*SumSig;
 		}
 		else if(vecG[TID].Face==UR_CORN) {
-			Sigma[TID] = 0.5*(vecC[EPS_TID].eps+vecC[EPS_left].eps)*(Phi[TID]-Phi[Phi_up])/dy+0.5*(vecC[EPS_TID].eps+vecC[EPS_down].eps)*(Phi[TID]-Phi[Phi_right])/dx-1.5*SumSig/(dx+dy);
+			Sigma[TID] = hdy*(vecC[EPS_TID].eps+vecC[EPS_left].eps)*(Phi[TID]-Phi[Phi_up])+hdx*(vecC[EPS_TID].eps+vecC[EPS_down].eps)*(Phi[TID]-Phi[Phi_right])-idxy*SumSig;
 		}
 		else if(vecG[TID].Face==LL_CORN) {
-			Sigma[TID] = 0.5*(vecC[EPS_down].eps+vecC[EPS_cross].eps)*(Phi[TID]-Phi[Phi_down])/dy+0.5*(vecC[EPS_left].eps+vecC[EPS_cross].eps)*(Phi[TID]-Phi[Phi_left])/dx-1.5*SumSig/(dx+dy);
+			Sigma[TID] = hdy*(vecC[EPS_down].eps+vecC[EPS_cross].eps)*(Phi[TID]-Phi[Phi_down])+hdx*(vecC[EPS_left].eps+vecC[EPS_cross].eps)*(Phi[TID]-Phi[Phi_left])-idxy*SumSig;
 		}
 		else if(vecG[TID].Face==LR_CORN) {
-			Sigma[TID] = 0.5*(vecC[EPS_down].eps+vecC[EPS_cross].eps)*(Phi[TID]-Phi[Phi_down])/dy+0.5*(vecC[EPS_TID].eps+vecC[EPS_down].eps)*(Phi[TID]-Phi[Phi_right])/dx-1.5*SumSig/(dx+dy);
+			Sigma[TID] = hdy*(vecC[EPS_down].eps+vecC[EPS_cross].eps)*(Phi[TID]-Phi[Phi_down])+hdx*(vecC[EPS_TID].eps+vecC[EPS_down].eps)*(Phi[TID]-Phi[Phi_right])-idxy*SumSig;
 		}
 	}
+}
+__global__ void Cond_Sigma_v2(int ngx, int ngy, float hdx, float hdy, float idxy, float zlength, 
+					GGA *vecG, GCA *vecC, Species *info, GPG *data, float *Phi, float *Sigma)
+{
+	int TID=blockDim.x*(gridDim.x*blockIdx.y+blockIdx.x)+threadIdx.x;
+	int x, y;
+    int i;
+    float SumSig;
+	int Phi_left, Phi_right, Phi_up, Phi_down;
+	int EPS_TID, EPS_left, EPS_down, EPS_cross, EPS_xover, EPS_yover;
+	float a,b,c;
+	if(TID>=ngx*ngy) return;
+	//if(TID<5) printf("Cond_Sigma:TID[%d]\n",TID);
+	x=TID/ngy; y=TID%ngy;
+	//Calculate surface charge
+	EPS_TID=x*(ngy-1)+y;
+	EPS_left=(x) ? EPS_TID-ngy+1:EPS_TID;
+	EPS_down=(y) ? EPS_TID-1:EPS_TID;
+	EPS_cross=EPS_left+EPS_down-EPS_TID;
+	EPS_xover=(x==ngx-1) ? ngy-1: 0;
+	EPS_yover=(y==ngy-1) ? 1: 0;
+	EPS_TID-=(EPS_xover+EPS_yover);
+	EPS_left-=EPS_yover;
+	EPS_down-=EPS_xover;
+
+	Phi_left =(x) ? TID-ngy:TID;
+	Phi_right=(x==ngx-1) ? TID:TID+ngy;
+	Phi_down =(y) ? TID-1:TID;
+	Phi_up =(y==ngy-1) ? TID:TID+1;
+
+    SumSig = 0;
+    for(i=0;i<info[0].spnum;i++) SumSig += data[TID + i*ngx*ngy].den * info[i].q_density;
+
+	if((vecG[TID].Boundary==CONDUCTOR || vecG[TID].Boundary==DIRICHLET) && vecG[TID].Face!=NO_FACE) {
+		if(vecG[TID].Face==UP) {
+			a = hdy*(vecC[EPS_TID].eps+vecC[EPS_left].eps)*(Phi[TID]-Phi[Phi_up]);
+			b = 0.0f;
+			c = hdx*SumSig;
+		}
+		else if(vecG[TID].Face==DOWN) {
+			a = hdy*(vecC[EPS_down].eps+vecC[EPS_cross].eps)*(Phi[TID]-Phi[Phi_down]);
+			b = 0.0f;
+			c = hdx*SumSig;
+		}
+		else if(vecG[TID].Face==LEFT) {
+			a = hdx*(vecC[EPS_left].eps+vecC[EPS_cross].eps)*(Phi[TID]-Phi[Phi_left]);
+			b = 0.0f;
+			c = hdy*SumSig;
+		}
+		else if(vecG[TID].Face==RIGHT) {
+			a = hdx*(vecC[EPS_TID].eps+vecC[EPS_down].eps)*(Phi[TID]-Phi[Phi_right]);
+			b = 0.0f;
+			c = hdy*SumSig;
+		}
+		else if(vecG[TID].Face==UL_CORN) {
+			a = hdy*(vecC[EPS_TID].eps+vecC[EPS_left].eps)*(Phi[TID]-Phi[Phi_up]);
+			b = hdx*(vecC[EPS_left].eps+vecC[EPS_cross].eps)*(Phi[TID]-Phi[Phi_left]);
+			c = idxy*SumSig;
+		}
+		else if(vecG[TID].Face==UR_CORN) {
+			a = hdy*(vecC[EPS_TID].eps+vecC[EPS_left].eps)*(Phi[TID]-Phi[Phi_up]);
+			b = hdx*(vecC[EPS_TID].eps+vecC[EPS_down].eps)*(Phi[TID]-Phi[Phi_right]);
+			c = idxy*SumSig;
+		}
+		else if(vecG[TID].Face==LL_CORN) {
+			a = hdy*(vecC[EPS_down].eps+vecC[EPS_cross].eps)*(Phi[TID]-Phi[Phi_down]);
+			b = hdx*(vecC[EPS_left].eps+vecC[EPS_cross].eps)*(Phi[TID]-Phi[Phi_left]);
+			c = idxy*SumSig;
+		}
+		else if(vecG[TID].Face==LR_CORN) {
+			a = hdy*(vecC[EPS_down].eps+vecC[EPS_cross].eps)*(Phi[TID]-Phi[Phi_down]);
+			b = hdx*(vecC[EPS_TID].eps+vecC[EPS_down].eps)*(Phi[TID]-Phi[Phi_right]);
+			c = idxy*SumSig;
+		}else{
+			return;
+		}
+	}else{
+		return;
+	}
+	Sigma[TID] = a + b - c;
 }
 __global__ void PCG_Deposit(int Gsize, int *IDX, GGA *vecG, float *X, float *PHI){
 	int TID=blockDim.x*(gridDim.x*blockIdx.y+blockIdx.x)+threadIdx.x;
@@ -805,4 +872,87 @@ void cofactor(float **matrix, float size) {
 	for (i = 0; i < size; i++)
 		free(m_cofactor[i]);
 	free(m_cofactor);
+}
+__global__ void PCG_float(int *I, int *J, float *val, float *x, float *M, float *Ax, float *p, float *r, float *Z, 
+            int N, int nnz, float tol2, int *Iter, float *d_result){
+    //Jacovi diagonal preconditioner version
+    cg::thread_block cta = cg::this_thread_block();
+    cg::grid_group grid = cg::this_grid();
+    //int TID = blockDim.x*(gridDim.x*blockIdx.y+blockIdx.x)+threadIdx.x;
+    int max_iter = 100000;
+    float a = 1.0f;
+    float na = -1.0f;
+    float rsold,rnew,Temp;
+    float nalpha,alpha,beta;
+    rsold = 0.0f;
+    if (threadIdx.x == 0 && blockIdx.x == 0){
+        *Iter = 0;
+        *d_result = 0.0f;  
+    } 
+    Mat_x_Vec(I, J, val, nnz, N, a, x, Ax, cta, grid); 
+    A_x_X_p_Y(na, Ax, r, N, grid); 
+    Vec_x_Vec(M, r, Z, N, cta, grid);
+    CopyVector(Z, p, N, grid);
+    cg::sync(grid);
+    Vec_Dot_Sum_F(r, Z, d_result, N, cta, grid); 
+    cg::sync(grid);
+    rsold = *d_result;
+    while (rsold > tol2 && *Iter <= max_iter){
+        Mat_x_Vec(I, J, val, nnz, N, a, p, Ax, cta, grid);
+        if (threadIdx.x == 0 && blockIdx.x == 0){
+            *Iter = *Iter + 1;
+            *d_result = 0.0f;  
+        } 
+        cg::sync(grid);
+        Vec_Dot_Sum_F(p, Ax, d_result, N, cta, grid);
+        cg::sync(grid);
+        Temp = *d_result;
+        alpha = (Temp)? rsold/Temp:0.0f;
+		//if(threadIdx.x == 0 && blockIdx.x == 0) printf("Iter = %d, temp = %g,  Res = %g AL = %g\n",*Iter,Temp,rsold,alpha);
+        A_x_X_p_Y(alpha, p, x, N, grid);
+        nalpha = -alpha;
+        A_x_X_p_Y(nalpha, Ax, r, N, grid);
+        Vec_x_Vec(M, r, Z, N, cta, grid);
+        if (threadIdx.x == 0 && blockIdx.x == 0){
+            *d_result = 0.0f;  
+        } 
+        cg::sync(grid);
+        Vec_Dot_Sum_F(r, Z, d_result, N, cta, grid);
+        cg::sync(grid);
+        rnew = *d_result;
+        beta = (rsold) ? rnew/rsold: 0.0f;
+        A_x_Y_p_X(beta, Z, p, N, grid);
+        rsold = rnew;
+        //rnew = 0.0;
+    }
+    //if(threadIdx.x == 0 && blockIdx.x == 0 ) printf("End Iter = %d, Res = %g, b = %g, a = %g\n",*Iter,Temp,alpha,beta,rsold);
+}
+__device__ void Vec_Dot_Sum_F(float *vecA, float *vecB, float *result, int size, const cg::thread_block &cta, const cg::grid_group &grid)
+{
+   __shared__ float tmp[THREADS_PER_BLOCK];
+    float temp_sum = 0.0;
+    for (int i=grid.thread_rank(); i < size; i+=grid.size()){
+        temp_sum += (float) (vecA[i] * vecB[i]);
+    }
+    tmp[cta.thread_rank()] = temp_sum;
+    cg::sync(cta);
+    cg::thread_block_tile<32> tile32 = cg::tiled_partition<32>(cta);
+    float beta  = temp_sum;
+    float temp;
+    for (int i = tile32.size() / 2; i > 0; i >>= 1) {
+        if (tile32.thread_rank() < i) {
+            temp       = tmp[cta.thread_rank() + i];
+            beta       += temp;
+            tmp[cta.thread_rank()] = beta;
+        }
+        cg::sync(tile32);
+    }
+    cg::sync(cta);
+    if (cta.thread_rank() == 0) {
+        beta  = 0.0;
+        for (int i = 0; i < cta.size(); i += tile32.size()) {
+            beta  += tmp[i];
+        }
+        atomicAdd(result, beta);
+    }
 }

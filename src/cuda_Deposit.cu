@@ -2,7 +2,6 @@
 
 void Deposit_cuda(){
     int i;
-
     // DepositAtom - Particle > density
 	DepositInitDensity<<<DEPOSIT_GRID,DEPOSIT_BLOCK>>>(Gsize,dev_info_sp,dev_G_sp);
 	//start plot Gsize values
@@ -40,7 +39,7 @@ __global__ void SumSource(int nsp, int Gsize, int ngx,int ngy, Species *info, GG
 		    SD = SumSig;
 		}
 		else if(vecSet[TID+ngy].Boundary==CONDUCTOR) {
-               for(i=0;i<nsp;i++) data[TID + i*Gsize].sigma = 0;
+            for(i=0;i<nsp;i++) data[TID + i*Gsize].sigma = 0;
 			SD=0;
 		}
 	}
@@ -103,22 +102,26 @@ __global__ void Smooth_121_y(int ngx, int ngy, int nsp, GGA *vecSet, GPG *data){
     ID = (int)TID%(Gsize);
     y=ID%ngy;
 	// a1,a2,a3
+	a1 = 0; 		
+	a2 = 1; 		
+	a3 = 0;
 	if(vecSet[ID].DensRegion){
 		if(y == 0){
-			a1 = 0; 		a2 = 1; 		a3 = 2;
+			a3 = 2;
 		}else if(y == ngy-1){
-			a1 = 2; 		a2 = 1; 		a3 = 0;
+			a1 = 2;
 		}else if(vecSet[ID-1].DensRegion == 0 && vecSet[ID+1].DensRegion != 0){
-			a1 = 0; 		a2 = 1; 		a3 = 2;
+			a3 = 2;
 		}else if(vecSet[ID-1].DensRegion != 0 && vecSet[ID+1].DensRegion == 0){
-			a1 = 2; 		a2 = 1; 		a3 = 0;
+			a1 = 2;
 		}else if(vecSet[ID-1].DensRegion == 0 && vecSet[ID+1].DensRegion == 0){
-			a1 = 0; 		a2 = 4; 		a3 = 0;
+			a2 = 4;
 		}else{
-			a1 = 1; 		a2 = 1; 		a3 = 1;
+			a1 = 1; 		
+			a3 = 1;
 		}
 	}else{
-		a1 = 0; 		a2 = 0; 		a3 = 0;
+		a2 = 0;
 	}
 	// smt_den >> den at t direction
 	data[TID].den = 0.25 * (a1 * data[TID-1].smt_den + 2 * a2 * data[TID].smt_den + a3 * data[TID+1].smt_den);
@@ -132,22 +135,26 @@ __global__ void Smooth_121_x(int ngx, int ngy, int nsp, GGA *vecSet, GPG *data){
     ID = (int)TID%(Gsize);
     x=ID/ngy;
 	// a1,a2,a3
+	a1 = 0; 		
+	a2 = 1; 		
+	a3 = 0;
 	if(vecSet[ID].DensRegion){
 		if(x == 0){
-			a1 = 0; 		a2 = 1; 		a3 = 2;
+			a3 = 2;
 		}else if(x == ngx-1){
-			a1 = 2; 		a2 = 1; 		a3 = 0;
+			a1 = 2;
 		}else if(vecSet[ID-ngy].DensRegion == 0 && vecSet[ID+ngy].DensRegion != 0){
-			a1 = 0; 		a2 = 1; 		a3 = 2;
+			a3 = 2;
 		}else if(vecSet[ID-ngy].DensRegion != 0 && vecSet[ID+ngy].DensRegion == 0){
-			a1 = 2; 		a2 = 1; 		a3 = 0;
+			a1 = 2;
 		}else if(vecSet[ID-ngy].DensRegion == 0 && vecSet[ID+ngy].DensRegion == 0){
-			a1 = 0; 		a2 = 4; 		a3 = 0;
+			a2 = 4;
 		}else{
-			a1 = 1; 		a2 = 1; 		a3 = 1;
+			a1 = 1; 		
+			a3 = 1;
 		}
 	}else{
-		a1 = 0; 		a2 = 0; 		a3 = 0;
+		a2 = 0;
 	}
 	// den >> smt_den at x direction
 	data[TID].smt_den = 0.25 * (a1 * data[TID-ngy].den + 2 * a2 * data[TID].den + a3 * data[TID+ngy].den);

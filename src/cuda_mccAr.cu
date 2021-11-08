@@ -28,7 +28,7 @@ __device__ void Direct_Argon_Electron(int Gsize, int ngy, int ID, int MCCn, floa
 	massRatio = info_CX[4].mofM;
 	i = info[0].St_num + ID;
 	for(k=0;k<PNC;k++){
-        Colltype = 0;
+		Colltype = 0;
 		for(j=0;j<MCCn;j++){
 			R1 = curand_uniform(&LocalStates);
 			if(R1<Prob2){
@@ -40,7 +40,7 @@ __device__ void Direct_Argon_Electron(int Gsize, int ngy, int ID, int MCCn, floa
             i+=Gsize;
 			continue;
         }
-        if(R1 <= Prob1)	Target = (int)0;
+		if(R1 <= Prob1)	Target = (int)0;
 		else			Target = (int)1;
         // Calculate energy
 		VX = sp[i].vx;
@@ -268,25 +268,75 @@ __device__ void Ar_Collision_Check(int Gsize, int Csize, int ngy, int TID, float
 	data[TID].PtNumMCCInCell=PNMC;
 	data[TID].PtNumInCell-=PNMC;
 }
-__device__ void Ar_Electron(int Gsize, int ngy, int TID, int nvel, float *vsave, curandState *states, 
+__device__ void Ar_Collision_Check_v2(int Gsize, int Csize, int ngy, int TID, float dt, int MCCn, float dtm, float dx, float dy,
+                                        curandState *states, Species *info, GPG *data, GCP *sp, MCC_sigmav *sigv, GGA *BG, GFC *Fluid){
+	int i,j,k,index,Randn;
+	int CID,PNMC,MPNC;
+    int PNC,Flag;
+	int nx,ny,ngx;
+	float Prob1,Prob2;
+	float R1;
+	nx = TID/ngy;
+	ny = TID%ngy;
+	ngx = Gsize/ngy;
+	if(nx == ngx-1) nx--;
+	if(ny == ngy-1) ny--;
+	CID = ny + (ngy-1)*nx;
+	curandState LocalStates = states[TID];
+	PNC = data[TID].PtNumInCell;
+	MPNC = data[TID].MaxPtNumInCell;
+	PNMC = 0;
+	// Calculate total Collision probability.
+	Prob1 = 1.0f - exp(-1*dtm*sigv[0].val*BG[TID].BackDen1);  // E + Ar
+	Prob2 = Prob1 + 1.0f - exp(-1*dtm*sigv[1].val*Fluid[CID].ave_den);  // E + Ar*
+	Randn = MCCn;
+	i = TID;
+	for(k=0;k<PNC;k++){
+        for(j=0;j<Randn;j++){
+			R1 = curand_uniform(&LocalStates);
+			if(R1<Prob2) break;
+		}
+		if(R1 >= Prob2){ // no collision
+			index = i - PNMC*Gsize;
+            Flag = sp[i].CellID;
+		}else{ // collision
+			PNMC++;
+			index = TID + (MPNC-PNMC)*Gsize;
+            if(R1 <= Prob1)	        Flag = (int)0;
+		    else			        Flag = (int)1;            
+		}
+		sp[index].CellID = Flag;
+		sp[index].vx=sp[i].vx;
+		sp[index].vy=sp[i].vy;
+		sp[index].vz=sp[i].vz;
+        sp[index].x=sp[i].x;
+		sp[index].y=sp[i].y;
+		i+=Gsize;
+	}
+	states[TID]=LocalStates;
+	data[TID].PtNumMCCInCell=PNMC;
+	data[TID].PtNumInCell-=PNMC;
+}
+__device__ void Ar_Electron_v2(int Gsize, int ngy, int TID, int nvel, float *vsave, curandState *states, 
 											Species *info, GPG *data, GCP *sp, int N_LOGX, float idLOGX, 
 											MCC_sigmav *sigv, CollF *info_CX, ArCollD *CX, int TnRct,float *MCCR, GGA *BG){
 	int i,k,n,index;
-	int PNMC,MPNC,Null,Flag;
-	int oldPNC;
+	int PNMC,MPNC,Flag;
 	int Colltype;
+	int PNC,PNC1,Addpt,Addpt1;
 	float mofm,R1;
 	float VX,VY,VZ;
-	float rengy,engy,dum,vel,vel2;
-	int Iz_isp1,Iz_isp2;		
+	float rengy,engy,dum,vel,vel2;		
 	float SumSigma,SumEngyLoss;
 
     curandState LocalStates = states[TID];
 	PNMC = data[TID].PtNumMCCInCell;
 	MPNC = data[TID].MaxPtNumInCell;
-	Null = 0;
 	// Calculate total Collision probability
-	i = info[0].St_num + TID + (MPNC-1)*Gsize;
+	i = TID + (MPNC-1)*Gsize;
+	Addpt = 0; Addpt1 = 0;
+	PNC = data[TID].PtNumInCell;
+	PNC1 = data[Gsize + TID].PtNumInCell;
 	//printf("PNMC = %d\n",PNMC);
 	for(k=0;k<PNMC;k++){
         // Calculate energy
@@ -298,7 +348,7 @@ __device__ void Ar_Electron(int Gsize, int ngy, int TID, int nvel, float *vsave,
 		vel = sqrt(dum);
 		VX/=vel; VY/=vel; VZ/=vel;
 		engy = info[0].Escale * dum;
-        Colltype = 1;
+        Colltype = 0;
         //Start
         // Colltype
         // 0 : Null collision
@@ -310,12 +360,15 @@ __device__ void Ar_Electron(int Gsize, int ngy, int TID, int nvel, float *vsave,
 				mofm = info_CX[0].mofM;
 				R1 *= sigv[0].val / vel;
 				if(engy > info_CX[0].Th_e && R1<=(SumSigma=Argon_CrossSection(0, engy, N_LOGX, idLOGX, CX))){
+					Colltype = 1;
 					MCCR[TID*TnRct]++;
 				}else if(engy > info_CX[1].Th_e && R1<=(SumSigma += Argon_CrossSection(1, engy, N_LOGX, idLOGX, CX))){
+					Colltype = 1;
 					engy-=info_CX[1].Th_e;
 					vel=sqrt(fabs(engy)/info[0].Escale);
 					MCCR[TID*TnRct+1]++;
 				}else if(engy > info_CX[2].Th_e && R1<=(SumSigma += Argon_CrossSection(2, engy, N_LOGX, idLOGX, CX))){
+					Colltype = 1;
 					engy-=info_CX[2].Th_e;
 					vel=sqrt(fabs(engy)/info[0].Escale);
 					MCCR[TID*TnRct+2]++;
@@ -326,14 +379,8 @@ __device__ void Ar_Electron(int Gsize, int ngy, int TID, int nvel, float *vsave,
 					engy-=rengy;
 					vel = sqrt(fabs(rengy)/info[0].Escale);
 					vel2 = sqrt(fabs(engy)/info[0].Escale);
-					Iz_isp1 = 0;
-					Iz_isp2 = 1;
 					MCCR[TID*TnRct+3]++;
-				}else{
-					Colltype = 0;
-					Null++;
-				}
-				
+				}				
 				break;
 			}
 			case 1:{ // E + Ar*
@@ -346,12 +393,149 @@ __device__ void Ar_Electron(int Gsize, int ngy, int TID, int nvel, float *vsave,
 					engy-=rengy;
 					vel = sqrt(fabs(rengy)/info[0].Escale);
 					vel2 = sqrt(fabs(engy)/info[0].Escale);
-					Iz_isp1 = 0;
-					Iz_isp2 = 1;
 					MCCR[TID*TnRct+4]++;
-				}else{
-					Colltype = 0;
-					Null++;
+				}
+				break;
+			}
+			default:{
+            	break;
+        	}
+		} 
+        switch (Colltype){
+        case 0: // 0 : Null collision
+			index = TID + (PNC+Addpt)*Gsize;
+			sp[index].CellID = TID;
+			sp[index].x = sp[i].x;
+			sp[index].y = sp[i].y;
+			sp[index].vx = sp[i].vx;
+			sp[index].vy = sp[i].vy;
+			sp[index].vz = sp[i].vz;
+			Addpt++;
+            break;
+        case 1: // 1 : Energy loss
+            dev_anewvel(engy,vel,&VX,&VY,&VZ,0,mofm,curand_uniform(&LocalStates),curand_uniform(&LocalStates));
+			index = TID + (PNC+Addpt)*Gsize;
+			sp[index].CellID = TID;
+			sp[index].x = sp[i].x;
+			sp[index].y = sp[i].y;
+			sp[index].vx = VX;
+			sp[index].vy = VY;
+			sp[index].vz = VZ;
+			Addpt++;
+            break;
+        case 2: // 2 : ionization 1 -> 3 charged
+			// second charged create
+			index = TID + (PNC+Addpt)*Gsize;
+			sp[index].CellID = TID;
+			sp[index].x = sp[i].x;
+			sp[index].y = sp[i].y;
+			sp[index].vx = VX;
+			sp[index].vy = VY;
+			sp[index].vz = VZ;
+			dev_anewvel(rengy,vel,&sp[index].vx,&sp[index].vy,&sp[index].vz,0,mofm,curand_uniform(&LocalStates),curand_uniform(&LocalStates));
+			Addpt++;
+			// Third charged create
+			index = info[1].St_num + TID + (PNC1+Addpt1)*Gsize;
+			sp[index].CellID = TID+Gsize;
+			sp[index].x = sp[i].x;
+			sp[index].y = sp[i].y;
+			n = (nvel-1)*curand_uniform(&LocalStates);
+			dev_maxwellv(&sp[index].vx,&sp[index].vy,&sp[index].vz,vsave[n],BG[TID].BackVel1,curand_uniform(&LocalStates),curand_uniform(&LocalStates));
+			Addpt1++;
+			// energy loss electron 
+			dev_anewvel(engy,vel2,&VX,&VY,&VZ,0,mofm,curand_uniform(&LocalStates),curand_uniform(&LocalStates));
+			index = TID + (PNC+Addpt)*Gsize;
+			sp[index].CellID = TID;
+			sp[index].x = sp[i].x;
+			sp[index].y = sp[i].y;
+			sp[index].vx = VX;
+			sp[index].vy = VY;
+			sp[index].vz = VZ;
+			Addpt++;
+            break;
+        default:
+            break;
+        }
+		i-=Gsize;
+	}
+	data[TID].PtNumInCell = PNC + Addpt;
+	data[Gsize + TID].PtNumInCell = PNC1 + Addpt1;
+	states[TID]=LocalStates;
+}
+__device__ void Ar_Electron(int Gsize, int ngy, int TID, int nvel, float *vsave, curandState *states, 
+											Species *info, GPG *data, GCP *sp, int N_LOGX, float idLOGX, 
+											MCC_sigmav *sigv, CollF *info_CX, ArCollD *CX, int TnRct,float *MCCR, GGA *BG){
+	int i,k,n,index;
+	int PNMC,MPNC,Flag;
+	int oldPNC;
+	int Colltype;
+	float mofm,R1;
+	float VX,VY,VZ;
+	float rengy,engy,dum,vel,vel2;		
+	float SumSigma,SumEngyLoss;
+
+    curandState LocalStates = states[TID];
+	PNMC = data[TID].PtNumMCCInCell;
+	MPNC = data[TID].MaxPtNumInCell;
+	// Calculate total Collision probability
+	i = TID + (MPNC-1)*Gsize;
+	//printf("PNMC = %d\n",PNMC);
+	for(k=0;k<PNMC;k++){
+        // Calculate energy
+		VX = sp[i].vx;
+		VY = sp[i].vy;
+		VZ = sp[i].vz;
+        Flag = sp[i].CellID;
+        dum = VX*VX+VY*VY+VZ*VZ;
+		vel = sqrt(dum);
+		VX/=vel; VY/=vel; VZ/=vel;
+		engy = info[0].Escale * dum;
+        Colltype = 0;
+        //Start
+        // Colltype
+        // 0 : Null collision
+        // 1 : Energy loss
+		// 2 : ionization 1 -> 3 charged
+		R1 = curand_uniform(&LocalStates);
+        switch(Flag){
+			case 0:{ // E + Ar
+				mofm = info_CX[0].mofM;
+				R1 *= sigv[0].val / vel;
+				if(engy > info_CX[0].Th_e && R1<=(SumSigma=Argon_CrossSection(0, engy, N_LOGX, idLOGX, CX))){
+					Colltype = 1;
+					MCCR[TID*TnRct]++;
+				}else if(engy > info_CX[1].Th_e && R1<=(SumSigma += Argon_CrossSection(1, engy, N_LOGX, idLOGX, CX))){
+					Colltype = 1;
+					engy-=info_CX[1].Th_e;
+					vel=sqrt(fabs(engy)/info[0].Escale);
+					MCCR[TID*TnRct+1]++;
+				}else if(engy > info_CX[2].Th_e && R1<=(SumSigma += Argon_CrossSection(2, engy, N_LOGX, idLOGX, CX))){
+					Colltype = 1;
+					engy-=info_CX[2].Th_e;
+					vel=sqrt(fabs(engy)/info[0].Escale);
+					MCCR[TID*TnRct+2]++;
+				}else if(engy > info_CX[3].Th_e && R1<=(SumSigma += Argon_CrossSection(3, engy, N_LOGX, idLOGX, CX))){
+					Colltype = 2;
+					engy-=info_CX[3].Th_e;
+					rengy=10.0*__tanf(curand_uniform(&LocalStates)*atan(engy/20.0));
+					engy-=rengy;
+					vel = sqrt(fabs(rengy)/info[0].Escale);
+					vel2 = sqrt(fabs(engy)/info[0].Escale);
+					MCCR[TID*TnRct+3]++;
+				}				
+				break;
+			}
+			case 1:{ // E + Ar*
+				mofm = info_CX[4].mofM;
+				R1 *= sigv[1].val / vel;
+				if(engy > info_CX[4].Th_e && R1<=(SumSigma=Argon_CrossSection(4, engy, N_LOGX, idLOGX, CX))){
+					Colltype = 2;
+					engy-=info_CX[4].Th_e;
+					rengy=10.0*__tanf(curand_uniform(&LocalStates)*atan(engy/20.0));
+					engy-=rengy;
+					vel = sqrt(fabs(rengy)/info[0].Escale);
+					vel2 = sqrt(fabs(engy)/info[0].Escale);
+					MCCR[TID*TnRct+4]++;
 				}
 				break;
 			}
@@ -362,7 +546,7 @@ __device__ void Ar_Electron(int Gsize, int ngy, int TID, int nvel, float *vsave,
         switch (Colltype){
         case 0: // 0 : Null collision
 			oldPNC = atomicAdd(&data[TID].PtNumInCell,1);
-			index = info[0].St_num + TID + oldPNC*Gsize;
+			index = TID + oldPNC*Gsize;
 			sp[index].CellID = TID;
 			sp[index].x = sp[i].x;
 			sp[index].y = sp[i].y;
@@ -373,7 +557,7 @@ __device__ void Ar_Electron(int Gsize, int ngy, int TID, int nvel, float *vsave,
         case 1: // 1 : Energy loss
             dev_anewvel(engy,vel,&VX,&VY,&VZ,0,mofm,curand_uniform(&LocalStates),curand_uniform(&LocalStates));
 			oldPNC = atomicAdd(&data[TID].PtNumInCell,1);
-			index = info[0].St_num + TID + oldPNC*Gsize;
+			index = TID + oldPNC*Gsize;
 			sp[index].CellID = TID;
 			sp[index].x = sp[i].x;
 			sp[index].y = sp[i].y;
@@ -383,39 +567,27 @@ __device__ void Ar_Electron(int Gsize, int ngy, int TID, int nvel, float *vsave,
             break;
         case 2: // 2 : ionization 1 -> 3 charged
 			// second charged create
-			oldPNC = atomicAdd(&data[TID+Iz_isp1*Gsize].PtNumInCell,1);
-			index = info[Iz_isp1].St_num + TID + oldPNC*Gsize;
-			sp[index].CellID = TID+Iz_isp1*Gsize;
+			oldPNC = atomicAdd(&data[TID].PtNumInCell,1);
+			index = TID + oldPNC*Gsize;
+			sp[index].CellID = TID;
 			sp[index].x = sp[i].x;
 			sp[index].y = sp[i].y;
-			if(Iz_isp1 == 0){
-				sp[index].vx = VX;
-				sp[index].vy = VY;
-				sp[index].vz = VZ;
-				dev_anewvel(rengy,vel,&sp[index].vx,&sp[index].vy,&sp[index].vz,0,mofm,curand_uniform(&LocalStates),curand_uniform(&LocalStates));
-			}else{
-				n = (nvel-1)*curand_uniform(&LocalStates);
-				dev_maxwellv(&sp[index].vx,&sp[index].vy,&sp[index].vz,vsave[n],BG[TID].BackVel1,curand_uniform(&LocalStates),curand_uniform(&LocalStates));
-			}
+			sp[index].vx = VX;
+			sp[index].vy = VY;
+			sp[index].vz = VZ;
+			dev_anewvel(rengy,vel,&sp[index].vx,&sp[index].vy,&sp[index].vz,0,mofm,curand_uniform(&LocalStates),curand_uniform(&LocalStates));
 			// Third charged create
-			oldPNC = atomicAdd(&data[TID+Iz_isp2*Gsize].PtNumInCell,1);
-			index = info[Iz_isp2].St_num + TID + oldPNC*Gsize;
-			sp[index].CellID = TID+Iz_isp2*Gsize;
+			oldPNC = atomicAdd(&data[TID+Gsize].PtNumInCell,1);
+			index = info[1].St_num + TID + oldPNC*Gsize;
+			sp[index].CellID = TID+Gsize;
 			sp[index].x = sp[i].x;
 			sp[index].y = sp[i].y;
-			if(Iz_isp2 == 0){
-				sp[index].vx = VX;
-				sp[index].vy = VY;
-				sp[index].vz = VZ;
-				dev_anewvel(rengy,vel,&sp[index].vx,&sp[index].vy,&sp[index].vz,0,mofm,curand_uniform(&LocalStates),curand_uniform(&LocalStates));
-			}else{
-				n = (nvel-1)*curand_uniform(&LocalStates);
-				dev_maxwellv(&sp[index].vx,&sp[index].vy,&sp[index].vz,vsave[n],BG[TID].BackVel1,curand_uniform(&LocalStates),curand_uniform(&LocalStates));
-			}
+			n = (nvel-1)*curand_uniform(&LocalStates);
+			dev_maxwellv(&sp[index].vx,&sp[index].vy,&sp[index].vz,vsave[n],BG[TID].BackVel1,curand_uniform(&LocalStates),curand_uniform(&LocalStates));
 			// energy loss electron 
 			dev_anewvel(engy,vel2,&VX,&VY,&VZ,0,mofm,curand_uniform(&LocalStates),curand_uniform(&LocalStates));
 			oldPNC = atomicAdd(&data[TID].PtNumInCell,1);
-			index = info[0].St_num + TID + oldPNC*Gsize;
+			index = TID + oldPNC*Gsize;
 			sp[index].CellID = TID;
 			sp[index].x = sp[i].x;
 			sp[index].y = sp[i].y;
@@ -429,13 +601,12 @@ __device__ void Ar_Electron(int Gsize, int ngy, int TID, int nvel, float *vsave,
 		i-=Gsize;
 	}
 	states[TID]=LocalStates;
-	data[TID].PtNullMCCInCell = Null;
 }
 __device__ void Ar_Ar_ion(int Gsize, int ngy, int TID, int nvel, float *vsave, curandState *states, 
 											Species *info, GPG *data, GCP *sp, int N_LOGX, float idLOGX, 
 											MCC_sigmav *sigv, CollF *info_CX, ArCollD *CX, int TnRct,float *MCCR, GGA *BG){
 	int i,k,n,index;
-	int ID,PNMC,MPNC,Null;
+	int ID,PNMC,MPNC;
 	int oldPNC;
 	int Colltype;
 	float R1;
@@ -448,7 +619,7 @@ __device__ void Ar_Ar_ion(int Gsize, int ngy, int TID, int nvel, float *vsave, c
     curandState LocalStates = states[TID];
 	PNMC = data[TID].PtNumMCCInCell;
 	MPNC = data[TID].MaxPtNumInCell;
-	Null = 0;
+
     // Calculate total Collision probability
 	i = info[1].St_num + ID + (MPNC-1)*Gsize;
 	for(k=0;k<PNMC;k++){
@@ -474,8 +645,6 @@ __device__ void Ar_Ar_ion(int Gsize, int ngy, int TID, int nvel, float *vsave, c
 		}else if(engy > info_CX[6].Th_e &&R1<=(SumSigma=Argon_CrossSection(6, engy, N_LOGX, idLOGX, CX))){
 			Colltype = 1; 
 			MCCR[ID*TnRct+6]++;
-		}else{
-			Null++;
 		}
 		switch (Colltype){
         case 0: // 0 : Null collision
@@ -515,9 +684,7 @@ __device__ void Ar_Ar_ion(int Gsize, int ngy, int TID, int nvel, float *vsave, c
 		i-=Gsize;
 	}
 	states[TID]=LocalStates;
-	data[TID].PtNullMCCInCell = Null;
 }
-
 __device__ float Argon_CrossSection(int R, float engy, int N_LOGX, float idLOGX, ArCollD *data){
 	if(engy == 0) return 0.0;
 	float lengy = log10(engy);

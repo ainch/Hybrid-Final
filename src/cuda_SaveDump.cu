@@ -36,6 +36,15 @@ void V000_DUMP(FILE *SF){
 		fwrite(HistPt[isp].np, 4, hist_count, SF);
 	}
 	fwrite(iter_array, 4, hist_count, SF);
+    for (i = 0; i < CondNUMR; i++) {
+		fwrite(Current_hist[i], 4, hist_count, SF);
+		for (isp = 0; isp < nsp; isp++) {
+			fwrite(SP_current_hist[isp][i], 4, hist_count, SF);
+		}
+		fwrite(Volt_hist[i], 4, hist_count, SF);
+		fwrite(Volt_cond_hist[i], 4, hist_count, SF);
+		fwrite(Surf_charge_hist[i], 4, hist_count, SF);
+	}
     // 2D data
     for (i = 0; i < nsp*Gsize; i++) {
         fwrite(&Host_G_sp[i].den, 4, 1, SF);    // pt density : GPG
@@ -54,6 +63,22 @@ void V000_DUMP(FILE *SF){
         fwrite(&vec_G[i].Ex, 4, 1, SF); // BG Ex
         fwrite(&vec_G[i].Ey, 4, 1, SF); // BG Ey
     } 
+    // Field
+    cudaMemcpy(vec_Potential, TotPotential, Gsize * sizeof(float), cudaMemcpyDeviceToHost);
+    fwrite(vec_Potential, 4, Gsize, SF); 
+    cudaMemcpy(ave_Potential, dev_ave_Potential, Gsize * sizeof(float), cudaMemcpyDeviceToHost);
+    fwrite(ave_Potential, 4, Gsize, SF); 
+    cudaMemcpy(ave_Source, dev_ave_Source, Gsize * sizeof(float), cudaMemcpyDeviceToHost);
+    fwrite(ave_Source, 4, Gsize, SF); 
+    cudaMemcpy(ave_Sigma, dev_ave_Sigma, Gsize * sizeof(float), cudaMemcpyDeviceToHost);
+    fwrite(ave_Sigma, 4, Gsize, SF); 
+    cudaMemcpy(ave_Ex, dev_ave_Ex, Gsize * sizeof(float), cudaMemcpyDeviceToHost);
+    fwrite(ave_Ex, 4, Gsize, SF); 
+    cudaMemcpy(ave_Ey, dev_ave_Ey, Gsize * sizeof(float), cudaMemcpyDeviceToHost);
+    fwrite(ave_Ey, 4, Gsize, SF); 
+    // MCC
+    cudaMemcpy(ave_MCC_rate, dev_ave_MCC_rate, TnRct * Gsize * sizeof(float), cudaMemcpyDeviceToHost);
+    fwrite(ave_MCC_rate, 4, TnRct * Gsize, SF); // MCC AVE RATE : mccrate
 }
 void SaveDumpFile(int KEY2,int KEY1,int KEY0){
     FILE *SaveFile;

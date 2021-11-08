@@ -23,7 +23,7 @@ float xlength,ylength,zlength;
 int ngx,ngy,Gsize;
 int ncx,ncy,Csize;
 float dx,dy;
-float idx,idy,dx2,dy2,dxdy2,hdx,hdy,r_eps0;
+float idxy,idx,idy,dx2,dy2,dxdy2,hdx,hdy,r_eps0;
 float dt_dx, dt_dy;
 float fncx,fncy,fngx,fngy;
 float *x_Garray,*y_Garray;
@@ -68,6 +68,8 @@ int NP_LIMIT; //Each of particle limit
 int N_ave;
 int N_smt;  // Number of smoothing every timestep
 int ConstB_Flag; // Magnetic field 
+int PD_intv;
+float PD_Ratio;
 //
 int Basic_Flag; // 0 : Basic, 1: OTHERS
 //
@@ -76,7 +78,7 @@ int TnRct; // Total Number of reaction
 int mMnum;
 CollF *Coll_Flag;
 int Msize;
-float *MCC_rate;
+float *MCC_rate,*ave_MCC_rate;
 //
 int FieldIter;
 int A_size;
@@ -84,6 +86,10 @@ float *A_val,*TA_val;
 int *Ai,*Aj;
 int **A_idx;
 float *MatM,**cond_b,*temp_b;
+float *phi_cond;
+float **AM,*V_t,*b_t,*extq,*extq_1,*extq_2,*extq_3;
+float *CondCharge;
+float *Surf_charge,*Old_Surf_charge,*Old2_Surf_charge;
 //
 int init_dump_num;
 int OVER_dump_order;

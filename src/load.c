@@ -1,4 +1,7 @@
 #include "load.h"
+void V001_LoadDUMP(FILE *LF){
+
+}
 void V000_LoadDUMP(FILE *LF){
     int buf0,isp,i;
     float buf1;
@@ -36,6 +39,15 @@ void V000_LoadDUMP(FILE *LF){
 		fread(HistPt[isp].np, 4, hist_count, LF);
 	}
 	fread(iter_array, 4, hist_count, LF);
+    for (i = 0; i < CondNUMR; i++) {
+		fread(Current_hist[i], 4, hist_count, LF);
+		for (isp = 0; isp < nsp; isp++) {
+			fread(SP_current_hist[isp][i], 4, hist_count, LF);
+		}
+		fread(Volt_hist[i], 4, hist_count, LF);
+		fread(Volt_cond_hist[i], 4, hist_count, LF);
+		fread(Surf_charge_hist[i], 4, hist_count, LF);
+	}
     // 2D data
     for (i = 0; i < nsp*Gsize; i++) {
         fread(&Host_G_sp[i].den, 4, 1, LF);    // pt density : GPG
@@ -61,9 +73,15 @@ void V000_LoadDUMP(FILE *LF){
         fread(&vec_G[i].Ex, 4, 1, LF); // BG Ex
         fread(&vec_G[i].Ey, 4, 1, LF); // BG Ey
     } 
-}
-void V001_LoadDUMP(FILE *LF){
-
+    // Field
+    fread(vec_Potential, 4, Gsize, LF);
+    fread(ave_Potential, 4, Gsize, LF);
+    fread(ave_Source, 4, Gsize, LF);
+    fread(ave_Sigma, 4, Gsize,LF);
+    fread(ave_Ex, 4, Gsize, LF);
+    fread(ave_Ey, 4, Gsize,LF);
+    // MCC
+    fread(ave_MCC_rate, 4, TnRct * Gsize, LF); // MCC AVE RATE : mccrate
 }
 void LoadDumpFile(){
     FILE *DumpDeck;
@@ -74,8 +92,8 @@ void LoadDumpFile(){
     fread(&KEY1, 4, 1, DumpDeck);
     fread(&KEY0, 4, 1, DumpDeck);
     printf(" - Dump Version : [%d].[%d].[%d]\n",KEY2, KEY1, KEY0);
-    if(KEY2==0 && KEY2==0 && KEY2==0)       V000_LoadDUMP(DumpDeck);
-    else if(KEY2==0 && KEY2==0 && KEY2==1)  V001_LoadDUMP(DumpDeck);
+    if(KEY2>=0 && KEY1>=0 && KEY0>=0)  V000_LoadDUMP(DumpDeck);
+    if(KEY2>=0 && KEY1>=0 && KEY0>=1)  V001_LoadDUMP(DumpDeck);
     fclose(DumpDeck);
     printf("Dump file read complete.\n");
 }

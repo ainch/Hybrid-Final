@@ -31,14 +31,14 @@ extern "C" void main_cuda()
         tstep++; // step
         if((tstep%CYCLE_NUM) == 0) cstep++;
         PCG_SOLVER();
-        Efield_cuda();
+        (*EFIELD)();
         Move_cuda();
         SortBounndary_cuda();
         if(MainGas == ARGON) MCC_Ar_cuda();
         else if(MainGas == OXYGEN) MCC_O2_cuda();
         else if(MainGas == ARO2) MCC_ArO2_cuda();
         Deposit_cuda();
-        Diagnostic();
+        Diagnostic_Basic();
         SaveDumpFile(0,0,0);
         printf("TIME = %1.4e (s), Iter = %3d, res = %1.3e\r",t,*FIter,*dot_result);
         if(isnan(*dot_result) || isinf(*dot_result)){
@@ -63,11 +63,10 @@ extern "C" void main_cuda()
         gpuErrchk( cudaPeekAtLastError() );
         gpuErrchk( cudaDeviceSynchronize() );
         fprintf(stderr,"TIME = %1.4e (s),[%3d][%3d], Iter = %3d, Field Solve time=%2.4f (ms)\r",t,tstep,cstep,*FIter,gputime);
-        exit(1);
         ///////////////////////////////////////////////////////////////////////////
         cudaEventCreate(&start); cudaEventCreate(&stop);
 	    cudaEventRecord( start, 0 );
-		Efield_cuda();
+		(*EFIELD)();
         cudaEventRecord( stop, 0 ); cudaEventSynchronize( stop );
 	    cudaEventElapsedTime( &gputime, start, stop );
 	    cudaEventDestroy( start );cudaEventDestroy( stop );
@@ -166,6 +165,7 @@ extern "C" void main_cuda()
             printf("\nField solver Error!\n");
             exit(1);
         }
+        //exit(1);
         //if(tstep > 3) exit(1);
     }
 }

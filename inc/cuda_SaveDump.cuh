@@ -22,19 +22,33 @@ extern GFG *Host_G_F, *dev_G_F;
 extern GGA *vec_G, *dev_GvecSet;
 extern float *MCC_rate, *ave_MCC_rate, *dev_ave_MCC_rate;
 extern float *RCstack, *dev_RCstack;
+extern float *TotPotential;
+extern float *vec_Potential, *ave_Potential; // [Gsize] potential
+extern float *vec_Source, *ave_Source; // [Gsize] Charge density 
+extern float *vec_Sigma, *ave_Sigma; // [Gsize] [Dielectric] surface charge density, [Conductor] Surface current
+extern float *ave_Ex, *ave_Ey;
+extern float *dev_ave_Potential;
+extern float *dev_ave_Source;
+extern float *dev_ave_Sigma;
+extern float *dev_ave_Ex;
+extern float *dev_ave_Ey;
 extern int MainGas;
 extern int nsp,nfsp;
 extern int Gsize,ngx,ngy;
 extern int Csize,ncx,ncy;
+extern int CondNUMR;
 extern int TnRct;
 extern int HISTMAX;
 extern int dHIST;
 extern int Hcount;
 extern int hist_count;
 extern Hist *HistPt,*HistFG;
+extern float **Current_hist,**Surf_charge_hist,**Volt_hist,**Volt_cond_hist;
+extern float ***SP_current_hist;
 extern float *t_array;  
 extern float *iter_array;  
 extern int Basic_Flag;
+extern float *Host_G_buf, *Host_C_buf;
 extern float 	totaltime,gputime_field,gputime_efield;
 extern float 	gputime_move,gputime_mcc,gputime_deposit;
 extern float 	gputime_diag,gputime_sort,gputime_Tec;

@@ -18,7 +18,7 @@ float FVnZC(char A[50],float Value){ // float Value non Zero CHECK
 }
 void InputRead() {
    int i,j,isp;
-   int buf;
+   int buf,buf_ID;
    int IDn, IDchk[100], IDchk1, IDchk2;
    float fbuf1,fbuf2,fbuf3;
    PRINT_Flag = 0;
@@ -773,10 +773,11 @@ void InputRead() {
    BufObject = json_object_get_object(SubObject4,"ContinuityBreakPoint");
    printf("Margin(%) = %g\n",(float)json_object_get_number(BufObject,"Margin(%)"));
    */
-   /*
    BufObject = json_object_get_object(SubObject4,"PowerDrivenOption");
-   printf("VoltageUpRatio = %g\n",(float)json_object_get_number(BufObject,"VoltageUpRatio"));
-   */
+   PD_intv = (int)((float)DT_PIC * (float)json_object_get_number(BufObject,"Interval"));
+   if(PD_intv == 0) PD_intv = 5 * DT_PIC;
+   PD_Ratio = (float)json_object_get_number(BufObject,"VoltageUpDownRatio");
+   if(PD_Ratio == 0.0f) PD_Ratio = 0.05;  
    /*
    BufObject = json_object_get_object(SubObject4,"SimulationStop");
    printf("EndTime(s) = %g\n",(float)json_object_get_number(BufObject,"EndTime(s)"));
@@ -998,6 +999,8 @@ void InputRead() {
       Msize = TnRct * ngx * ngy;
       MCC_rate = (float *) malloc(Msize * sizeof(float));
       VFInit(MCC_rate,0.0,Msize);
+      ave_MCC_rate = (float *) malloc(Msize * sizeof(float));
+      VFInit(ave_MCC_rate,0.0,Msize);
       BufObject = json_object_get_object(SubObject6,"ArgonCase");
       Coll_Flag[0].Flag = (float)json_object_get_number(BufObject,"0.e+Ar>e+Ar");
       Coll_Flag[0].mofM = SP[0].mass/BG[0].mass;
@@ -1046,6 +1049,8 @@ void InputRead() {
       Msize = TnRct * ngx * ngy;
       MCC_rate = (float *) malloc(Msize * sizeof(float));
       VFInit(MCC_rate,0.0,Msize);
+      ave_MCC_rate = (float *) malloc(Msize * sizeof(float));
+      VFInit(ave_MCC_rate,0.0,Msize);
       BufObject = json_object_get_object(SubObject6,"OxygenCase");
       Coll_Flag[0].Flag = (float)json_object_get_number(BufObject,"0.e+O2>e+O2");
       Coll_Flag[0].mofM = SP[0].mass/BG[0].mass;
@@ -1208,6 +1213,8 @@ void InputRead() {
       Msize = TnRct * ngx * ngy;
       MCC_rate = (float *) malloc(Msize * sizeof(float));
       VFInit(MCC_rate,0.0,Msize);
+      ave_MCC_rate = (float *) malloc(Msize * sizeof(float));
+      VFInit(ave_MCC_rate,0.0,Msize);
       BufObject = json_object_get_object(SubObject6,"Argon/OxygenCase");
       Coll_Flag[0].Flag = (float)json_object_get_number(BufObject,"0.e+Ar>e+Ar");
       Coll_Flag[0].mofM = SP[0].mass/BG[0].mass;
@@ -1416,11 +1423,13 @@ void Geometry_setting() {
    dy=ylength/ncy;
    idx=1/dx;
    idy=1/dy;
+   idxy = 1.5/(dx+dy);
    dx2=dx*dx;
    dy2=dy*dy;
    dxdy2=dx2/dy2;
    hdx=0.5/dx;
    hdy=0.5/dy;
+   
    r_eps0=1/EPS0;
    fncx=(float)ncx;
    fncy=(float)ncy;
@@ -1913,6 +1922,23 @@ void FieldSolverSetting(){
    VFInit(temp_b,0.0,A_size);
    //
    CG_Matrix_Setting(A_val, Ai, Aj, cond_b, MatM, TA_val, temp_b);
+   // 
+   // Condunctor 
+	CondCharge = VFMalloc(nsp * CondNUMR); 
+	VFInit(CondCharge,0.0,nsp * CondNUMR);
+    // Efield
+    phi_cond = VFMalloc(CondNUMR);
+    AM = MFMalloc(CondNUMR,CondNUMR);
+    MFDigonal(AM,1.0,0.0,CondNUMR,CondNUMR);
+    V_t = VFMalloc(CondNUMR); VFInit(V_t,0.0,CondNUMR);
+    b_t = VFMalloc(CondNUMR); VFInit(b_t,0.0,CondNUMR);
+    extq = VFMalloc(CondNUMR); VFInit(extq,0.0,CondNUMR);
+    extq_1 = VFMalloc(CondNUMR);VFInit(extq_1,0.0,CondNUMR);
+    extq_2 = VFMalloc(CondNUMR);VFInit(extq_2,0.0,CondNUMR);
+    extq_3 = VFMalloc(CondNUMR);VFInit(extq_3,0.0,CondNUMR);
+    Surf_charge = VFMalloc(CondNUMR); VFInit(Surf_charge,0.0,CondNUMR);
+    Old_Surf_charge = VFMalloc(CondNUMR); VFInit(Old_Surf_charge,0.0,CondNUMR);
+    Old2_Surf_charge = VFMalloc(CondNUMR); VFInit(Old2_Surf_charge,0.0,CondNUMR);
    //
    if(PRINT_Flag && A_size<100){
       printf("A_size=%d\n",A_size);

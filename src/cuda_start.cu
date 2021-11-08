@@ -1,5 +1,10 @@
 #include "cuda_start.cuh"
 void start_cuda(){
+	if(External_Flag){
+		EFIELD = Efield_cuda;
+	}else{
+		EFIELD = Efield_cuda_Basic;
+	}
 	/*** Move ***/
 	if(ConstB_Flag){
 		//MOVE = MoveB_cuda;
@@ -23,7 +28,7 @@ void start_cuda(){
 		break;
 	}
 	DEPOSIT = Deposit_cuda;
-	DIAG    = Diagnostic;
+	DIAG    = Diagnostic_Basic;
 }
 
 void info_Device()

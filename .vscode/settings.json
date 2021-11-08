@@ -36,7 +36,8 @@
         "__locale": "cpp",
         "math.h": "c",
         "*.ipp": "cpp",
-        "ratio": "cpp"
+        "ratio": "cpp",
+        "__config": "cpp"
     },
     "C_Cpp.errorSquiggles": "Disabled"
 }

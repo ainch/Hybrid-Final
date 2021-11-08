@@ -223,10 +223,6 @@ typedef struct BackGround{
 	float mass;
 	float InitDens;
 }BackG;
-typedef struct __Global_CondNUMR_Array{
-	//SIZE = nsp * CondNUMR
-    float Charge;
-}GCondA;
 typedef struct __Host_History{
 	//SIZE = nsp or nfsp
     float *np;

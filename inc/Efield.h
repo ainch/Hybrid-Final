@@ -19,7 +19,8 @@ float dt_dx, dt_dy;
 int DT_MCCn; // mcc count for each step
 float dt_mcc; // timestsep for MCC Module
 int CYCLE_NUM; // Minimum frequency number of cycle
-int *Efield_Flag;
+int *Efield_Flag, *Cond_Source_num, *Cond_count,**Cond_Power_ID;
+float *Cond_Power;
 float **CC_a; //Circuit_Const a
 void Source_setting();
 #endif

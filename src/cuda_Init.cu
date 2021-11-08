@@ -17,10 +17,10 @@ void Set_Device_Parameter(){
     cudaMalloc((void**) &dev_vsave, h_nvel * sizeof(float));
     cudaMemcpy(dev_vsave, vsave, h_nvel * sizeof(float),cudaMemcpyHostToDevice);
     // Field Solver 
-    sMemSize = sizeof(double) * THREADS_PER_BLOCK;
+    sMemSize = sizeof(float) * THREADS_PER_BLOCK;
     numBlocksPerSm = 0;
     numThreads = THREADS_PER_BLOCK;
-    checkCudaErrors(cudaOccupancyMaxActiveBlocksPerMultiprocessor(&numBlocksPerSm, PCG, numThreads, sMemSize));
+    checkCudaErrors(cudaOccupancyMaxActiveBlocksPerMultiprocessor(&numBlocksPerSm, PCG_float, numThreads, sMemSize));
     numSms = prop.multiProcessorCount;
     FIELD_GRID = dim3(numSms*numBlocksPerSm, 1, 1);
     FIELD_BLOCK = dim3(THREADS_PER_BLOCK, 1, 1);
@@ -38,12 +38,6 @@ void Set_Device_Parameter(){
     printf(" - Deposit module : [%d][%d]\n",grid,block);
     DEPOSIT_GRID = dim3(grid, 1, 1);
     DEPOSIT_BLOCK = dim3(block, 1, 1);
-    // Efield
-    cudaOccupancyMaxPotentialBlockSize(&mingrid,&block,(void*)GCondAInit,0,CondNUMR); 
-    grid = (CondNUMR*nsp + block - 1) / block;
-    printf(" - Efield module : [%d][%d]\n",grid,block);
-    EFIELD_GRID = dim3(grid, 1, 1);
-    EFIELD_BLOCK = dim3(block, 1, 1);
     // Move 
     cudaOccupancyMaxPotentialBlockSize(&mingrid,&block,(void*)MoveE_Basic,0,Gsize*nsp); 
     grid = (Gsize*nsp + block - 1) / block;
@@ -57,7 +51,7 @@ void Set_Device_Parameter(){
     SORT_GRID = dim3(grid, 1, 1);
     SORT_BLOCK = dim3(block, 1, 1);
     // MCC
-    size = Gsize;
+    size = nsp*Gsize;
     cudaOccupancyMaxPotentialBlockSize(&mingrid,&block,(void*)MCC_Ar_Basic,0,size); 
     grid = (size + block - 1) / block;
     printf(" - MCC module : [%d][%d]\n",grid,block);
@@ -70,6 +64,21 @@ void Set_Device_Parameter(){
     printf(" - CONTI module : [%d][%d]\n",grid,block);
     CONTI_GRID = dim3(grid, 1, 1);
     CONTI_BLOCK = dim3(block, 1, 1);
+    // Diagnostics
+    size = Gsize;
+    cudaOccupancyMaxPotentialBlockSize(&mingrid,&block,(void*)Average_Particle_Density,0,size); 
+    grid = (size + block - 1) / block;
+    printf(" - Diagnostics 1 module : [%d][%d]\n",grid,block);
+    DIAG_G_GRID = dim3(grid, 1, 1);
+    DIAG_G_BLOCK = dim3(block, 1, 1);
+    size = nsp * Gsize;
+    cudaOccupancyMaxPotentialBlockSize(&mingrid,&block,(void*)Average_Argon_MCC_rate,0,size); 
+    grid = (size + block - 1) / block;
+    printf(" - Diagnostics 2 module : [%d][%d]\n",grid,block);
+    DIAG_NSPG_GRID = dim3(grid, 1, 1);
+    DIAG_NSPG_BLOCK = dim3(block, 1, 1);
+    
+
     // time setting
     gputime_field	=0.0;	gputime_efield	=0.0;	gputime_diag	=0.0;	gputime_move	=0.0;
 	gputime_mcc		=0.0;	gputime_continue=0.0;	gputime_deposit	=0.0;	gputime_sort	=0.0;

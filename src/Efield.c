@@ -2,11 +2,11 @@
 
 void Source_setting(){
    int i,j;
-   int buf,TScnt,S_ID;
+   int buf,buf1,TScnt,S_ID;
    printf("Initial Source setting\n"); 
    dt = 1.0 / Max_FREQ / (float)DT_PIC;
    dtc = dt * (float)DT_CONTI;
-   CYCLE_NUM = Max_FREQ / Min_FREQ * DT_PIC;
+   CYCLE_NUM =  DT_PIC;
    DT_MCCn = 0;
    dt_mcc = 0.0;
    dt_dx = dt/dx;
@@ -19,26 +19,52 @@ void Source_setting(){
       exit(1);
    }
    Efield_Flag = VIMalloc(CondNUMR); // 0:ground 1~ : Source ID
+   VIInit(Efield_Flag,0,CondNUMR);
+   Cond_Source_num = VIMalloc(CondNUMR);  // Number of Fix power frequency 
+   VIInit(Cond_Source_num,0,CondNUMR);
+   Cond_count = VIMalloc(CondNUMR);
+   VIInit(Cond_count,0,CondNUMR);
+   Cond_Power = VFMalloc(CondNUMR);
+   VFInit(Cond_Power,0.0f,CondNUMR);
+   Cond_Power_ID = MIMalloc(CondNUMR,2);
+   MIInit(Cond_Power_ID,0,CondNUMR,2);
    //Find Source num each of Conductor
    TScnt = 0;
    for (i=0;i<CondNUMR;i++){
       buf = 0;
+      buf1 = 0;
       for (j=0;j<SrcNUM;j++){
          if(i+1==SrcM_ID[j]){
             buf++;
+            if(SrcPOWER[j] !=0 ){
+               if(buf1 == 2){
+                  printf("Error! : There should be no more than 3 different Power each conductor.\n"); 
+                  exit(1);
+               }
+               Cond_Power_ID[i][buf1] = j;
+               buf1++;
+            }
          }
       }
       if(buf == 0){
-         printf("\tConductor ID[%d] : Grounded electrode \n",i+1);
+         printf("\tConductor ID[%d] : Grounded Electrode",i+1);
          Efield_Flag[i] = 0;
       }else if(buf < 4){
-         printf("\tConductor ID[%d] : Powered electrode \n",i+1);
+         printf("\tConductor ID[%d] : Powered Electrode",i+1);
          TScnt++;
          Efield_Flag[i] = 1;
+      }
+      if(buf1 == 0){
+         printf(", Voltage Driven \n");
+      }else if(buf1 == 1){
+         printf(", Single Power Driven \n");
+      }else if(buf1 == 2){
+         printf(", Dual Power Driven \n");
       }else{
-         printf("Error! : There should be no more than 3 different frequencies.\n");
+         printf("Error! : There should be no more than 3 different frequencies each conductor.\n"); 
          exit(1);
       }
+      Cond_Source_num[i] = buf1;
    }
    printf("\tTotal Number of Source set : [%d]\n",TScnt);
    if(External_Flag){

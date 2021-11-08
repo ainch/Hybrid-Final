@@ -2,7 +2,13 @@
 
 
 void SortBounndary_cuda(){
-	SortBoundary_Basic<<<SORT_GRID, SORT_BLOCK>>>(Gsize,ngy,CondNUMR,dt_dx,dt_dy, dev_StructureIndex, dev_info_sp, dev_sp, dev_G_sp, dev_GvecSet, dev_CondVec, dev_ReArgFlag);
+	SortBoundary_Basic<<<SORT_GRID, SORT_BLOCK>>>(Gsize,ngy,CondNUMR,dt_dx,dt_dy, dev_StructureIndex, dev_info_sp, dev_sp, dev_G_sp, dev_GvecSet, dev_CondCharge, ReArgFlag);
+	// Number of particle changer
+	if (*ReArgFlag) {
+		fprintf(stderr,"\n\nReArgPtcls start in sort\n");
+		ReArgPtcls<<<SORT_GRID, SORT_BLOCK>>>(Gsize, nsp, ngy, devStates, dev_info_sp, dev_sp, dev_G_sp);
+		Deposit_cuda();
+	}
 	cudaDeviceSynchronize();
 }
 void Set_SortBoundary_cuda(){
@@ -11,10 +17,28 @@ void Set_SortBoundary_cuda(){
 	checkCudaErrors(cudaMalloc((void**) &dev_StructureIndex, size * sizeof(int)));
     checkCudaErrors(cudaMemset((void *) dev_StructureIndex, 0.0, size * sizeof(int)));
 	checkCudaErrors(cudaMemcpy(dev_StructureIndex, vec_StructureIndex , size * sizeof(int), cudaMemcpyHostToDevice));
-	checkCudaErrors(cudaMalloc((void**) &dev_ReArgFlag, sizeof(int)));
-	checkCudaErrors(cudaMemset((void *) dev_ReArgFlag, 0, sizeof(int)));
+	checkCudaErrors(cudaMallocManaged((void **)&ReArgFlag, sizeof(int)));
+    *ReArgFlag = 0.0;
 }	
-__global__ void SortBoundary_Basic(int Gsize,int ngy, int CondNum, float dt_dx,float dt_dy,int *StructureIndex, Species *info, GCP *sp, GPG *data, GGA *Field, GCondA *Cond, int *ReArgFlag){
+__global__ void ReArgPtcls(int Gsize, int nsp, int ngy, curandState *states, Species *info, GCP *sp, GPG *data) {
+	int TID = threadIdx.x + blockIdx.x * blockDim.x;
+	if (TID >= nsp * Gsize) return;
+	int isp = (int)TID/Gsize; //species number [< nsp]
+	int ID = (int)TID%Gsize; // Grid ID [< Gsize]
+	int PNC, i, k;
+	curandState LocalStates;
+	LocalStates = states[TID];
+
+	PNC = (int) (0.5 * data[TID].PtNumInCell);
+	data[TID].PtNumInCell = PNC;
+	for (k = 0; k < PNC; k++) {
+		i = info[isp].St_num + ID + k * Gsize;
+		sp[i].x = curand_uniform(&LocalStates);
+		sp[i].y = curand_uniform(&LocalStates);
+	}
+	states[ID]=LocalStates;
+}
+__global__ void SortBoundary_Basic(int Gsize,int ngy, int CondNum, float dt_dx,float dt_dy,int *StructureIndex, Species *info, GCP *sp, GPG *data, GGA *Field, float *Cond, int *ReArgFlag){
 	int TID = threadIdx.x + blockIdx.x * blockDim.x;
 	int isp,ID;
     if(TID>=Gsize*info[0].spnum) return;
@@ -36,8 +60,8 @@ __global__ void SortBoundary_Basic(int Gsize,int ngy, int CondNum, float dt_dx,f
 
 	MPNC = data[TID].MaxPtNumInCell;
 	PNC = data[TID].PtNumInCell;
-	if(PNC+PNMIC>0.9*MPNC) {
-		*ReArgFlag=1;
+	if(PNC+PNMIC>0.5*MPNC) {
+		*ReArgFlag = 1;
 	}
 	x = ID/ngy;
 	i = info[isp].St_num + ID + (MPNC-1)*Gsize;
@@ -228,7 +252,7 @@ __global__ void SortBoundary_Basic(int Gsize,int ngy, int CondNum, float dt_dx,f
 			sp[index].vy = Flag_vy * sp[i].vy;
 			sp[index].vz = sp[i].vz;
 		}else if(Flag_type==2){
-			atomicAdd(&Cond[isp*CondNum + index].Charge,1.0);
+			atomicAdd(&Cond[isp*CondNum + index],1.0);
 		}
 		i-=Gsize;
 	}		

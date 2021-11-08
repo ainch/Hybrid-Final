@@ -23,6 +23,8 @@ extern int Lap_Field_Solver_Test,Lap_Field_Solver_Flag,Lap_Field_Solver_Save;
 extern double *dot_result;
 extern int *FIter;
 extern int Conti_Flag;
+extern int External_Flag; // 0 : Voltage driven, 1: Power driven
+extern void (*EFIELD)();
 extern void (*MOVE)();
 extern void (*SORT_BOUNDARY)();
 extern void (*MCC)();
@@ -44,6 +46,7 @@ extern void PCG_SOLVER_Laplace();
 extern void Deposit_cuda();
 extern void PCG_SOLVER();
 extern void Efield_cuda();
+extern void Efield_cuda_Basic();
 extern void Move_Sort_cuda();
 extern void Move_cuda();
 extern void SortBounndary_cuda();
@@ -52,7 +55,7 @@ extern void MCC_O2_cuda();
 extern void MCC_ArO2_cuda();
 extern void Tecplot_save();
 extern void SaveDumpFile(int KEY2,int KEY1,int KEY0);
-extern void Diagnostic();
+extern void Diagnostic_Basic();
 #ifndef __CUDA_MAIN_CUH__
 #define __CUDA_MAIN_CUH__
 float time_sum;

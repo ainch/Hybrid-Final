@@ -12,6 +12,10 @@ void MCC_O2_cuda(){
 void MCC_Ar_cuda(){
 	MCC_Ar_Basic<<<MCC_GRID, MCC_BLOCK>>>(Gsize, Csize, ngy, nsp, dt, DT_MCCn, dt_mcc, idx, idy, h_nvel, dev_vsave, devStates, N_LOGX, idLOGX, dev_SigmaV,
 												dev_Coll_Flag, dev_ArCX, TnRct, dev_MCC_rate, dev_FG, dev_C_F, dev_GvecSet, dev_info_sp, dev_G_sp, dev_sp);
+	//MCC_Ar_Basic_v2<<<MCC_GRID, MCC_BLOCK>>>(Gsize, Csize, ngy, nsp, dt, DT_MCCn, dt_mcc, idx, idy, h_nvel, dev_vsave, devStates, N_LOGX, idLOGX, dev_SigmaV,
+	//											dev_Coll_Flag, dev_ArCX, TnRct, dev_MCC_rate, dev_FG, dev_C_F, dev_GvecSet, dev_info_sp, dev_G_sp, dev_sp);
+	//MCC_Ar_Basic_v3<<<MCC_GRID, MCC_BLOCK>>>(Gsize, Csize, ngy, nsp, dt, DT_MCCn, dt_mcc, idx, idy, h_nvel, dev_vsave, devStates, N_LOGX, idLOGX, dev_SigmaV,
+	//											dev_Coll_Flag, dev_ArCX, TnRct, dev_MCC_rate, dev_FG, dev_C_F, dev_GvecSet, dev_info_sp, dev_G_sp, dev_sp);
 	cudaDeviceSynchronize();
 }
 __global__ void MCC_ArO2_Basic(int Gsize, int Csize, int ngy, int nsp, float dt, int MCCn, float dtm, float idx,float idy, int nvel, float *vsave,
@@ -98,8 +102,12 @@ __global__ void MCC_Ar_Basic(int Gsize, int Csize, int ngy, int nsp, float dt, i
 	if(TID>=Gsize) return;
 	Direct_Argon_ArIon(Gsize, ngy, TID, MCCn, dt, nvel, vsave, states, info, data, sp, N_LOGX, idLOGX, sigv, CollP, CX, TnRct, MCCR, BG, Fluid);
 	Direct_Argon_Electron(Gsize, ngy, TID, MCCn, dtm, nvel, vsave, states, info, data, sp, N_LOGX, idLOGX, sigv, CollP, CX, TnRct, MCCR, BG, Fluid);
+}	
+__global__ void MCC_Ar_Basic_v2(int Gsize, int Csize, int ngy, int nsp, float dt, int MCCn, float dtm, float idx,float idy, int nvel, float *vsave,
+											curandState *states, int N_LOGX, float idLOGX, MCC_sigmav *sigv, CollF *CollP, ArCollD *CX, int TnRct, float*MCCR,
+											Fluid *infoF, GFC *Fluid, GGA *BG, Species *info, GPG *data, GCP *sp){
+	int TID = threadIdx.x + blockIdx.x * blockDim.x;
 	// Memory mode
-	/*
 	if(TID>=nsp*Gsize) return;
 	int isp = TID/Gsize;
 	Ar_Collision_Check(Gsize, Csize, ngy, TID, dt, MCCn, dtm, idx, idy, states, info, data, sp, sigv, BG, Fluid);
@@ -113,7 +121,19 @@ __global__ void MCC_Ar_Basic(int Gsize, int Csize, int ngy, int nsp, float dt, i
 	default:
 		break;
 	}
-	*/	
+}	
+__global__ void MCC_Ar_Basic_v3(int Gsize, int Csize, int ngy, int nsp, float dt, int MCCn, float dtm, float idx,float idy, int nvel, float *vsave,
+											curandState *states, int N_LOGX, float idLOGX, MCC_sigmav *sigv, CollF *CollP, ArCollD *CX, int TnRct, float*MCCR,
+											Fluid *infoF, GFC *Fluid, GGA *BG, Species *info, GPG *data, GCP *sp){
+	int TID = threadIdx.x + blockIdx.x * blockDim.x;
+	// Hybrid mode
+	if(TID>=Gsize) return;
+	int isp = TID/Gsize;
+	// ion
+	Direct_Argon_ArIon(Gsize, ngy, TID, MCCn, dt, nvel, vsave, states, info, data, sp, N_LOGX, idLOGX, sigv, CollP, CX, TnRct, MCCR, BG, Fluid);
+	// Electron
+	Ar_Collision_Check_v2(Gsize, Csize, ngy, TID, dt, MCCn, dtm, idx, idy, states, info, data, sp, sigv, BG, Fluid);
+	Ar_Electron_v2(Gsize, ngy, TID, nvel, vsave, states,  info, data, sp, N_LOGX, idLOGX, sigv, CollP, CX, TnRct, MCCR, BG);
 }	
 __device__ void dev_maxwellv(float *vx_local,float *vy_local,float *vz_local,float vsaven,float vti,float Rphi,float Rthe){
 	float aphi,sintheta,costheta;
@@ -199,6 +219,10 @@ void Set_NullCollisionTime_cuda(){
     checkCudaErrors(cudaMemcpy(dev_Coll_Flag, Coll_Flag, TnRct * sizeof(CollF), cudaMemcpyHostToDevice));
 	checkCudaErrors(cudaMalloc((void**)&dev_MCC_rate, Msize * sizeof(float)));
     checkCudaErrors(cudaMemcpy(dev_MCC_rate, MCC_rate, Msize * sizeof(float), cudaMemcpyHostToDevice));
+	checkCudaErrors(cudaMemset((void *) dev_MCC_rate, 0.0f, Msize * sizeof(float)));
+	checkCudaErrors(cudaMalloc((void**)&dev_ave_MCC_rate, Msize * sizeof(float)));
+	checkCudaErrors(cudaMemset((void *) dev_ave_MCC_rate, 0.0f, Msize * sizeof(float)));
+	checkCudaErrors(cudaMemcpy(dev_ave_MCC_rate, ave_MCC_rate, Msize * sizeof(float), cudaMemcpyHostToDevice));
     if(MainGas == ARGON){
         checkCudaErrors(cudaMalloc((void**)&dev_ArCX, N_LOGX * sizeof(ArCollD)));
         checkCudaErrors(cudaMemcpy(dev_ArCX, Ar_Data, N_LOGX * sizeof(ArCollD), cudaMemcpyHostToDevice));

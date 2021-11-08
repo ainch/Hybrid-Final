@@ -6,6 +6,10 @@ extern int MainGas; // Gas type 0:argon, 1:oxygen, 2:argon/oxygen
 extern int Lap_Field_Solver_Test,Lap_Field_Solver_Flag,Lap_Field_Solver_Save;
 extern int nsp;
 extern Species *SP;// particle species
+extern int External_Flag; // 0 : Voltage driven, 1: Power driven
+extern void (*EFIELD)();
+extern void Efield_cuda();
+extern void Efield_cuda_Basic();
 extern void (*MOVE)();
 extern void Move_cuda();
 extern void (*SORT_BOUNDARY)();
@@ -18,7 +22,7 @@ extern void (*DEPOSIT)();
 extern void Deposit_cuda();
 extern void (*CONTIEQ)();
 extern void (*DIAG)();
-extern void Diagnostic();
+extern void Diagnostic_Basic();
 #ifndef __CUDA_START_CUH__
 #define __CUDA_START_CUH__
 cudaDeviceProp prop;
