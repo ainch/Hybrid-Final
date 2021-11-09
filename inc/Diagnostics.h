@@ -9,11 +9,13 @@ extern Species *SP;// particle species
 #ifndef __DIAGNOSTICS_H__
 #define __DIAGNOSTICS_H__
 int Hcount;
-int hist_count;
+int hist_count, hist_ave_count;
 int nave_count;
 float *t_array;
 float *iter_array;    
 Hist *HistPt,*HistFG;
+float *t_ave_array;
+Hist *Hist_ave_Pt,*Hist_ave_Pt_stack;
 float **Current_hist,**Surf_charge_hist,**Volt_hist,**Volt_cond_hist;
 float ***SP_current_hist;
 float *Current_Now;

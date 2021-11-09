@@ -48,6 +48,12 @@ void V000_LoadDUMP(FILE *LF){
 		fread(Volt_cond_hist[i], 4, hist_count, LF);
 		fread(Surf_charge_hist[i], 4, hist_count, LF);
 	}
+    fread(&hist_ave_count, 4, 1, LF);
+    fread(t_ave_array, 4, hist_ave_count, LF);
+    for (isp = 0; isp < nsp; isp++) {
+		fread(Hist_ave_Pt[isp].np, 4, hist_ave_count, LF);
+        fread(Hist_ave_Pt_stack[isp].np, 4, hist_ave_count, LF);
+	}
     // 2D data
     for (i = 0; i < nsp*Gsize; i++) {
         fread(&Host_G_sp[i].den, 4, 1, LF);    // pt density : GPG

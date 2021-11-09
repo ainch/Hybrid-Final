@@ -784,7 +784,9 @@ void InputRead() {
    BufObject2 = json_object_get_object(BufObject,"SteadyStatePrint");
    Flag_ave_np = (int)json_object_get_number(BufObject2,"Flag");
    Margin_ave_np = (float)json_object_get_number(BufObject2,"AveMargin(%)");
+   if(Margin_ave_np == 0) Margin_ave_np = 0.05;
    Same_ave_np = (int)json_object_get_number(BufObject2,"SatGoal");
+   if(Same_ave_np == 0) Same_ave_np = 50;
    //-------------------------//
    //-------Diagnostics-------//
    //-------------------------//

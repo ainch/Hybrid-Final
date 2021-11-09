@@ -142,6 +142,16 @@ void Set_Time_History(){
 	//for (isp = 0; isp < nfsp; isp++)
 	//	XGCurve(t_array, HistFG[isp].np, &hist_count, isp);
 
+	XGSet2D("linlin", "t (s)", "History Averaged Particle (t)", "closed", 100, 500, 1.0,
+			1.0, TRUE, TRUE, 0.0, 0.0, 0.0, 0.0);
+	for (isp = 0; isp < nsp; isp++)
+		XGCurve(t_ave_array, Hist_ave_Pt[isp].np, &hist_ave_count, isp);
+	
+	XGSet2D("linlin", "t (s)", "History Averaged Particle stack (t)", "closed", 100, 500, 1.0,
+			1.0, TRUE, TRUE, 0.0, 0.0, 0.0, 0.0);
+	for (isp = 0; isp < nsp; isp++)
+		XGCurve(t_ave_array, Hist_ave_Pt_stack[isp].np, &hist_ave_count, isp);
+
 	XGSet2D("linlin", "t (s)", "History PCG Iter (t)", "closed", 100, 500, 1.0, 1.0,
 	TRUE, TRUE, 0.0, 0.0, 0.0, 0.0);
 	XGScat2D(t_array, iter_array, &hist_count, 0);

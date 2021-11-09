@@ -34,16 +34,14 @@ void Diagnostic_Basic(){
     if(Flag_ave_np){
         for(isp = 0;isp<nsp;isp++){
             cudaMemcpy(&now_np, &dev_info_sp[isp].np, sizeof(int),cudaMemcpyDeviceToHost);
-            ave_np[isp] += now_np;
+            ave_np[isp] += (int)((float)now_np/(float)DT_PIC);
         }
         if(tstep%DT_PIC == 0){
             buf1 = 0;
-            printf("\n diff persent : ");  
             for(isp = 0;isp<nsp;isp++){
-                new_ave_np[isp] = (float)ave_np[isp] / (float)DT_PIC;
+                new_ave_np[isp] = (float)ave_np[isp];
                 ave_np[isp] = 0;
                 buf = 100.0f * fabs((new_ave_np[isp]-old_ave_np[isp])/new_ave_np[isp]);
-                printf("%s = %2.3g % [new = %g, old = %g]\n",SP[isp].name,buf,new_ave_np[isp],old_ave_np[isp]);               
                 old_ave_np[isp] = new_ave_np[isp];
                 if(buf < Margin_ave_np){
                     Stack_ave_np[isp]++;
@@ -53,8 +51,11 @@ void Diagnostic_Basic(){
                 if(Stack_ave_np[isp] >= Same_ave_np){
                     buf1++;
                 }
+                t_ave_array[hist_ave_count] = (float) t;
+                Hist_ave_Pt[isp].np[hist_ave_count] = new_ave_np[isp];
+                Hist_ave_Pt_stack[isp].np[hist_ave_count] = (float)Stack_ave_np[isp];
             }
-            printf("\n");  
+            hist_ave_count++;
             if(buf1>=nsp){
                 Flag_ave_np = 0;
                 Basic_Flag = 0;

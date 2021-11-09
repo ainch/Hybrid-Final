@@ -45,6 +45,12 @@ void V000_DUMP(FILE *SF){
 		fwrite(Volt_cond_hist[i], 4, hist_count, SF);
 		fwrite(Surf_charge_hist[i], 4, hist_count, SF);
 	}
+    fwrite(&hist_ave_count, 4, 1, SF);
+    fwrite(t_ave_array, 4, hist_ave_count, SF);
+    for (isp = 0; isp < nsp; isp++) {
+		fwrite(Hist_ave_Pt[isp].np, 4, hist_ave_count, SF);
+        fwrite(Hist_ave_Pt_stack[isp].np, 4, hist_ave_count, SF);
+	}
     // 2D data
     for (i = 0; i < nsp*Gsize; i++) {
         fwrite(&Host_G_sp[i].den, 4, 1, SF);    // pt density : GPG

@@ -17,6 +17,16 @@ void Diagnostic_Setting(){
       	HistFG[isp].np = (float *) malloc(HISTMAX * sizeof(float));
       	VFInit(HistFG[isp].np,0.0f,HISTMAX);
    	}
+	hist_ave_count=0;
+	t_ave_array = VFMalloc(HISTMAX); VFInit(t_ave_array,0.0f,HISTMAX);
+	Hist_ave_Pt = (Hist *) malloc(nsp * sizeof(Hist));
+	Hist_ave_Pt_stack = (Hist *) malloc(nsp * sizeof(Hist));
+	for(isp=0;isp<nsp;isp++){
+      	Hist_ave_Pt[isp].np = (float *) malloc(HISTMAX * sizeof(float));
+      	VFInit(Hist_ave_Pt[isp].np,0.0f,HISTMAX);
+		Hist_ave_Pt_stack[isp].np = (float *) malloc(HISTMAX * sizeof(float));
+      	VFInit(Hist_ave_Pt_stack[isp].np,0.0f,HISTMAX);
+   	}
 	// Source
 	Current_hist = MFMalloc(CondNUMR,HISTMAX); MFInit(Current_hist,0.0f,CondNUMR,HISTMAX);
 	Surf_charge_hist = MFMalloc(CondNUMR,HISTMAX); MFInit(Surf_charge_hist,0.0f,CondNUMR,HISTMAX);
@@ -45,5 +55,7 @@ void Diagnostic_Setting(){
     old_ave_np = VFMalloc(nsp); VFInit(old_ave_np,0.0f,nsp);
 	for(isp = 0;isp<nsp;isp++){
         old_ave_np[isp] = SP[isp].np;
+		Hist_ave_Pt[isp].np[hist_ave_count] = SP[isp].np;
     }
+	hist_ave_count++;
 }
