@@ -75,6 +75,7 @@ float *dev_sum_Source, *dev_ave_Source;
 float *dev_sum_Sigma, *dev_ave_Sigma;
 float *dev_sum_Ex, *dev_ave_Ex;
 float *dev_sum_Ey, *dev_ave_Ey;
+void Diagnostic();
 void Diagnostic_Basic();
 void Set_Diagnostic_cuda();
 __global__ void Accomulate_Field_Data(int Gsize, float *TotPot, float *Source, float *Sigma, GGA *vecG

@@ -18,6 +18,15 @@ void Deposit_cuda(){
     PCG_Set<<<DEPOSIT_GRID,DEPOSIT_BLOCK>>>(Gsize,dev_A_idx, dev_GvecSet, dev_Source, dev_R);
 	cudaDeviceSynchronize();
 }
+void Deposit_Basic(){
+    int i;
+	DepositInitDensity<<<DEPOSIT_GRID,DEPOSIT_BLOCK>>>(Gsize,dev_info_sp,dev_G_sp);
+    DepositAtom<<<DEPOSIT_GRID,DEPOSIT_BLOCK>>>(Gsize,ngy,dev_info_sp,dev_sp,dev_G_sp);
+    DepositBoundary<<<DEPOSIT_GRID,DEPOSIT_BLOCK>>>(Gsize,ngy,nsp,dev_GvecSet,dev_G_sp);
+    SumSource<<<DEPOSIT_GRID,DEPOSIT_BLOCK>>>(nsp, Gsize, ngx, ngy, dev_info_sp, dev_GvecSet, dev_G_sp, dev_Sigma, dev_Source);
+    PCG_Set<<<DEPOSIT_GRID,DEPOSIT_BLOCK>>>(Gsize,dev_A_idx, dev_GvecSet, dev_Source, dev_R);
+	cudaDeviceSynchronize();
+}
 __global__ void PCG_Set(int Gsize, int *IDX, GGA *vecSet, float *Source, float *B){
 	int TID=blockDim.x*(gridDim.x*blockIdx.y+blockIdx.x)+threadIdx.x;
 	if(TID>=Gsize) return;
@@ -304,7 +313,7 @@ __global__ void DepositAtom(int Gsize, int ngy, Species *info, GCP *sp, GPG *dat
 	atomicAdd(&data[TID+1].den,WN);
 	atomicAdd(&data[TID+ngy].den,ES);
 	atomicAdd(&data[TID+ngy+1].den,EN); 
-	atomicAdd(&info[isp].np,PNC); 
+	//atomicAdd(&info[isp].np,PNC); 
 }
 __global__ void DepositInitDensity(int Gsize, Species *info, GPG *data){
     int TID = threadIdx.x + blockIdx.x * blockDim.x;

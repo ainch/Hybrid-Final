@@ -23,9 +23,10 @@ extern "C" void main_cuda()
     Set_SortBoundary_cuda();
 	Set_MatrixPCG_cuda();
 	if(Lap_Field_Solver_Test) PCG_Laplace_TEST();
+    //else{
     PCG_SOLVER_Laplace();
     Set_Fluid_cuda();
-	Deposit_cuda();
+	Deposit_Basic();
     while(cstep<Basic_Flag || Basic_Flag < 0){
         t+=dt; // real time
         tstep++; // step
@@ -39,10 +40,8 @@ extern "C" void main_cuda()
         (*EFIELD)();
         Move_cuda();
         SortBounndary_cuda();
-        if(MainGas == ARGON) MCC_Ar_cuda();
-        else if(MainGas == OXYGEN) MCC_O2_cuda();
-        else if(MainGas == ARO2) MCC_ArO2_cuda();
-        Deposit_cuda();
+        (*MCC_Basic)();
+        Deposit_Basic();
         Diagnostic_Basic();
         SaveDumpFile(0,0,0);
         fprintf(stderr,"TIME = %1.4e (s),[%3d][%3d], Iter = %3d, Field Solve time=%2.4f (ms)\r",t,tstep,cstep,*FIter,gputime);
@@ -170,7 +169,9 @@ extern "C" void main_cuda()
             printf("\nField solver Error!\n");
             exit(1);
         }
+        //if(tstep > 5) break;
         //exit(1);
         //if(tstep > 3) exit(1);
     }
+    //}
 }

@@ -23,6 +23,7 @@ int main(int argc, char *argv[])
 	tstep = 0; // INT Time step
 	cstep = 0; // INT Cycle step
 	DumpFlag = 0;
+	
 	if (argc == 5) {
 		DumpFlag = 1;
 		strcpy(InputFile, argv[2]);
@@ -36,6 +37,8 @@ int main(int argc, char *argv[])
 		puts(" 2D_Hybrid_PIC -i <InputFile> -d <DumpFile>");
 		exit(1);
 	}
+	
+	//sprintf(InputFile, "/home/geonwoo/Coding/Hybrid_PIC/test/test1.json");
 	//seed = 1;
 	seed = (long) getpid();
 	display_title();       /* Display 2D Field Solver title */

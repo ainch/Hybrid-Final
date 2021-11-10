@@ -1151,7 +1151,6 @@ void PCG_Laplace_TEST(){
         printf("Empty Test Laplace Field Solver\n");
         exit(1);
     }
-    exit(1);
 }
 int CG_CPU(){
     int TID,i,Iter=0;

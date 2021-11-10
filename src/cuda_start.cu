@@ -16,19 +16,22 @@ void start_cuda(){
 	switch(MainGas){
 	case ARGON:
 		MCC	= MCC_Ar_cuda;
+		MCC_Basic = MCC_Ar_cuda;
 		CONTIEQ = NULL;
 		break;
 	case OXYGEN:
 		MCC		= MCC_O2_cuda;
+		MCC_Basic = MCC_O2_cuda;
 		CONTIEQ = NULL;
 		break;
 	case ARO2:
 		MCC		= MCC_ArO2_cuda;
+		MCC_Basic = MCC_ArO2_cuda;
 		CONTIEQ = NULL;
 		break;
 	}
 	DEPOSIT = Deposit_cuda;
-	DIAG    = Diagnostic_Basic;
+	DIAG    = Diagnostic;
 }
 
 void info_Device()
@@ -58,10 +61,10 @@ void info_Device()
 	printf("Computer capability: %d.%d \n", prop.major, prop.minor);
 	//printf("Clock rate: %d\n", prop.clockRate);
 	printf("Total Global Mem.: %u Mbytes\n", prop.totalGlobalMem/1024/1024);
-	//printf("Total constant Mem.: %u Kbytes\n", prop.totalConstMem/1024);
+	printf("Total constant Mem.: %u Kbytes\n", prop.totalConstMem/1024);
 	printf("Shared Mem. per block: %u bytes \n", prop.sharedMemPerBlock);
-	//printf("Registers available per block.: %u #\n", prop.regsPerBlock);
-	//printf("Max Mem. pitch: %ld\n", prop.memPitch);
+	printf("Registers available per block.: %u #\n", prop.regsPerBlock);
+	printf("Max Mem. pitch: %ld\n", prop.memPitch);
 	printf("Multiprocessor count: %d\n", prop.multiProcessorCount);
 	printf("Threads in warp: %d \n", prop.warpSize);
 	printf("Max thread dimensions: (%d, %d, %d) \n",prop.maxThreadsDim[0], prop.maxThreadsDim[1], prop.maxThreadsDim[2]);

@@ -34,6 +34,7 @@ void (*EFIELD)();
 void (*MOVE)();
 void (*SORT_BOUNDARY)();
 void (*MCC)();
+void (*MCC_Basic)();
 void (*DEPOSIT)();
 void (*CONTIEQ)();
 void (*DIAG)();

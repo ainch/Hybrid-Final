@@ -17,6 +17,7 @@ extern cudaEvent_t start, stop;
 #ifndef __CUDA_MCC_CUH__
 #define __CUDA_MCC_CUH__
 void Deposit_cuda();
+void Deposit_Basic();
 __global__ void DepositInitDensity(int Gsize, Species *info, GPG *data);
 __global__ void DepositAtom(int Gsize, int ngy, Species *info, GCP *sp, GPG *data);
 __global__ void DepositBoundary(int Gsize, int ngy, int nsp, GGA *vecSet, GPG *data);
