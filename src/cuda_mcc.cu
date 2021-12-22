@@ -1,26 +1,26 @@
 #include "cuda_mcc.cuh"
 void MCC_ArO2_cuda(){
 	MCC_ArO2_Basic<<<MCC_GRID, MCC_BLOCK>>>(Gsize, Csize, ngy, nsp, dt, DT_MCCn, dt_mcc, idx, idy, h_nvel, dev_vsave, devStates, N_LOGX, idLOGX, dev_SigmaV,
-												dev_Coll_Flag, dev_ArO2CX, TnRct, dev_MCC_rate, dev_FG, dev_C_F, dev_GvecSet, dev_info_sp, dev_G_sp, dev_sp);
+												dev_Coll_Flag, dev_ArO2CX, TnRct, dev_MCC_rate, dev_RCstack, dev_FG, dev_FG_Den, dev_GvecSet, dev_info_sp, dev_G_sp, dev_sp);
 	cudaDeviceSynchronize();
 }
 void MCC_O2_cuda(){
 	MCC_O2_Basic<<<MCC_GRID, MCC_BLOCK>>>(Gsize, Csize, ngy, nsp, dt, DT_MCCn, dt_mcc, idx, idy, h_nvel, dev_vsave, devStates, N_LOGX, idLOGX, dev_SigmaV,
-												dev_Coll_Flag, dev_O2CX, TnRct, dev_MCC_rate, dev_FG, dev_C_F, dev_GvecSet, dev_info_sp, dev_G_sp, dev_sp);
+												dev_Coll_Flag, dev_O2CX, TnRct, dev_MCC_rate, dev_RCstack, dev_FG, dev_FG_Den, dev_GvecSet, dev_info_sp, dev_G_sp, dev_sp);
 	cudaDeviceSynchronize();
 }
 void MCC_Ar_cuda(){
 	MCC_Ar_Basic<<<MCC_GRID, MCC_BLOCK>>>(Gsize, Csize, ngy, nsp, dt, DT_MCCn, dt_mcc, idx, idy, h_nvel, dev_vsave, devStates, N_LOGX, idLOGX, dev_SigmaV,
-												dev_Coll_Flag, dev_ArCX, TnRct, dev_MCC_rate, dev_FG, dev_C_F, dev_GvecSet, dev_info_sp, dev_G_sp, dev_sp);
+												dev_Coll_Flag, dev_ArCX, TnRct, dev_MCC_rate, dev_RCstack, dev_FG, dev_FG_Den, dev_GvecSet, dev_info_sp, dev_G_sp, dev_sp);
 	//MCC_Ar_Basic_v2<<<MCC_GRID, MCC_BLOCK>>>(Gsize, Csize, ngy, nsp, dt, DT_MCCn, dt_mcc, idx, idy, h_nvel, dev_vsave, devStates, N_LOGX, idLOGX, dev_SigmaV,
-	//											dev_Coll_Flag, dev_ArCX, TnRct, dev_MCC_rate, dev_FG, dev_C_F, dev_GvecSet, dev_info_sp, dev_G_sp, dev_sp);
+	//											dev_Coll_Flag, dev_ArCX, TnRct, dev_MCC_rate, dev_RCstack, dev_FG, dev_FG_Den, dev_GvecSet, dev_info_sp, dev_G_sp, dev_sp);
 	//MCC_Ar_Basic_v3<<<MCC_GRID, MCC_BLOCK>>>(Gsize, Csize, ngy, nsp, dt, DT_MCCn, dt_mcc, idx, idy, h_nvel, dev_vsave, devStates, N_LOGX, idLOGX, dev_SigmaV,
-	//											dev_Coll_Flag, dev_ArCX, TnRct, dev_MCC_rate, dev_FG, dev_C_F, dev_GvecSet, dev_info_sp, dev_G_sp, dev_sp);
+	//											dev_Coll_Flag, dev_ArCX, TnRct, dev_MCC_rate, dev_RCstack, dev_FG, dev_FG_Den, dev_GvecSet, dev_info_sp, dev_G_sp, dev_sp);
 	cudaDeviceSynchronize();
 }
 __global__ void MCC_ArO2_Basic(int Gsize, int Csize, int ngy, int nsp, float dt, int MCCn, float dtm, float idx,float idy, int nvel, float *vsave,
-											curandState *states, int N_LOGX, float idLOGX, MCC_sigmav *sigv, CollF *CollP, ArO2CollD *CX, int TnRct, float*MCCR,
-											Fluid *infoF, GFC *Fluid, GGA *BG, Species *info, GPG *data, GCP *sp){
+											curandState *states, int N_LOGX, float idLOGX, MCC_sigmav *sigv, CollF *CollP, ArO2CollD *CX, int TnRct, float *MCCR, float *Stack,
+											Fluid *infoF, GFG *Fluid, GGA *BG, Species *info, GPG *data, GCP *sp){
 	int TID = threadIdx.x + blockIdx.x * blockDim.x;
 	if(TID>=nsp*Gsize) return;
 	int isp = TID/Gsize;
@@ -70,8 +70,8 @@ __global__ void MCC_ArO2_Basic(int Gsize, int Csize, int ngy, int nsp, float dt,
 	*/
 }	
 __global__ void MCC_O2_Basic(int Gsize, int Csize, int ngy, int nsp, float dt, int MCCn, float dtm, float idx,float idy, int nvel, float *vsave,
-											curandState *states, int N_LOGX, float idLOGX, MCC_sigmav *sigv, CollF *CollP, O2CollD *CX, int TnRct, float*MCCR,
-											Fluid *infoF, GFC *Fluid, GGA *BG, Species *info, GPG *data, GCP *sp){
+											curandState *states, int N_LOGX, float idLOGX, MCC_sigmav *sigv, CollF *CollP, O2CollD *CX, int TnRct, float *MCCR, float *Stack,
+											Fluid *infoF, GFG *Fluid, GGA *BG, Species *info, GPG *data, GCP *sp){
 	int TID = threadIdx.x + blockIdx.x * blockDim.x;
 	if(TID>=Gsize) return;
 	int isp = TID/Gsize;
@@ -95,17 +95,18 @@ __global__ void MCC_O2_Basic(int Gsize, int Csize, int ngy, int nsp, float dt, i
 	}	
 }	
 __global__ void MCC_Ar_Basic(int Gsize, int Csize, int ngy, int nsp, float dt, int MCCn, float dtm, float idx,float idy, int nvel, float *vsave,
-											curandState *states, int N_LOGX, float idLOGX, MCC_sigmav *sigv, CollF *CollP, ArCollD *CX, int TnRct, float*MCCR,
-											Fluid *infoF, GFC *Fluid, GGA *BG, Species *info, GPG *data, GCP *sp){
+											curandState *states, int N_LOGX, float idLOGX, MCC_sigmav *sigv, CollF *CollP, ArCollD *CX, int TnRct, float *MCCR, float *Stack,
+											Fluid *infoF, GFG *Fluid, GGA *BG, Species *info, GPG *data, GCP *sp){
 	int TID = threadIdx.x + blockIdx.x * blockDim.x;
 	// Direct Method
 	if(TID>=Gsize) return;
 	Direct_Argon_ArIon(Gsize, ngy, TID, MCCn, dt, nvel, vsave, states, info, data, sp, N_LOGX, idLOGX, sigv, CollP, CX, TnRct, MCCR, BG, Fluid);
 	Direct_Argon_Electron(Gsize, ngy, TID, MCCn, dtm, nvel, vsave, states, info, data, sp, N_LOGX, idLOGX, sigv, CollP, CX, TnRct, MCCR, BG, Fluid);
+	//MCC_Argon_RC(Gsize, ngy, TID, nvel, vsave, states, TnRct, MCCR, Stack, CollP, info, data, sp, Fluid);
 }	
 __global__ void MCC_Ar_Basic_v2(int Gsize, int Csize, int ngy, int nsp, float dt, int MCCn, float dtm, float idx,float idy, int nvel, float *vsave,
-											curandState *states, int N_LOGX, float idLOGX, MCC_sigmav *sigv, CollF *CollP, ArCollD *CX, int TnRct, float*MCCR,
-											Fluid *infoF, GFC *Fluid, GGA *BG, Species *info, GPG *data, GCP *sp){
+											curandState *states, int N_LOGX, float idLOGX, MCC_sigmav *sigv, CollF *CollP, ArCollD *CX, int TnRct, float *MCCR, float *Stack,
+											Fluid *infoF, GFG *Fluid, GGA *BG, Species *info, GPG *data, GCP *sp){
 	int TID = threadIdx.x + blockIdx.x * blockDim.x;
 	// Memory mode
 	if(TID>=nsp*Gsize) return;
@@ -123,8 +124,8 @@ __global__ void MCC_Ar_Basic_v2(int Gsize, int Csize, int ngy, int nsp, float dt
 	}
 }	
 __global__ void MCC_Ar_Basic_v3(int Gsize, int Csize, int ngy, int nsp, float dt, int MCCn, float dtm, float idx,float idy, int nvel, float *vsave,
-											curandState *states, int N_LOGX, float idLOGX, MCC_sigmav *sigv, CollF *CollP, ArCollD *CX, int TnRct, float*MCCR,
-											Fluid *infoF, GFC *Fluid, GGA *BG, Species *info, GPG *data, GCP *sp){
+											curandState *states, int N_LOGX, float idLOGX, MCC_sigmav *sigv, CollF *CollP, ArCollD *CX, int TnRct, float *MCCR, float *Stack,
+											Fluid *infoF, GFG *Fluid, GGA *BG, Species *info, GPG *data, GCP *sp){
 	int TID = threadIdx.x + blockIdx.x * blockDim.x;
 	// Hybrid mode
 	if(TID>=Gsize) return;
@@ -218,14 +219,17 @@ void Set_NullCollisionTime_cuda(){
     checkCudaErrors(cudaMalloc((void**)&dev_Coll_Flag, TnRct * sizeof(CollF)));
     checkCudaErrors(cudaMemcpy(dev_Coll_Flag, Coll_Flag, TnRct * sizeof(CollF), cudaMemcpyHostToDevice));
 	checkCudaErrors(cudaMalloc((void**)&dev_MCC_rate, Msize * sizeof(float)));
-    checkCudaErrors(cudaMemcpy(dev_MCC_rate, MCC_rate, Msize * sizeof(float), cudaMemcpyHostToDevice));
 	checkCudaErrors(cudaMemset((void *) dev_MCC_rate, 0.0f, Msize * sizeof(float)));
+    checkCudaErrors(cudaMemcpy(dev_MCC_rate, MCC_rate, Msize * sizeof(float), cudaMemcpyHostToDevice));
 	checkCudaErrors(cudaMalloc((void**)&dev_ave_MCC_rate, Msize * sizeof(float)));
 	checkCudaErrors(cudaMemset((void *) dev_ave_MCC_rate, 0.0f, Msize * sizeof(float)));
 	checkCudaErrors(cudaMemcpy(dev_ave_MCC_rate, ave_MCC_rate, Msize * sizeof(float), cudaMemcpyHostToDevice));
     if(MainGas == ARGON){
         checkCudaErrors(cudaMalloc((void**)&dev_ArCX, N_LOGX * sizeof(ArCollD)));
         checkCudaErrors(cudaMemcpy(dev_ArCX, Ar_Data, N_LOGX * sizeof(ArCollD), cudaMemcpyHostToDevice));
+		// RC_stack
+		checkCudaErrors(cudaMalloc((void**)&dev_RCstack, 1 * Gsize * sizeof(float)));
+		checkCudaErrors(cudaMemset((void *)dev_RCstack, 0.0f, 1 * Gsize * sizeof(float)));
         num_a = 3; 			
         Host_SigmaV = (MCC_sigmav *)malloc(num_a * sizeof(MCC_sigmav));
         for(i=0;i<num_a;i++) Host_SigmaV[i].val = 0.0;
@@ -271,6 +275,9 @@ void Set_NullCollisionTime_cuda(){
     }else if(MainGas == OXYGEN){
         checkCudaErrors(cudaMalloc((void**)&dev_O2CX, N_LOGX * sizeof(O2CollD)));
         checkCudaErrors(cudaMemcpy(dev_O2CX, O2_Data, N_LOGX * sizeof(O2CollD), cudaMemcpyHostToDevice));
+		// RC_stack
+		checkCudaErrors(cudaMalloc((void**)&dev_RCstack, 1 * Gsize * sizeof(float)));
+		checkCudaErrors(cudaMemset((void *)dev_RCstack, 0.0f, 1 * Gsize * sizeof(float)));
 		num_a = 20; 			
 		Host_SigmaV = (MCC_sigmav *)malloc(num_a * sizeof(MCC_sigmav));
         for(i=0;i<num_a;i++) Host_SigmaV[i].val = 0.0;
@@ -373,6 +380,11 @@ void Set_NullCollisionTime_cuda(){
     }else if(MainGas == ARO2){
         checkCudaErrors(cudaMalloc((void**)&dev_ArO2CX, N_LOGX * sizeof(ArO2CollD)));
         checkCudaErrors(cudaMemcpy(dev_ArO2CX, ArO2_Data, N_LOGX * sizeof(ArO2CollD), cudaMemcpyHostToDevice));
+		// RC_stack
+		checkCudaErrors(cudaMalloc((void**)&dev_RCstack, 5 * Gsize * sizeof(float)));
+		checkCudaErrors(cudaMemset((void *)dev_RCstack, 0.0f, 5 * Gsize * sizeof(float)));
+		checkCudaErrors(cudaMalloc((void**)&dev_stack, nsp * Gsize * sizeof(float)));
+		checkCudaErrors(cudaMemset((void *)dev_stack, 0.0f, nsp * Gsize * sizeof(float)));
 		num_a = 25; 			
 		Host_SigmaV = (MCC_sigmav *)malloc(num_a * sizeof(MCC_sigmav));
         for(i=0;i<num_a;i++) Host_SigmaV[i].val = 0.0;

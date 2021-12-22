@@ -26,7 +26,22 @@ void V000_DUMP(FILE *SF){
             fwrite(&PtD[isp].vx[i], 4, 1, SF);
             fwrite(&PtD[isp].vy[i], 4, 1, SF);
             fwrite(&PtD[isp].vz[i], 4, 1, SF);
+            //if(isp ==1 && PtD[isp].x[i] < 5){
+            //    printf("x = %g, CellID = %d\n",PtD[isp].x[i],PtD[isp].CellID[i]);
+            //}
         }
+    }
+    //Fluid info
+    fwrite(&Conti_Flag, 4, 1, SF);
+    for(isp=0;isp<nfsp;isp++){
+        for(i=0;i<ncx;i++){
+            fwrite(Fluid_sp[isp].den[i], 4, ncy, SF);
+            fwrite(Fluid_sp[isp].Source[i], 4, ncy, SF);
+        }
+        for(i=0;i<ngx;i++)
+            fwrite(Fluid_sp[isp].flux_x[i], 4, ncy, SF);
+        for(i=0;i<ncx;i++)
+            fwrite(Fluid_sp[isp].flux_y[i], 4, ngy, SF);
     }
     // History data
     fwrite(&hist_count, 4, 1, SF);
@@ -34,6 +49,9 @@ void V000_DUMP(FILE *SF){
 	fwrite(t_array, 4, hist_count, SF);
 	for (isp = 0; isp < nsp; isp++) {
 		fwrite(HistPt[isp].np, 4, hist_count, SF);
+	}
+    for (isp = 0; isp < nfsp; isp++) {
+		fwrite(HistFG[isp].np, 4, hist_count, SF);
 	}
 	fwrite(iter_array, 4, hist_count, SF);
     for (i = 0; i < CondNUMR; i++) {

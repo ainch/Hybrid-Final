@@ -7,6 +7,7 @@ extern int Lap_Field_Solver_Test,Lap_Field_Solver_Flag,Lap_Field_Solver_Save;
 extern int nsp;
 extern Species *SP;// particle species
 extern int External_Flag; // 0 : Voltage driven, 1: Power driven
+extern int CSS_Flag;
 extern void (*EFIELD)();
 extern void Efield_cuda();
 extern void Efield_cuda_Basic();
@@ -23,6 +24,8 @@ extern void (*DEPOSIT)();
 extern void Deposit_cuda();
 extern void Deposit_Basic();
 extern void (*CONTIEQ)();
+extern void Solve_Continuity_eqn();
+extern void Solve_Continuity_eqn_check();
 extern void (*DIAG)();
 extern void Diagnostic();
 extern void Diagnostic_Basic();

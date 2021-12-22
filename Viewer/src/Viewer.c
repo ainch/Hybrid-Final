@@ -63,7 +63,7 @@ void Make_Value(){
 			for (j = 0; j < ncy; j++) {
 				index = isp * Csize + i * ncy + j;
 				FG_den[isp][i][j] = 0.0f;
-				//FG_source[isp][i][j] = 0.0f;
+				FG_source[isp][i][j] = 0.0f;
 			}
 		}
 		for (i = 0; i < ngx; i++) {
@@ -137,10 +137,10 @@ void Set_Time_History(){
 	for (isp = 0; isp < nsp; isp++)
 		XGCurve(t_array, HistPt[isp].np, &hist_count, isp);
 
-    //XGSet2D("linlog", "t (s)", "A Number of Fluid(t)", "closed", 100, 500, 1.0,
-	//		1.0, TRUE, TRUE, 0.0, 0.0, 0.0, 0.0);
-	//for (isp = 0; isp < nfsp; isp++)
-	//	XGCurve(t_array, HistFG[isp].np, &hist_count, isp);
+    XGSet2D("linlog", "t (s)", "A Number of Fluid(t)", "closed", 100, 500, 1.0,
+			1.0, TRUE, TRUE, 0.0, 0.0, 0.0, 0.0);
+	for (isp = 0; isp < nfsp; isp++)
+		XGCurve(t_array, HistFG[isp].np, &hist_count, isp);
 
 	XGSet2D("linlin", "t (s)", "History Averaged Particle (t)", "closed", 100, 500, 1.0,
 			1.0, TRUE, TRUE, 0.0, 0.0, 0.0, 0.0);
@@ -262,24 +262,23 @@ void Set_Fluid_2D(){
 		XGSet3D("linlinlin", "X (m)", "Y (m)", buffer, 20.0, 60.0, "closed", 100,
 				150, 1.0, 1.0, 1.0, FALSE, FALSE, TRUE, 0.0,
 				xlength, 0.0, ylength, 0.0, 0.0);
-		XGSurf(x_Carray, y_Carray, FG_den[isp], &ncx, &ncy, 3);
-		/*
+		XGSurf(x_Carray, y_Carray, Fluid_sp[isp].den, &ncx, &ncy, 3);
+		
 		sprintf(buffer, "Source %s", FG[isp].name);
 		XGSet3D("linlinlin", "X (m)", "Y (m)", buffer, 20.0, 60.0, "closed", 100,
 				150, 1.0, 1.0, 1.0, FALSE, FALSE, TRUE, 0.0,
 				xlength, 0.0, ylength, 0.0, 0.0);
-		XGSurf(x_Carray, y_Carray, FG_source[isp], &ncx, &ncy, 3);
+		XGSurf(x_Carray, y_Carray, Fluid_sp[isp].Source, &ncx, &ncy, 3);
 		sprintf(buffer, "Flux_x %s", FG[isp].name);
 		XGSet3D("linlinlin", "X (m)", "Y (m)", buffer, 20.0, 60.0, "closed", 100,
 				150, 1.0, 1.0, 1.0, FALSE, FALSE, TRUE, 0.0,
 				xlength, 0.0, ylength, 0.0, 0.0);
-		XGSurf(x_Garray, y_Garray, FG_flux_x[isp], &ngx, &ngy, 3);
+		XGSurf(x_Garray, y_Carray, Fluid_sp[isp].flux_x, &ngx, &ncy, 3);
 		sprintf(buffer, "Flux_y %s", FG[isp].name);
 		XGSet3D("linlinlin", "X (m)", "Y (m)", buffer, 20.0, 60.0, "closed", 100,
 				150, 1.0, 1.0, 1.0, FALSE, FALSE, TRUE, 0.0,
 				xlength, 0.0, ylength, 0.0, 0.0);
-		XGSurf(x_Garray, y_Garray, FG_flux_y[isp], &ngx, &ngy, 3);
-		*/
+		XGSurf(x_Carray, y_Garray, Fluid_sp[isp].flux_y, &ncx, &ngy, 3);
 	}
 }
 void Set_Background_2D(){

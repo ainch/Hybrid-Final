@@ -20,9 +20,8 @@ extern __global__ void Cond_Sigma_Lap(int ngx, int ngy, float dx, float dy, floa
 extern __global__ void MoveE_Basic(int Gsize,int ngy,float dt_dx,float dt_dy, Species *info, GCP *sp, GPG *data, GGA *Field);
 extern __global__ void SortBoundary_Basic(int Gsize,int ngy,int CondNum, float dt_dx,float dt_dy,int *StructureIndex, Species *info, GCP *sp, GPG *data, GGA *Field, float *Cond, int *ReArgFlag);
 extern __global__ void MCC_Ar_Basic(int Gsize, int Csize, int ngy, int nsp, float dt, int MCCn, float dtm,float idx,float idy, int nvel, float *vsave,
-											curandState *states, int N_LOGX, float idLOGX, MCC_sigmav *sigv, CollF *CollP, ArCollD *CX,  int TnRct, float*MCCR,
-											Fluid *infoF, GFC *Fluid, GGA *BG, Species *info, GPG *data, GCP *sp);
-extern __global__ void Cal_D_Argon(int nfsp, int ncy, int Csize, float press, GCA *vec_C, GGA *vec_G, GFC *data);
+											curandState *states, int N_LOGX, float idLOGX, MCC_sigmav *sigv, CollF *CollP, ArCollD *CX,  int TnRct, float *MCCR, float *Stack, 
+											Fluid *infoF, GFG *Fluid, GGA *BG, Species *info, GPG *data, GCP *sp);
 extern __global__ void Average_Particle_Density(int nsp, int Gsize, int N_ave, Species *info, GPG *data);
 extern __global__ void Average_Argon_MCC_rate(int Gsize, int TnRct, int N_ave, float dt, float *MCCR, float *ave_MCCR, Species *info);
 namespace cg = cooperative_groups;
@@ -47,7 +46,6 @@ dim3 EFIELD_GRID,EFIELD_BLOCK;
 dim3 MOVE_GRID, MOVE_BLOCK;
 dim3 SORT_GRID, SORT_BLOCK;
 dim3 MCC_GRID, MCC_BLOCK;
-dim3 CONTI_GRID,CONTI_BLOCK;
 dim3 DIAG_G_GRID, DIAG_G_BLOCK;
 dim3 DIAG_NSPG_GRID, DIAG_NSPG_BLOCK;
 void Set_Device_Parameter();

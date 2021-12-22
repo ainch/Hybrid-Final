@@ -22,6 +22,7 @@ C_OBJS = $(OBJ_DIR)/Main_Viewer.o \
           $(OBJ_DIR2)/load.o \
           $(OBJ_DIR2)/Diagnostics.o \
           $(OBJ_DIR2)/Efield.o \
+          $(OBJ_DIR2)/Fluid.o \
           $(OBJ_DIR2)/Tecplot.o \
           $(OBJ_DIR2)/Particle.o
 
@@ -33,6 +34,7 @@ C_H_FILES = inc/xypic.h \
             $(HEADER_DIR)/PhysicsData.h \
             $(HEADER_DIR)/load.h \
             $(HEADER_DIR)/Efield.h \
+            $(HEADER_DIR)/Fluid.h \
             $(HEADER_DIR)/Tecplot.h \
             $(HEADER_DIR)/Particle.h
 

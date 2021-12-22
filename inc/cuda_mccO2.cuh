@@ -26,7 +26,7 @@ extern Species *dev_info_sp;// particle species
 extern GCP *dev_sp;
 extern GPG *dev_G_sp;
 extern GGA *dev_GvecSet;
-extern GFC *dev_C_F;
+extern GFG *dev_FG_Den;
 extern Fluid *dev_FG;
 extern curandState *devStates;
 extern int h_nvel;
@@ -46,7 +46,7 @@ extern __device__ void dev_anewvel(float energy,float vel,float* n_vx,float* n_v
 #ifndef __CUDA_MCCAR_CUH__
 #define __CUDA_MCCAR_CUH__
 __device__ void  O2Collision_Check(int Gsize, int Csize, int ngy, int TID, float dt, int MCCn, float dtm, float dx, float dy,
-                                        curandState *states, Species *info, GPG *data, GCP *sp, MCC_sigmav *sigv, GGA *BG, GFC *Fluid);
+                                        curandState *states, Species *info, GPG *data, GCP *sp, MCC_sigmav *sigv, GGA *BG, GFG *Fluid);
 __device__ void O2_Electron(int Gsize, int ngy, int TID, int nvel, float *vsave, curandState *states, 
 											Species *info, GPG *data, GCP *sp, int N_LOGX, float idLOGX, 
 											MCC_sigmav *sigv, CollF *info_CX, O2CollD *CX, int TnRct, float*MCCR,GGA *BG);

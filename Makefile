@@ -21,6 +21,7 @@ C_OBJS = $(OBJ_DIR)/main.o \
           $(OBJ_DIR)/PhysicsData.o \
           $(OBJ_DIR)/load.o \
           $(OBJ_DIR)/Efield.o \
+          $(OBJ_DIR)/Fluid.o \
           $(OBJ_DIR)/Diagnostics.o \
           $(OBJ_DIR)/Tecplot.o \
           $(OBJ_DIR)/Particle.o
@@ -37,10 +38,10 @@ CU_OBJS = $(OBJ_DIR)/cuda_main.o \
           $(OBJ_DIR)/cuda_mccArO2.o \
           $(OBJ_DIR)/cuda_Deposit.o \
           $(OBJ_DIR)/cuda_Move.o \
+          $(OBJ_DIR)/cuda_Fluid.o \
           $(OBJ_DIR)/cuda_Sortboundary.o \
           $(OBJ_DIR)/cuda_Combination.o \
           $(OBJ_DIR)/cuda_Tecplot.o \
-          $(OBJ_DIR)/cuda_Fluid.o \
           $(OBJ_DIR)/cuda_Diagnostic.o \
           $(OBJ_DIR)/cuda_SaveDump.o 
 
@@ -50,6 +51,7 @@ C_H_FILES = inc/xypic.h \
             inc/def.h \
             inc/PhysicsData.h \
             inc/load.h \
+            inc/Fluid.h \
             inc/Efield.h \
             inc/Diagnostics.h \
             inc/Tecplot.h \
@@ -68,10 +70,10 @@ CU_H_FILES = inc/xypic.cuh \
              inc/cuda_mccArO2.cuh \
              inc/cuda_Deposit.cuh \
              inc/cuda_Move.cuh \
+             inc/cuda_Fluid.cuh \
              inc/cuda_Sortboundary.cuh \
              inc/cuda_Combination.cuh \
              inc/cuda_Tecplot.cuh \
-             inc/cuda_Fluid.cuh \
              inc/cuda_Diagnostic.cuh \
              inc/cuda_SaveDump.cuh \
              inc/helper_cuda.h \

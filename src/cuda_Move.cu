@@ -27,7 +27,6 @@ __device__ void Move_Electron(int TID, int Gsize,int ngy, float dt_dx,float dt_d
 	float mvX,mvY,mvZ;
 	float del_vx,del_vy;
     float id_cell;
-	int pp=0;
 	PNMC=0;
 	ex_ws=Field[TID].Ex; 
 	ex_wn=Field[TID+1].Ex; 
@@ -43,7 +42,6 @@ __device__ void Move_Electron(int TID, int Gsize,int ngy, float dt_dx,float dt_d
 	for(k=0;k<PNC;k++){
 		lx=sp[i].x; 
 		ly=sp[i].y;
-		pp = sp[i].CellID;
 		del_vx=ex_ws*(1-lx)*(1-ly)+ex_wn*(1-lx)*ly+ex_es*lx*(1-ly)+ex_en*lx*ly;
 		del_vy=ey_ws*(1-lx)*(1-ly)+ey_wn*(1-lx)*ly+ey_es*lx*(1-ly)+ey_en*lx*ly;
 
@@ -74,12 +72,12 @@ __device__ void Move_Electron(int TID, int Gsize,int ngy, float dt_dx,float dt_d
 				id_cell-=ngy;
 				lx+=1.0;
 			}
-			while(ly>=1 || ly<0 || lx>=1 || lx<0){
-				if(ly>=1) ly-=1.0;
-				else if(ly<0) ly+=1.0;
-				if(lx>=1) lx-=1.0;
-				else if(lx<0) lx+=1.0;
-			}
+			//while(ly>=1 || ly<0 || lx>=1 || lx<0){
+			//	if(ly>=1) ly-=1.0;
+			//	else if(ly<0) ly+=1.0;
+			//	if(lx>=1) lx-=1.0;
+			//	else if(lx<0) lx+=1.0;
+			//}
             sp[index].CellID = id_cell;
         }else{
             index = i-PNMC*Gsize;
@@ -113,7 +111,6 @@ __device__ void Move_ion(int TID, int Gsize,int ngy, float dt_dx,float dt_dy, Sp
 	float mvX,mvY,mvZ;
 	float del_vx,del_vy;
     float id_cell;
-	int pp=0;
 	PNMC=0;
 	ex_ws=Field[TID].Ex; 
 	ex_wn=Field[TID+1].Ex; 
@@ -129,7 +126,6 @@ __device__ void Move_ion(int TID, int Gsize,int ngy, float dt_dx,float dt_dy, Sp
 	for(k=0;k<PNC;k++){
 		lx=sp[i].x; 
 		ly=sp[i].y;
-		pp = sp[i].CellID;
 		del_vx=ex_ws*(1-lx)*(1-ly)+ex_wn*(1-lx)*ly+ex_es*lx*(1-ly)+ex_en*lx*ly;
 		del_vy=ey_ws*(1-lx)*(1-ly)+ey_wn*(1-lx)*ly+ey_es*lx*(1-ly)+ey_en*lx*ly;
 
@@ -202,7 +198,6 @@ __global__ void MoveE_Basic(int Gsize,int ngy, float dt_dx,float dt_dy, Species 
 	float mvX,mvY,mvZ;
 	float del_vx,del_vy;
     float id_cell;
-		int pp=0;
 	
 	PNMC=0;
 	
@@ -220,10 +215,8 @@ __global__ void MoveE_Basic(int Gsize,int ngy, float dt_dx,float dt_dy, Species 
 	for(k=0;k<PNC;k++){
 		lx=sp[i].x; 
 		ly=sp[i].y;
-		pp = sp[i].CellID;
 		del_vx=ex_ws*(1-lx)*(1-ly)+ex_wn*(1-lx)*ly+ex_es*lx*(1-ly)+ex_en*lx*ly;
 		del_vy=ey_ws*(1-lx)*(1-ly)+ey_wn*(1-lx)*ly+ey_es*lx*(1-ly)+ey_en*lx*ly;
-
 		mvX=sp[i].vx+del_vx*info[isp].Ascale;
 		mvY=sp[i].vy+del_vy*info[isp].Ascale;
 		mvZ=sp[i].vz;
@@ -251,21 +244,23 @@ __global__ void MoveE_Basic(int Gsize,int ngy, float dt_dx,float dt_dy, Species 
 				id_cell-=ngy;
 				lx+=1.0;
 			}
+			/*
 			while(ly>=1 || ly<0 || lx>=1 || lx<0){
 				if(ly>=1) ly-=1.0;
 				else if(ly<0) ly+=1.0;
 				if(lx>=1) lx-=1.0;
 				else if(lx<0) lx+=1.0;
 			}
+			*/
             sp[index].CellID = id_cell;
         }else{
             index = i-PNMC*Gsize;
         }
+		sp[index].x=lx;
+		sp[index].y=ly;
         sp[index].vx=mvX;
 		sp[index].vy=mvY;
 		sp[index].vz=mvZ;
-        sp[index].x=lx;
-		sp[index].y=ly;
 		//if(sp[index].vx==0) printf("vx[%d]: B[%g]->A[%g]\n",isp,sp[i].x,sp[index].x);
 		//if(sp[index].x>1.0f) printf("[%d]=[%d,%d]isp[%d][%g]E[%g,%g]: B[%g]->A[%g] = %g\n",sp[index].CellID,(int)(pp/ngy),(int)(pp%ngy),isp,info[isp].Ascale,del_vx,del_vy,sp[i].vx,sp[index].vx, mvX*dt_dx);
        	i+=Gsize;

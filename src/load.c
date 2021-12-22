@@ -31,12 +31,27 @@ void V000_LoadDUMP(FILE *LF){
             fread(&PtD[isp].vz[i], 4, 1, LF);
         }
     }
+    //Fluid info
+    fread(&Conti_Flag, 4, 1, LF);
+    for(isp=0;isp<nfsp;isp++){
+        for(i=0;i<ncx;i++){
+            fread(Fluid_sp[isp].den[i], 4, ncy, LF);
+            fread(Fluid_sp[isp].Source[i], 4, ncy, LF);
+        }
+        for(i=0;i<ngx;i++)
+            fread(Fluid_sp[isp].flux_x[i], 4, ncy, LF);
+        for(i=0;i<ncx;i++)
+            fread(Fluid_sp[isp].flux_y[i], 4, ngy, LF);
+    }
     // History data
     fread(&hist_count, 4, 1, LF);
     fread(&dHIST, 4, 1, LF);
 	fread(t_array, 4, hist_count, LF);
 	for (isp = 0; isp < nsp; isp++) {
 		fread(HistPt[isp].np, 4, hist_count, LF);
+	}
+    for (isp = 0; isp < nfsp; isp++) {
+		fread(HistFG[isp].np, 4, hist_count, LF);
 	}
 	fread(iter_array, 4, hist_count, LF);
     for (i = 0; i < CondNUMR; i++) {

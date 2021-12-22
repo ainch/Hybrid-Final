@@ -1,10 +1,48 @@
 #include "cuda_mccAr.cuh"
+__device__ void MCC_Argon_RC(int Gsize, int ngy, int TID, int nvel, float *vsave, curandState *states, 
+	int TnRct, float *MCCR, float *Stack, CollF *info_CX, Species *info, GPG *data, GCP *sp, GFG *FG){
+	float PNC,M1;
+	int oldPNC,index,index2,n;
+	int xi = TID/ngy;
+	int yi = TID%ngy;
+	if(yi>ngy-2) return;
+	if(xi>Gsize/ngy-2) return;
+	curandState LocalStates = states[TID];
+	M1 = 0;
+	PNC = Stack[TID];
+	PNC += info_CX[8].RR*FG[TID].n*FG[TID].n * info[0].MCCscale;
+	while(PNC >= 1.0f){
+		//printf("[%d]=[%d][%d]PNC = %g %g %g %g \n",TID,xi,yi,PNC,info_CX[8].RR,FG[CID].den,info[isp].MCCscale);
+		oldPNC = atomicAdd(&data[TID].PtNumInCell,1);
+		index = info[0].St_num + TID + oldPNC*Gsize;
+		sp[index].CellID = TID;
+		sp[index].x = curand_uniform(&LocalStates);
+		sp[index].y = curand_uniform(&LocalStates);
+		n = (nvel-1) * curand_uniform(&LocalStates);
+		dev_maxwellv(&sp[index].vx,&sp[index].vy,&sp[index].vz,vsave[n],info[0].vti,curand_uniform(&LocalStates),curand_uniform(&LocalStates));	
+		oldPNC = atomicAdd(&data[TID+Gsize].PtNumInCell,1);
+		index2 = info[1].St_num + TID + oldPNC*Gsize;
+		sp[index2].CellID = TID + Gsize;
+		sp[index2].x = sp[index].x;
+		sp[index2].y = sp[index].y;
+		n = (nvel-1) * curand_uniform(&LocalStates);
+		dev_maxwellv(&sp[index2].vx,&sp[index2].vy,&sp[index2].vz,vsave[n],info[1].vti,curand_uniform(&LocalStates),curand_uniform(&LocalStates));	
+		PNC--;
+		M1 += 0.25;
+		break;
+	}
+	atomicAdd(&MCCR[TID*TnRct + 8] ,M1);
+	atomicAdd(&MCCR[(TID+1)*TnRct + 8] ,M1);
+	atomicAdd(&MCCR[(TID+ngy)*TnRct + 8] ,M1);
+	atomicAdd(&MCCR[(TID+ngy+1)*TnRct + 8] ,M1);
+	Stack[TID] = PNC;
+    states[TID] = LocalStates;
+}
 __device__ void Direct_Argon_Electron(int Gsize, int ngy, int ID, int MCCn, float dtm, int nvel, float *vsave, curandState *states, 
 											Species *info, GPG *data, GCP *sp, int N_LOGX, float idLOGX, 
-											MCC_sigmav *sigv, CollF *info_CX, ArCollD *CX, int TnRct, float*MCCR, GGA *BG, GFC *Fluid){
+											MCC_sigmav *sigv, CollF *info_CX, ArCollD *CX, int TnRct, float*MCCR, GGA *BG, GFG *Fluid){
 	int i,j,k,n,index;
 	int PNC,PNC2;
-	int nx,ny,ngx;
 	int Target;
 	int Colltype;
 	float Prob1,Prob2;
@@ -16,13 +54,8 @@ __device__ void Direct_Argon_Electron(int Gsize, int ngy, int ID, int MCCn, floa
 	PNC = data[ID].PtNumInCell;
     PNC2 = data[ID+Gsize].PtNumInCell;
 	curandState LocalStates = states[ID];
-    nx = ID/ngy;
-	ny = ID%ngy;
-	ngx = Gsize/ngy;
-	if(nx == ngx-1) nx--;
-	if(ny == ngy-1) ny--;
 	Prob1 = 1.0f - exp(-1*dtm*sigv[0].val*BG[ID].BackDen1);
-	Prob2 = Prob1 + 1.0f - exp(-1*dtm*sigv[1].val*Fluid[ny + (ngy-1)*nx].ave_den);
+	Prob2 = Prob1 + 1.0f - exp(-1*dtm*sigv[1].val*Fluid[ID].n);
     // Calculate total Collision probability.
     AddPt = 0;
 	massRatio = info_CX[4].mofM;
@@ -135,13 +168,13 @@ __device__ void Direct_Argon_Electron(int Gsize, int ngy, int ID, int MCCn, floa
 		i+=Gsize;
 	}
 	//if(AddPt != 0) printf("[%d] PNC[%d] addpt[%d]\n",ID,PNC,AddPt);
-    data[ID].PtNumInCell = PNC +AddPt;
+    data[ID].PtNumInCell = PNC + AddPt;
     data[ID+Gsize].PtNumInCell = PNC2+AddPt;
 	states[ID]=LocalStates;
 }
 __device__ void Direct_Argon_ArIon(int Gsize, int ngy, int ID, int MCCn, float dt, int nvel, float *vsave, curandState *states, 
 											Species *info, GPG *data, GCP *sp, int N_LOGX, float idLOGX, 
-											MCC_sigmav *sigv, CollF *info_CX, ArCollD *CX, int TnRct, float*MCCR, GGA *BG, GFC *Fluid){
+											MCC_sigmav *sigv, CollF *info_CX, ArCollD *CX, int TnRct, float*MCCR, GGA *BG, GFG *Fluid){
 	int i,k,n;
 	int PNC,Null;
 	float Prob;
@@ -198,21 +231,14 @@ __device__ void Direct_Argon_ArIon(int Gsize, int ngy, int ID, int MCCn, float d
 	states[ID]=LocalStates;
 }
 __device__ void Ar_Collision_Check(int Gsize, int Csize, int ngy, int TID, float dt, int MCCn, float dtm, float dx, float dy,
-                                        curandState *states, Species *info, GPG *data, GCP *sp, MCC_sigmav *sigv, GGA *BG, GFC *Fluid){
+                                        curandState *states, Species *info, GPG *data, GCP *sp, MCC_sigmav *sigv, GGA *BG, GFG *Fluid){
 	int i,j,k,index,Randn;
-	int ID,isp,CID,PNMC,MPNC;
+	int ID,isp,PNMC,MPNC;
     int PNC,Flag;
-	int nx,ny,ngx;
 	float Tprob,Prob1,Prob2;
 	float R1;
 	ID = TID%Gsize;
     isp = TID/Gsize;
-	nx = ID/ngy;
-	ny = ID%ngy;
-	ngx = Gsize/ngy;
-	if(nx == ngx-1) nx--;
-	if(ny == ngy-1) ny--;
-	CID = ny + (ngy-1)*nx;
 	curandState LocalStates = states[TID];
 	PNC = data[TID].PtNumInCell;
 	MPNC = data[TID].MaxPtNumInCell;
@@ -221,7 +247,7 @@ __device__ void Ar_Collision_Check(int Gsize, int Csize, int ngy, int TID, float
     switch (isp){
     case 0: // Electron
 		Prob1 = 1.0f - exp(-1*dtm*sigv[0].val*BG[ID].BackDen1);  // E + Ar
-		Prob2 = Prob1 + 1.0f - exp(-1*dtm*sigv[1].val*Fluid[CID].ave_den);  // E + Ar*
+		Prob2 = Prob1 + 1.0f - exp(-1*dtm*sigv[1].val*Fluid[ID].n);  // E + Ar*
 	    Tprob = Prob2; 
 		Randn = MCCn;
         break;
@@ -269,26 +295,19 @@ __device__ void Ar_Collision_Check(int Gsize, int Csize, int ngy, int TID, float
 	data[TID].PtNumInCell-=PNMC;
 }
 __device__ void Ar_Collision_Check_v2(int Gsize, int Csize, int ngy, int TID, float dt, int MCCn, float dtm, float dx, float dy,
-                                        curandState *states, Species *info, GPG *data, GCP *sp, MCC_sigmav *sigv, GGA *BG, GFC *Fluid){
+                                        curandState *states, Species *info, GPG *data, GCP *sp, MCC_sigmav *sigv, GGA *BG, GFG *Fluid){
 	int i,j,k,index,Randn;
-	int CID,PNMC,MPNC;
+	int PNMC,MPNC;
     int PNC,Flag;
-	int nx,ny,ngx;
 	float Prob1,Prob2;
 	float R1;
-	nx = TID/ngy;
-	ny = TID%ngy;
-	ngx = Gsize/ngy;
-	if(nx == ngx-1) nx--;
-	if(ny == ngy-1) ny--;
-	CID = ny + (ngy-1)*nx;
 	curandState LocalStates = states[TID];
 	PNC = data[TID].PtNumInCell;
 	MPNC = data[TID].MaxPtNumInCell;
 	PNMC = 0;
 	// Calculate total Collision probability.
 	Prob1 = 1.0f - exp(-1*dtm*sigv[0].val*BG[TID].BackDen1);  // E + Ar
-	Prob2 = Prob1 + 1.0f - exp(-1*dtm*sigv[1].val*Fluid[CID].ave_den);  // E + Ar*
+	Prob2 = Prob1 + 1.0f - exp(-1*dtm*sigv[1].val*Fluid[TID].n);  // E + Ar*
 	Randn = MCCn;
 	i = TID;
 	for(k=0;k<PNC;k++){

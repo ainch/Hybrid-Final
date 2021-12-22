@@ -165,9 +165,10 @@ typedef struct __Global_Info_Particle
 	float Escale;
 	float Ascale;
 	float Denscale;
+    float MCCscale;
 }Species;
 typedef struct fluid{
-	//Size =[nfsp]
+	//Size =[nfsp]  
 	char name[10];				// string name
 	int   Loadtype;				// density load type
 	float x_center,x_fall;		// density load position
@@ -178,42 +179,42 @@ typedef struct fluid{
 	float Vel;
 	float Gamma1;				// Quenching
 	float ave_Den;
+    int CSS_Flag;				// Continuity equation on or off
+	int CSS_Check;				// Cycle to judge convergence
+	float CSS_Conver;           // convergence judge value
 }Fluid;
 typedef struct __Global_Fluid_Csize_Data
 {
-	//SIZE = nfsp * Gsize, real size is Csize = ncx*ncy
-	float D;     	
-    float den;		
-	float sum_den;	
-	float ave_den;	
-	float Source;	
+	float **D;     	
+    float **den;		
+	float **Source;	
+    float **gummel_ax;			// Gummel method coefficient for x direction flux
+	float **gummel_bx;			// Gummel method coefficient for x direction flux
+	float **gummel_ay;			// Gummel method coefficient for y direction flux
+	float **gummel_by;			// Gummel method coefficient for y direction flux
+	float **flux_x;				// x direction flux
+	float **flux_y;				// y direction flux
 }GFC;
 typedef struct __Global_Fluid_Gsize_Data
 {
 	//SIZE = nfsp * Gsize, real size is nfsp * [ngx*ncy]
-	float Flux_x;
-	float Gummel_ax;
-	float Gummel_bx;
-	//SIZE = nfsp * Gsize, real size is nfsp * [ncx*ngy]
-	float Flux_y;
-	float Gummel_ay;
-	float Gummel_by;
+	float n;
 }GFG;
 typedef struct Continuity_region_x {
 	// SIZE = nfsp * Conti_xnum
-	int x1;
-	int x2;
-	int yy;		
-	float fg1;
-	float fg2;	
+	int *x1;
+	int *x2;
+	int *yy;		
+	float *fg1;
+	float *fg2;	
 }Con_RegionX;
 typedef struct Continuity_region_y {
 	// SIZE = nfsp * Conti_ynum
-	int xx;
-	int y1;
-	int y2;	
-	float fg1;
-	float fg2;	
+	int *xx;
+	int *y1;
+	int *y2;	
+	float *fg1;
+	float *fg2;	
 }Con_RegionY;
 typedef struct BackGround{
 	char name[10];				// string name

@@ -53,7 +53,7 @@ void Copy_HCPtoGCP(Species *info, HCP *A, GCP *B, GPG *C){
 		    B[index].vy = A[isp].vy[k];
 		    B[index].vz = A[isp].vz[k];
             C[GID].PtNumInCell++;
-            //printf("np[%d] = %d\n",GID,C[GID].PtNumInCell);
+            //if(isp ==1 && XID <8) printf("np[%d] = XID[%d]\n",k,XID);
         }
         sum = 0.0;
         count = 0;

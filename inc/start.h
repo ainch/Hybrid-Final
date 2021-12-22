@@ -54,7 +54,6 @@ Fluid *FG;	// fluid species
 BackG *BG;	// background species
 HCP *PtD;
 GPG *Host_G_sp;
-GFC *Host_C_F;
 float Total_Pressure;
 //
 int DT_PIC;  // Number of 1 cycle step
@@ -70,6 +69,7 @@ int N_smt;  // Number of smoothing every timestep
 int ConstB_Flag; // Magnetic field 
 int PD_intv;
 float PD_Ratio;
+int CSS_Flag;
 //
 float EndTime;
 float Margin_ave_np;

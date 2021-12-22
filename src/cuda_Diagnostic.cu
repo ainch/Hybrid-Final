@@ -3,8 +3,16 @@ void Diagnostic(){
     int i, j, k, isp, index;
     static int power_init = 0;
     float cond_current, dis_current, phi_now, power_total;
-    int buf1=0, now_np;
+    int buf1=0, now_np[nsp];
+    float oldDen[nfsp],newDen[nfsp];
     float buf;
+    // Cal NP
+    for (isp = 0; isp < nsp; isp++) {
+		cudaMemset((void *) &dev_info_sp[isp].np, 0, sizeof(int));
+		SumReductionINT1024All<<<DIAG_G_GRID, DIAG_G_BLOCK>>>(Gsize, isp, dev_G_sp, &dev_info_sp[isp].np);
+		cudaMemcpy(&SP[isp].np, &dev_info_sp[isp].np, sizeof(int),cudaMemcpyDeviceToHost);
+        now_np[isp] = SP[isp].np;
+	}
     if(nave_count==N_ave){  // average calculate
         Conti_Flag = 1;  
         Average_Particle_Density<<<DIAG_NSPG_GRID, DIAG_NSPG_BLOCK>>>(nsp, Gsize, N_ave, dev_info_sp, dev_G_sp);
@@ -14,14 +22,24 @@ void Diagnostic(){
         switch(MainGas){ 
 		case ARGON:
             Average_Argon_MCC_rate<<<DIAG_G_GRID, DIAG_G_BLOCK>>>(Gsize, TnRct, N_ave, dt, dev_MCC_rate, dev_ave_MCC_rate, dev_info_sp);
+            Argon_Update_Source<<<DIAG_G_GRID, DIAG_G_BLOCK>>>(Gsize, ngy, TnRct, dev_ave_MCC_rate, dev_Coll_Flag, dev_G_sp, dev_FG_Den, dev_FG_Src, dev_GvecSet);
             break;
 		case OXYGEN: 
             Average_Oxygen_MCC_rate<<<DIAG_G_GRID, DIAG_G_BLOCK>>>(Gsize, TnRct, N_ave, dt, dev_MCC_rate, dev_ave_MCC_rate, dev_info_sp);
-			break;
+			Oxygen_Update_Source<<<DIAG_G_GRID, DIAG_G_BLOCK>>>(Gsize, TnRct, dev_ave_MCC_rate, dev_Coll_Flag, dev_G_sp, dev_FG_Den, dev_FG_Src, dev_GvecSet);
+            break;
 		case ARO2: 
             Average_ArO2_MCC_rate<<<DIAG_G_GRID, DIAG_G_BLOCK>>>(Gsize, TnRct, N_ave, dt, dev_MCC_rate, dev_ave_MCC_rate, dev_info_sp);
-			break;
+			ArO2_Update_Source<<<DIAG_G_GRID, DIAG_G_BLOCK>>>(Gsize, ngy, TnRct, dev_ave_MCC_rate, dev_Coll_Flag, dev_G_sp, dev_FG_Den, dev_FG_Src, dev_GvecSet);
+            break;
         }
+        cudaMemcpy(Fluid_Src, dev_FG_Src, nfsp * Gsize * sizeof(GFG), cudaMemcpyDeviceToHost);
+        if(CSS_Flag){
+            for(isp = 0;isp<nfsp;isp++){ // Continuity on
+                FG[isp].CSS_Flag = 1;
+            }
+        }
+        Sync_Fluid_GFGtoGFC_forSource(Fluid_Src, Fluid_sp);
         nave_count = 0;
     }else{ // accomulation data
         Accomulate_Particle_Density<<<DIAG_NSPG_GRID, DIAG_NSPG_BLOCK>>>(nsp, Gsize, dev_G_sp);
@@ -29,11 +47,28 @@ void Diagnostic(){
                         ,dev_sum_Potential,dev_sum_Source,dev_sum_Sigma,dev_sum_Ex,dev_sum_Ey);
         nave_count++;
     }  
+    if(Conti_Flag){//Fluid density copy
+        if(CSS_Flag){
+            for(isp = 0;isp<nfsp;isp++){
+                oldDen[isp] = FG[isp].ave_Den;
+            }
+        }
+        Sync_Fluid_GFCtoGFG_forDen(Fluid_sp, Fluid_Den); 
+        cudaMemcpy(dev_FG_Den, Fluid_Den, nfsp * Gsize * sizeof(GFG), cudaMemcpyHostToDevice);
+        if(CSS_Flag){
+            for(isp = 0;isp<nfsp;isp++){
+                newDen[isp] = FG[isp].ave_Den;
+                if(nave_count > FG[isp].CSS_Check){
+                    if(abs(oldDen[isp]-newDen[isp])/newDen[isp] <= FG[isp].CSS_Conver)
+                        FG[isp].CSS_Flag = 1;
+                }
+            }
+        }   
+    }
     // Steady-state check
     if(Flag_ave_np){
         for(isp = 0;isp<nsp;isp++){
-            cudaMemcpy(&now_np, &dev_info_sp[isp].np, sizeof(int),cudaMemcpyDeviceToHost);
-            ave_np[isp] += (int)((float)now_np/(float)DT_PIC);
+            ave_np[isp] += (int)((float)now_np[isp]/(float)DT_PIC);
         }
         if(tstep%DT_PIC == 0){
             buf1 = 0;
@@ -123,6 +158,9 @@ void Diagnostic(){
 			for (isp = 0; isp < nsp; isp++) {
                 HistPt[isp].np[k] =  HistPt[isp].np[i];
 			}
+            for (isp = 0; isp < nfsp; isp++) {
+                HistFG[isp].np[k] = HistFG[isp].np[i];
+            }
 			iter_array[k] = iter_array[i];
             for (j = 0; j < CondNUMR; j++) {
 				for (isp = 0; isp < nsp; isp++) {
@@ -142,7 +180,10 @@ void Diagnostic(){
         iter_array[hist_count] = (float) *FIter;
         for (isp = 0; isp < nsp; isp++) {
             cudaMemcpy(&now_np, &dev_info_sp[isp].np, sizeof(int),cudaMemcpyDeviceToHost);
-            HistPt[isp].np[hist_count] = now_np;
+            HistPt[isp].np[hist_count] = now_np[isp];
+        }
+        for (isp = 0; isp < nfsp; isp++) {
+            HistFG[isp].np[hist_count] = FG[isp].ave_Den;
         }
         for (i = 0; i < CondNUMR; i++) {
             Current_hist[i][hist_count] = Current_Now[i];
@@ -161,8 +202,16 @@ void Diagnostic_Basic(){
     int i, j, k, isp, index;
     static int power_init = 0;
     float cond_current, dis_current, phi_now, power_total;
-    int buf1=0, now_np;
+    int buf1=0, now_np[nsp];
+    float oldDen[nfsp],newDen[nfsp];
     float buf;
+    // Cal NP
+    for (isp = 0; isp < nsp; isp++) {
+		cudaMemset((void *) &dev_info_sp[isp].np, 0, sizeof(int));
+		SumReductionINT1024All<<<DIAG_G_GRID, DIAG_G_BLOCK>>>(Gsize, isp, dev_G_sp, &dev_info_sp[isp].np);
+		cudaMemcpy(&SP[isp].np, &dev_info_sp[isp].np, sizeof(int),cudaMemcpyDeviceToHost);
+        now_np[isp] = SP[isp].np;
+	}
     if(nave_count==N_ave){  // average calculate
         Conti_Flag = 1;  
         Average_Particle_Density<<<DIAG_NSPG_GRID, DIAG_NSPG_BLOCK>>>(nsp, Gsize, N_ave, dev_info_sp, dev_G_sp);
@@ -172,13 +221,23 @@ void Diagnostic_Basic(){
         switch(MainGas){ 
 		case ARGON:
             Average_Argon_MCC_rate<<<DIAG_G_GRID, DIAG_G_BLOCK>>>(Gsize, TnRct, N_ave, dt, dev_MCC_rate, dev_ave_MCC_rate, dev_info_sp);
+            Argon_Update_Source<<<DIAG_G_GRID, DIAG_G_BLOCK>>>(Gsize, ngy, TnRct, dev_ave_MCC_rate, dev_Coll_Flag, dev_G_sp, dev_FG_Den, dev_FG_Src, dev_GvecSet);
             break;
 		case OXYGEN: 
             Average_Oxygen_MCC_rate<<<DIAG_G_GRID, DIAG_G_BLOCK>>>(Gsize, TnRct, N_ave, dt, dev_MCC_rate, dev_ave_MCC_rate, dev_info_sp);
-			break;
+			Oxygen_Update_Source<<<DIAG_G_GRID, DIAG_G_BLOCK>>>(Gsize, TnRct, dev_ave_MCC_rate, dev_Coll_Flag, dev_G_sp, dev_FG_Den, dev_FG_Src, dev_GvecSet);
+            break;
 		case ARO2: 
             Average_ArO2_MCC_rate<<<DIAG_G_GRID, DIAG_G_BLOCK>>>(Gsize, TnRct, N_ave, dt, dev_MCC_rate, dev_ave_MCC_rate, dev_info_sp);
-			break;
+			ArO2_Update_Source<<<DIAG_G_GRID, DIAG_G_BLOCK>>>(Gsize, ngy, TnRct, dev_ave_MCC_rate, dev_Coll_Flag, dev_G_sp, dev_FG_Den, dev_FG_Src, dev_GvecSet);
+            break;
+        }
+        cudaMemcpy(Fluid_Src, dev_FG_Src, nfsp * Gsize * sizeof(GFG), cudaMemcpyDeviceToHost);
+        Sync_Fluid_GFGtoGFC_forSource(Fluid_Src, Fluid_sp);
+        if(CSS_Flag){
+            for(isp = 0;isp<nfsp;isp++){ // Continuity on
+                FG[isp].CSS_Flag = 1;
+            }
         }
         nave_count = 0;
     }else{ // accomulation data
@@ -187,11 +246,28 @@ void Diagnostic_Basic(){
                         ,dev_sum_Potential,dev_sum_Source,dev_sum_Sigma,dev_sum_Ex,dev_sum_Ey);
         nave_count++;
     }  
+    if(Conti_Flag){//Fluid density copy
+        if(CSS_Flag){
+            for(isp = 0;isp<nfsp;isp++){
+                oldDen[isp] = FG[isp].ave_Den;
+            }
+        }
+        Sync_Fluid_GFCtoGFG_forDen(Fluid_sp, Fluid_Den); 
+        cudaMemcpy(dev_FG_Den, Fluid_Den, nfsp * Gsize * sizeof(GFG), cudaMemcpyHostToDevice);
+        if(CSS_Flag){
+            for(isp = 0;isp<nfsp;isp++){
+                newDen[isp] = FG[isp].ave_Den;
+                if(nave_count > FG[isp].CSS_Check){
+                    if(abs(oldDen[isp]-newDen[isp])/newDen[isp] <= FG[isp].CSS_Conver)
+                        FG[isp].CSS_Flag = 1;
+                }
+            }
+        }   
+    }
     // Steady-state check
     if(Flag_ave_np){
         for(isp = 0;isp<nsp;isp++){
-            cudaMemcpy(&now_np, &dev_info_sp[isp].np, sizeof(int),cudaMemcpyDeviceToHost);
-            ave_np[isp] += (int)((float)now_np/(float)DT_PIC);
+            ave_np[isp] += (int)((float)now_np[isp]/(float)DT_PIC);
         }
         if(tstep%DT_PIC == 0){
             buf1 = 0;
@@ -281,6 +357,9 @@ void Diagnostic_Basic(){
 			for (isp = 0; isp < nsp; isp++) {
                 HistPt[isp].np[k] =  HistPt[isp].np[i];
 			}
+            for (isp = 0; isp < nfsp; isp++) {
+                HistFG[isp].np[k] = HistFG[isp].np[i]; 
+            }
 			iter_array[k] = iter_array[i];
             for (j = 0; j < CondNUMR; j++) {
 				for (isp = 0; isp < nsp; isp++) {
@@ -300,7 +379,10 @@ void Diagnostic_Basic(){
         iter_array[hist_count] = (float) *FIter;
         for (isp = 0; isp < nsp; isp++) {
             cudaMemcpy(&now_np, &dev_info_sp[isp].np, sizeof(int),cudaMemcpyDeviceToHost);
-            HistPt[isp].np[hist_count] = now_np;
+            HistPt[isp].np[hist_count] = now_np[isp];
+        }
+        for (isp = 0; isp < nfsp; isp++) {
+            HistFG[isp].np[hist_count] = FG[isp].ave_Den;
         }
         for (i = 0; i < CondNUMR; i++) {
             Current_hist[i][hist_count] = Current_Now[i];
@@ -314,6 +396,44 @@ void Diagnostic_Basic(){
         hist_count++;
         Hcount = dHIST;
     }
+}
+__global__ void SumReductionINT1024All(int n, int isp, GPG *g_data, int *g_max){
+	__shared__ int sdata[1024];
+	unsigned int TID=threadIdx.x;
+	unsigned int i=blockDim.x*blockIdx.x+TID ; // global thread index
+    
+	//if(i>=n) g_data[isp*n + i].PtNumInCell = 0;
+    if(i>=n) return;
+    
+	sdata[TID] = g_data[isp*n + i].PtNumInCell;
+	__syncthreads();
+
+	if(TID<512) sdata[TID]=sdata[TID]+sdata[TID+512];
+		__syncthreads();
+
+	if(TID<256) sdata[TID]=sdata[TID]+sdata[TID+256];
+		__syncthreads();
+
+	if(TID<128) sdata[TID]=sdata[TID]+sdata[TID+128];
+		__syncthreads();
+
+	if(TID<64) sdata[TID]=sdata[TID]+sdata[TID+64];
+		__syncthreads();
+
+	if(TID<32) warpSumReduceINT(sdata,TID);
+
+	if(TID==0) {
+		atomicAdd(g_max,sdata[0]);
+	}
+}
+__device__ void warpSumReduceINT(volatile int* sdata,int TID)
+{
+	sdata[TID]+=sdata[TID+32];
+	sdata[TID]+=sdata[TID+16];
+	sdata[TID]+=sdata[TID+8];
+	sdata[TID]+=sdata[TID+4];
+	sdata[TID]+=sdata[TID+2];
+	sdata[TID]+=sdata[TID+1];
 }
 __global__ void Accomulate_Field_Data(int Gsize, float *TotPot, float *Source, float *Sigma, GGA *vecG
                         ,float *sum_Potential, float *sum_Source, float *sum_Sigma, float *sum_Ex, float *sum_Ey){
@@ -443,6 +563,117 @@ __global__ void Average_ArO2_MCC_rate(int Gsize, int TnRct, int N_ave, float dt,
     MCCR[TID*TnRct+80] = 0.0f;
     ave_MCCR[TID*TnRct+81] = info[0].Denscale * temp * MCCR[TID*TnRct+81];
     MCCR[TID*TnRct+81] = 0.0f;
+}
+__global__ void Argon_Update_Source(int Gsize, int ngy, int TnRct, float*MCCR, CollF *CollP, GPG *SP, GFG *FG, GFG *FG_S, GGA *BG){
+    int TID = threadIdx.x + blockIdx.x * blockDim.x;
+    if(TID>=Gsize) return;
+    //float Eden = 0.25*(SP[TID].ave_den+SP[TID+ngy].ave_den+SP[TID+1].ave_den+SP[TID+ngy+1].ave_den);
+    float Eden = 0.25*SP[TID].ave_den;
+    MCCR[TID*TnRct + 7] = CollP[7].RR*Eden*FG[TID].n;
+    MCCR[TID*TnRct + 9] = CollP[9].RR*BG[TID].BackDen1*FG[TID].n;      
+    FG_S[TID].n = MCCR[TID*TnRct + 2] - MCCR[TID*TnRct + 4] - MCCR[TID*TnRct + 7] - 2 * MCCR[TID*TnRct + 8] - MCCR[TID*TnRct + 9];
+} 
+__global__ void Oxygen_Update_Source(int Gsize, int TnRct, float*MCCR, CollF *CollP, GPG *SP, GFG *FG, GFG *FG_S, GGA *BG){
+    int TID = threadIdx.x + blockIdx.x * blockDim.x;
+    if(TID>=Gsize) return;
+    int RID;
+    float Sum_O2A, Diff_O2A, Sum_O2B, Diff_O2B,Sum_OP, Diff_OP,Sum_OD, Diff_OD;
+    RID = TnRct * TID;
+
+    MCCR[RID + 59] = CollP[59].RR*FG[2*Gsize + TID].n*FG[3*Gsize + TID].n;
+    MCCR[RID + 60] = CollP[60].RR*FG[3*Gsize + TID].n*BG[TID].BackDen1;
+    MCCR[RID + 61] = CollP[61].RR*FG[3*Gsize + TID].n*BG[TID].BackDen1;
+    MCCR[RID + 62] = CollP[62].RR*FG[3*Gsize + TID].n*BG[TID].BackDen1;
+    MCCR[RID + 63] = CollP[63].RR*FG[TID].n*FG[2*Gsize + TID].n;
+    MCCR[RID + 64] = CollP[64].RR*FG[TID].n*BG[TID].BackDen1;   
+    MCCR[RID + 65] = CollP[65].RR*FG[TID].n*FG[TID].n;
+    MCCR[RID + 66] = CollP[66].RR*FG[Gsize + TID].n*BG[TID].BackDen1;  
+    //
+    Sum_O2A  = MCCR[RID + 3] + MCCR[RID + 61];
+    Diff_O2A = MCCR[RID + 14] + MCCR[RID + 15] + MCCR[RID + 16] + MCCR[RID + 17] + MCCR[RID + 18]
+                + MCCR[RID + 19] + MCCR[RID + 20] + MCCR[RID + 21] + MCCR[RID + 46] + MCCR[RID + 51]
+                 + MCCR[RID + 56] + MCCR[RID + 63] + MCCR[RID + 64] + 2*MCCR[RID + 65];
+    Sum_O2B = MCCR[RID + 4] + MCCR[RID + 62];
+    Diff_O2B = MCCR[RID + 22] + MCCR[RID + 23] + MCCR[RID + 24] + MCCR[RID + 25] + MCCR[RID + 26]
+                 + MCCR[RID + 27] + MCCR[RID + 28] + MCCR[RID + 29] + MCCR[RID + 52] + MCCR[RID + 57]
+                 + MCCR[RID + 58] + MCCR[RID + 66];
+    Sum_OP = MCCR[RID + 6] + 2 * MCCR[RID + 7] + MCCR[RID + 8] + MCCR[RID + 11] + MCCR[RID + 13]
+                + MCCR[RID + 15] + 2*MCCR[RID + 18] + MCCR[RID + 19] + MCCR[RID + 21] + MCCR[RID + 23]
+                 + 2*MCCR[RID + 26] + MCCR[RID + 27] + MCCR[RID + 29] + MCCR[RID + 30] + MCCR[RID + 31]
+                  + MCCR[RID + 40] + MCCR[RID + 42] + MCCR[RID + 44] + 2*MCCR[RID + 45] + MCCR[RID + 46]
+                   + MCCR[RID + 50] + MCCR[RID + 53] + MCCR[RID + 56] + MCCR[RID + 57] + MCCR[RID + 58]
+                    + MCCR[RID + 59]  + MCCR[RID + 60]  + MCCR[RID + 61] + MCCR[RID + 62];
+    Diff_OP =  MCCR[RID + 33] + MCCR[RID + 34] + MCCR[RID + 35] + MCCR[RID + 36] + MCCR[RID + 37]
+                 + MCCR[RID + 38] + MCCR[RID + 43] + MCCR[RID + 47];
+    Sum_OD = MCCR[RID + 8] + 2*MCCR[RID + 9] + MCCR[RID + 19] + 2*MCCR[RID + 20] + MCCR[RID + 27]
+                 + 2*MCCR[RID + 28] + MCCR[RID + 31] + MCCR[RID + 33];
+    Diff_OD = MCCR[RID + 39] + MCCR[RID + 40] + MCCR[RID + 59] + MCCR[RID + 60] + MCCR[RID + 61] + MCCR[RID + 62];
+
+    FG_S[TID].n = Sum_O2A - Diff_O2A;
+    FG_S[Gsize + TID].n = Sum_O2B - Diff_O2B;
+    FG_S[2*Gsize + TID].n = Sum_OP - Diff_OP;
+    FG_S[3*Gsize + TID].n = Sum_OD - Diff_OD;   
+}
+__global__ void ArO2_Update_Source(int Gsize, int ngy, int TnRct, float*MCCR, CollF *CollP, GPG *SP, GFG *FG, GFG *FG_S, GGA *BG){
+    int TID = threadIdx.x + blockIdx.x * blockDim.x;
+    if(TID>=Gsize) return;
+    int RID;
+    float Eden;
+    float Sum_ARM, Diff_ARM,Sum_O2A, Diff_O2A, Sum_O2B, Diff_O2B,Sum_OP, Diff_OP,Sum_OD, Diff_OD;
+    float N1,N2,N4,N5;
+    //Eden = 0.25*(SP[TID].ave_den+SP[TID+ngy].ave_den+SP[TID+1].ave_den+SP[TID+ngy+1].ave_den);
+    Eden = 0.25*SP[TID].ave_den;
+    RID = TnRct * TID;
+    N1 = FG[TID].n;
+    N2 = FG[Gsize + TID].n;
+    N4 = FG[3*Gsize + TID].n;
+    N5 = FG[4*Gsize + TID].n;
+    MCCR[RID + 68] = CollP[68].RR*Eden*N1;
+    MCCR[RID + 71] = CollP[71].RR*N4*N5;
+    MCCR[RID + 72] = CollP[72].RR*N5*BG[TID].BackDen2;
+    MCCR[RID + 73] = CollP[73].RR*N5*BG[TID].BackDen2;
+    MCCR[RID + 74] = CollP[74].RR*N5*BG[TID].BackDen2;
+    MCCR[RID + 75] = CollP[75].RR*N2*N4;
+    MCCR[RID + 76] = CollP[76].RR*N2*BG[TID].BackDen2;
+    MCCR[RID + 77] = CollP[77].RR*N2*N2;
+    MCCR[RID + 78] = CollP[78].RR*FG[2*Gsize + TID].n*BG[TID].BackDen2;
+    MCCR[RID + 82] = CollP[82].RR*N1*BG[TID].BackDen1;
+    MCCR[RID + 83] = CollP[83].RR*N1*N4;
+    MCCR[RID + 84] = CollP[84].RR*N1*N4;
+    MCCR[RID + 85] = CollP[85].RR*N1*BG[TID].BackDen2;
+    MCCR[RID + 86] = CollP[86].RR*N1*BG[TID].BackDen2;
+    MCCR[RID + 87] = CollP[87].RR*N1*BG[TID].BackDen2;
+
+    Sum_ARM = MCCR[RID + 2];
+    Diff_ARM = MCCR[RID + 4] + MCCR[RID + 68] + 2*MCCR[RID + 81] + MCCR[RID + 82]
+                + MCCR[RID + 83]+ MCCR[RID + 84]+ MCCR[RID + 85]
+                + MCCR[RID + 86] + MCCR[RID + 87];
+    Sum_O2A  = MCCR[RID + 8] + MCCR[RID + 73];
+    Diff_O2A = MCCR[RID + 19] + MCCR[RID + 20] + MCCR[RID + 21] + MCCR[RID + 22] + MCCR[RID + 23]
+                + MCCR[RID + 24] + MCCR[RID + 25] + MCCR[RID + 26] + MCCR[RID + 51] + MCCR[RID + 56]
+                 + MCCR[RID + 30] + MCCR[RID + 75] + MCCR[RID + 76] + 2*MCCR[RID + 77];
+    Sum_O2B = MCCR[RID + 9] + MCCR[RID + 74];
+    Diff_O2B = MCCR[RID + 27] + MCCR[RID + 28] + MCCR[RID + 29] + MCCR[RID + 30] + MCCR[RID + 31]
+                 + MCCR[RID + 32] + MCCR[RID + 33] + MCCR[RID + 34] + MCCR[RID + 57] + MCCR[RID + 64]
+                 + MCCR[RID + 70] + MCCR[RID + 78];
+    Sum_OP = MCCR[RID + 11] + 2 * MCCR[RID + 12] + MCCR[RID + 13] + MCCR[RID + 16] + MCCR[RID + 18]
+                + MCCR[RID + 20] + 2*MCCR[RID + 23] + MCCR[RID + 24] + MCCR[RID + 26] + MCCR[RID + 28]
+                 + 2*MCCR[RID + 31] + MCCR[RID + 32] + MCCR[RID + 34] + MCCR[RID + 35] + MCCR[RID + 36]
+                  + MCCR[RID + 45] + MCCR[RID + 47] + MCCR[RID + 49] + 2*MCCR[RID + 50] + MCCR[RID + 51]
+                   + MCCR[RID + 55] + MCCR[RID + 60] + MCCR[RID + 63] + MCCR[RID + 64] + MCCR[RID + 70]
+                   + MCCR[RID + 71] + MCCR[RID + 72] + MCCR[RID + 73] + MCCR[RID + 74] + MCCR[RID + 69]
+                   +2*MCCR[RID + 85] + MCCR[RID + 86];
+    Diff_OP =  MCCR[RID + 38] + MCCR[RID + 39] + MCCR[RID + 40] + MCCR[RID + 41] + MCCR[RID + 42]
+                 + MCCR[RID + 43] + MCCR[RID + 48] + MCCR[RID + 52] + MCCR[RID + 79] + MCCR[RID + 83];
+    Sum_OD = MCCR[RID + 13] + 2*MCCR[RID + 14] + MCCR[RID + 24] + 2*MCCR[RID + 25] + MCCR[RID + 32]
+                 + 2*MCCR[RID + 33] + MCCR[RID + 36] + MCCR[RID + 38] + MCCR[RID + 83] + MCCR[RID + 86];
+    Diff_OD = MCCR[RID + 44] + MCCR[RID + 45] + MCCR[RID + 71]+ MCCR[RID + 72]+ MCCR[RID + 73]
+                    + MCCR[RID + 74];
+    FG_S[TID].n = Sum_ARM - Diff_ARM;
+    FG_S[Gsize + TID].n = Sum_O2A - Diff_O2A;
+    FG_S[2*Gsize + TID].n = Sum_O2B - Diff_O2B;
+    FG_S[3*Gsize + TID].n = Sum_OP - Diff_OP;
+    FG_S[4*Gsize + TID].n = Sum_OD - Diff_OD;
 }
 void Set_Diagnostic_cuda(){
     // Host BUF VECTOR

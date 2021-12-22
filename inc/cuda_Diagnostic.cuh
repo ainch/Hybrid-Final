@@ -67,6 +67,14 @@ extern int Flag_ave_np, Same_ave_np;
 extern int Basic_Flag; // 0 : Basic, 1: OTHERS
 extern int *Stack_ave_np, *ave_np;
 extern float *new_ave_np, *old_ave_np;
+extern CollF *dev_Coll_Flag;
+extern Fluid *FG;
+extern GFG *dev_FG_Den, *dev_FG_Src;
+extern GFG *Fluid_Den, *Fluid_Src;
+extern GFC *Fluid_sp;
+extern int CSS_Flag;
+extern void Sync_Fluid_GFCtoGFG_forDen(GFC *A, GFG *B);
+extern void Sync_Fluid_GFGtoGFC_forSource(GFG *A, GFC *B);
 #ifndef __CUDA_DIAGNOSTIC_CUH__
 #define __CUDA_DIAGNOSTIC_CUH__
 float *Host_G_buf, *Host_C_buf;
@@ -78,6 +86,8 @@ float *dev_sum_Ey, *dev_ave_Ey;
 void Diagnostic();
 void Diagnostic_Basic();
 void Set_Diagnostic_cuda();
+__global__ void SumReductionINT1024All(int n, int isp, GPG *g_data, int *g_max);
+__device__ void warpSumReduceINT(volatile int* sdata,int TID);
 __global__ void Accomulate_Field_Data(int Gsize, float *TotPot, float *Source, float *Sigma, GGA *vecG
                         ,float *sum_Potential, float *sum_Source, float *sum_Sigma, float *sum_Ex, float *sum_Ey);
 __global__ void Average_Field_Data(int Gsize, int N_ave, float *TotPot, float *Source, float *Sigma, GGA *vecG
@@ -88,5 +98,7 @@ __global__ void Average_Particle_Density(int nsp, int Gsize, int N_ave, Species 
 __global__ void Average_Argon_MCC_rate(int Gsize, int TnRct, int N_ave, float dt, float *MCCR, float *ave_MCCR, Species *info);
 __global__ void Average_Oxygen_MCC_rate(int Gsize, int TnRct, int N_ave, float dt, float *MCCR, float *ave_MCCR, Species *info);
 __global__ void Average_ArO2_MCC_rate(int Gsize, int TnRct, int N_ave, float dt, float *MCCR, float *ave_MCCR, Species *info);
-
+__global__ void Argon_Update_Source(int Gsize, int ngy, int TnRct, float*MCCR, CollF *CollP, GPG *SP, GFG *FG, GFG *FG_S, GGA *BG);
+__global__ void Oxygen_Update_Source(int Gsize, int TnRct, float*MCCR, CollF *CollP, GPG *SP, GFG *FG, GFG *FG_S, GGA *BG);
+__global__ void ArO2_Update_Source(int Gsize, int ngy, int TnRct, float*MCCR, CollF *CollP, GPG *SP, GFG *FG, GFG *FG_S, GGA *BG);
 #endif

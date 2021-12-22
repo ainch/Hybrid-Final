@@ -1,39 +1,41 @@
 #include "xypic.cuh"
+extern float dtc;
 extern int nfsp;
 extern int Gsize, Csize;
 extern int ngx,ngy,ncx,ncy;
 extern float dx,dy;
 extern int MainGas;
-extern Fluid *FG;	// fluid species
-extern GFC *Host_C_F;
-extern GGA *dev_GvecSet;
-extern GCA *dev_CvecSet;
-extern GGA *vec_G;
-extern GCA *vec_C;
 extern float Total_Pressure;
-extern dim3 CONTI_GRID,CONTI_BLOCK;
+extern GCA *vec_C;
+extern GGA *vec_G;
+extern Fluid *FG;	// fluid species
+extern GFC *Fluid_sp;
+extern GFG *Fluid_Den, *Fluid_Src;
+extern int Conti_xnum, Conti_ynum;
+extern Con_RegionX *Conti_x;
+extern Con_RegionY *Conti_y;
+extern float gputime;
+extern cudaEvent_t start, stop;
 #ifndef __CUDA_FLUID_CUH__
 #define __CUDA_FLUID_CUH__
-int Conti_Flag;
 Fluid *dev_FG;
-GFC *dev_C_F;
-GFG *Host_G_F;
-GFG *dev_G_F;
-int Conti_xnum, Conti_ynum;
-dim3 CONTIx_GRID,CONTIx_BLOCK;
-dim3 CONTIy_GRID,CONTIy_BLOCK;
-Con_RegionX *Conti_x, *dev_Conti_x;
-Con_RegionY *Conti_y, *dev_Conti_y;
-
+GFG *dev_FG_Den, *dev_FG_Src;
 void Set_Fluid_cuda();
-int Cal_XRegion_check();
-int Cal_YRegion_check();
-void Set_Con_Region(int isp, Con_RegionX *Cx,Con_RegionY *Cy);
-void Set_Con_Boundary(int isp, Con_RegionX *Cx,Con_RegionY *Cy);
-__global__ void Cal_D_Argon(int nfsp, int ncy, int Csize, float press, GCA *vec_C, GGA *vec_G, GFC *data);
-__device__ float Ar_meta_omega(float value);
-__global__ void Cal_D_Oxygen(int nfsp, int ncy, int Csize, float press, GCA *vec_C, GGA *vec_G, GFC *data);
-__global__ void Cal_D_ArO2(int nfsp, int ncy, int Csize, float press, GCA *vec_C, GGA *vec_G, GFC *data);
+void Sync_Fluid_GFCtoGFG_forDen(GFC *A, GFG *B);
+void Sync_Fluid_GFGtoGFC_forSource(GFG *A, GFC *B);
+void Cal_D_Argon(GCA *vecC, GGA *vecG, GFC *data);
+float Ar_meta_omega(float value);
+void Cal_D_Oxygen(GCA *vecC, GGA *vecG, GFC *data);
+void Cal_D_ArO2(GCA *vecC, GGA *vecG, GFC *data);
+void calculate_gummel_coef_x();
+void calculate_gummel_coef_y();
+void Solve_Continuity_eqn();
+void Solve_Continuity_eqn_check();
+void Solve_Density_x(int isp);
+void Solve_Density_y(int isp);
+void Calculate_Flux_x(int isp);
+void Calculate_Flux_y(int isp);
+int tridiag(float *a, float *b, float *c, float *d, float *x, float *gam, int min, int max);
 __global__ void calculate_gummel_coef_x(int nfsp, int size, int ngy, int Gsize,int Csize, float dx, Con_RegionX *val, Fluid *info, GFC *Cdata, GFG *Gdata);
 __global__ void calculate_gummel_coef_y(int nfsp, int size, int ngy, int Gsize,int Csize, float dy, Con_RegionY *val, Fluid *info, GFC *Cdata, GFG *Gdata);
 #endif

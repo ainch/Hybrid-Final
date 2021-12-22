@@ -106,7 +106,6 @@ __global__ void VectorSum(int Gsize,float *TotPhi,float V,float *Phi);
 __global__ void GGACopy_Potential(int Gsize, GGA *vecG, float *V1, float *V2);
 __global__ void VtoEfield(int ngx,int ngy,float dx,float dy,float hdx,float hdy,float idx,
                             float idy, float *Sigma, float *Phi, GPG *data, GCA *vecC, GGA *vecG);
-
 __device__ void Vec_Dot_Sum_F(float *vecA, float *vecB, float *result, int size, const cg::thread_block &cta, const cg::grid_group &grid);
 __global__ void PCG_float(int *I, int *J, float *val, float *x, float *M, float *Ax, float *p, float *r, float *Z, 
             int N, int nnz, float tol2, int *Iter, float *d_result);

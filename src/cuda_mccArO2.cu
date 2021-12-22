@@ -1,4 +1,53 @@
 #include "cuda_mccArO2.cuh"
+__device__ void MCC_ArO2_RC_StackUp(int Gsize, int ngy, int ID, int nvel, float *vsave, curandState *states, int TnRct, float *MCCR, float *Stack, CollF *info_CX, Species *info, GPG *data, GFC *FG, GGA *BG){
+	float PNC1,PNC2,PNC3,PNC4,PNC5,M1,M2,M3,M4,M5;
+	int oldPNC,index,index2,index3,n;
+	int xi = ID/ngy;
+	int yi = ID%ngy;
+	if(yi>ngy-2) return;
+	if(xi>Gsize/ngy-2) return;
+	M1 = 0.0f; M2 = 0.0f;M3 = 0.0f;M4 = 0.0f;M5 = 0.0f;
+	PNC1 = Stack[5*ID + 0];
+	PNC2 = Stack[5*ID + 1];
+	PNC3 = Stack[5*ID + 2];
+	PNC4 = Stack[5*ID + 3];
+	PNC5 = Stack[5*ID + 4];
+
+	while(PNC1 >= 1.0f){ // 69.O-+Ar^>OP+AR
+		if(data[Gsize + ID].den>=1 && data[4*Gsize + ID].den>=1)
+
+
+		PNC1--;
+	}
+	while(PNC2 >= 1.0f){ // 70.O-+O2B>e+OP+O2
+		if(data[4*Gsize + ID].den>=1)
+
+		M2 += 0.25;
+		PNC2--;
+	}
+	while(PNC3 >= 1.0f){ // 79.Ar^+OP>Ar+O^
+		if(data[Gsize + ID].den>=1)
+
+
+		PNC3--;
+	}
+	while(PNC4 >= 1.0f){ //80.Ar^+O2>Ar+O2^
+		if(data[Gsize + ID].den>=1)
+
+	
+		PNC4--;
+	}
+	while(PNC5 >= 1.0f){ //81.Ar*+Ar*>e+Ar+Ar^
+
+
+		PNC5--;
+	}
+	Stack[5*ID + 0]= PNC1;
+	Stack[5*ID + 1] = PNC2;
+	Stack[5*ID + 2] = PNC3;
+	Stack[5*ID + 3] = PNC4;
+	Stack[5*ID + 4] = PNC5;
+}
 __device__ void ArO2_Electron(int Gsize, int ngy, int TID, int nvel, float *vsave, curandState *states, 
 											Species *info, GPG *data, GCP *sp, int N_LOGX, float idLOGX, 
 											MCC_sigmav *sigv, CollF *info_CX, ArO2CollD *CX, int TnRct,float *MCCR, GGA *BG){
@@ -1079,21 +1128,14 @@ __device__ void ArO2_O_negative(int Gsize, int ngy, int TID, int nvel, float *vs
 	data[TID].PtNullMCCInCell = Null;
 }
 __device__ void  ArO2_Collision_Check(int Gsize, int Csize, int ngy, int TID, float dt, int MCCn, float dtm, float dx, float dy,
-                                        curandState *states, Species *info, GPG *data, GCP *sp, MCC_sigmav *sigv, GGA *BG, GFC *Fluid){
+                                        curandState *states, Species *info, GPG *data, GCP *sp, MCC_sigmav *sigv, GGA *BG, GFG *Fluid){
 	int i,j,k,index,Randn;
-	int ID,isp,CID,PNMC,MPNC;
+	int ID,isp,PNMC,MPNC;
     int PNC,Flag;
-	int nx,ny,ngx;
 	float Tprob,Prob1,Prob2,Prob3,Prob4,Prob5,Prob6,Prob7,Prob8,Prob9;
 	float R1;
 	ID = TID%Gsize;
     isp = TID/Gsize;
-	nx = ID/ngy;
-	ny = ID%ngy;
-	ngx = Gsize/ngy;
-	if(nx == ngx-1) nx--;
-	if(ny == ngy-1) ny--;
-	CID = ny + (ngy-1)*nx;
 	curandState LocalStates = states[TID];
 	PNC = data[TID].PtNumInCell;
 	MPNC = data[TID].MaxPtNumInCell;
@@ -1102,18 +1144,18 @@ __device__ void  ArO2_Collision_Check(int Gsize, int Csize, int ngy, int TID, fl
     switch (isp){
     case 0: // Electron
 		Prob1 = 1.0f - exp(-1*dtm*sigv[0].val*BG[ID].BackDen1);  // E + Ar
-		Prob2 = Prob1 + 1.0f - exp(-1*dtm*sigv[1].val*Fluid[CID].ave_den);  // E + Ar*
+		Prob2 = Prob1 + 1.0f - exp(-1*dtm*sigv[1].val*Fluid[ID].n);  // E + Ar*
         Prob3 = Prob2 + 1.0f - exp(-1*dtm*sigv[2].val*BG[ID].BackDen2);  // E + O2
-	    Prob4 = Prob3 + 1.0f - exp(-1*dtm*sigv[3].val*Fluid[CID+Csize].ave_den);  // E + O2A
-        Prob5 = Prob4 + 1.0f - exp(-1*dtm*sigv[4].val*Fluid[CID+2*Csize].ave_den);  // E + O2B
+	    Prob4 = Prob3 + 1.0f - exp(-1*dtm*sigv[3].val*Fluid[ID+Gsize].n);  // E + O2A
+        Prob5 = Prob4 + 1.0f - exp(-1*dtm*sigv[4].val*Fluid[ID+2*Gsize].n);  // E + O2B
         Prob6 = Prob5 + 1.0f - exp(-1*dtm*sigv[5].val*data[ID+4*Gsize].den*info[4].np2c*dx*dy);  // E + O-
         Prob7 = Prob6 + 1.0f - exp(-1*dtm*sigv[6].val*data[ID+2*Gsize].den*info[2].np2c*dx*dy);  // E + O2+
-        Prob8 = Prob7 + 1.0f - exp(-1*dtm*sigv[7].val*Fluid[CID+3*Csize].ave_den);  // E + OP
-        Prob9 = Prob8 + 1.0f - exp(-1*dtm*sigv[8].val*Fluid[CID+4*Csize].ave_den);  // E + OD
+        Prob8 = Prob7 + 1.0f - exp(-1*dtm*sigv[7].val*Fluid[ID+3*Gsize].n);  // E + OP
+        Prob9 = Prob8 + 1.0f - exp(-1*dtm*sigv[8].val*Fluid[ID+4*Gsize].n);  // E + OD
 	    Tprob = Prob9; 
 		//printf("Case[%d] : 1[%1.2e] 2[%1.2e] 3[%1.2e] 4[%1.2e] 5[%1.2e] 6[%1.2e] 7[%1.2e] 8[%1.2e] 9[%1.2e]\n",isp,Prob1, Prob2, Prob3, Prob4, Prob5, Prob6, Prob7, Prob8, Prob9);
 		//printf("Case[%d] : Ar[%1.2e] O2[%1.2e]\n",isp,BG[ID].BackDen1,BG[ID].BackDen2);
-		//printf("Case[%d] : Ar*[%1.2e] O2A[%1.2e] O2B[%1.2e] OP[%1.2e] OD[%1.2e]\n",isp,Fluid[CID].ave_den,Fluid[CID+1*Csize].ave_den,Fluid[CID+2*Csize].ave_den,Fluid[CID+3*Csize].ave_den,Fluid[CID+4*Csize].ave_den);
+		//printf("Case[%d] : Ar*[%1.2e] O2A[%1.2e] O2B[%1.2e] OP[%1.2e] OD[%1.2e]\n",isp,Fluid[ID].n,Fluid[ID+1*Gsize].n,Fluid[ID+2*Gsize].n,Fluid[ID+3*Gsize].n,Fluid[ID+4*Gsize].n);
 		Randn = MCCn;
         break;
 	case 1: // Ar+
@@ -1124,10 +1166,10 @@ __device__ void  ArO2_Collision_Check(int Gsize, int Csize, int ngy, int TID, fl
 		Randn = 1;
 		break;
     case 2: // O2+
-        Prob1 = 1.0 - exp(-1*dt*sigv[14].val*Fluid[CID+3*Csize].ave_den); // O2+ + OP
+        Prob1 = 1.0 - exp(-1*dt*sigv[14].val*Fluid[ID+3*Gsize].n); // O2+ + OP
 	    Prob2 = Prob1 + 1.0 - exp(-1*dt*sigv[15].val*BG[ID].BackDen2); // O2+ + O2
-	    Prob3 = Prob2 + 1.0 - exp(-1*dt*sigv[16].val*Fluid[CID+Csize].ave_den); // O2+ + O2A
-	    Prob4 = Prob3 + 1.0 - exp(-1*dt*sigv[17].val*Fluid[CID+2*Csize].ave_den); // O2+ + O2B
+	    Prob3 = Prob2 + 1.0 - exp(-1*dt*sigv[16].val*Fluid[ID+Gsize].n); // O2+ + O2A
+	    Prob4 = Prob3 + 1.0 - exp(-1*dt*sigv[17].val*Fluid[ID+2*Gsize].n); // O2+ + O2B
 		Prob5 = Prob4 + 1.0 - exp(-1*dt*sigv[18].val*BG[ID].BackDen1); // O2+ + AR
         Tprob = Prob5;
 		//printf("Case[%d] : 1[%1.2e] 2[%1.2e] 3[%1.2e] 4[%1.2e] 5[%1.2e]\n",isp,Prob1, Prob2, Prob3, Prob4, Prob5);
@@ -1135,19 +1177,19 @@ __device__ void  ArO2_Collision_Check(int Gsize, int Csize, int ngy, int TID, fl
         break;
     case 3: // O+
         Prob1 = 1.0 - exp(-1*dt*sigv[19].val*BG[ID].BackDen2); // O+ + O2
-	    Prob2 = Prob1 + 1.0 - exp(-1*dt*sigv[20].val*Fluid[CID+3*Csize].ave_den); // O+ + OP
-	    Prob3 = Prob2 + 1.0 - exp(-1*dt*sigv[21].val*Fluid[CID+Csize].ave_den); // O+ + O2A
-	    Prob4 = Prob3 + 1.0 - exp(-1*dt*sigv[22].val*Fluid[CID+2*Csize].ave_den); // O+ + O2B
+	    Prob2 = Prob1 + 1.0 - exp(-1*dt*sigv[20].val*Fluid[ID+3*Gsize].n); // O+ + OP
+	    Prob3 = Prob2 + 1.0 - exp(-1*dt*sigv[21].val*Fluid[ID+Gsize].n); // O+ + O2A
+	    Prob4 = Prob3 + 1.0 - exp(-1*dt*sigv[22].val*Fluid[ID+2*Gsize].n); // O+ + O2B
 	    Tprob = Prob4;
 		//printf("Case[%d] : 1[%1.2e] 2[%1.2e] 3[%1.2e] 4[%1.2e]\n",isp,Prob1, Prob2, Prob3, Prob4);
 		Randn = 1;
         break;
     case 4: // O-
         Prob1 = 1.0 - exp(-1*dt*sigv[9].val*BG[ID].BackDen2); // O- + O2
-	    Prob2 = Prob1 + 1.0 - exp(-1*dt*sigv[10].val*Fluid[CID+3*Csize].ave_den); // O- + OP
+	    Prob2 = Prob1 + 1.0 - exp(-1*dt*sigv[10].val*Fluid[ID+3*Gsize].n); // O- + OP
 	    Prob3 = Prob2 + 1.0 - exp(-1*dt*sigv[11].val*data[ID+2*Gsize].den*info[2].np2c*dx*dy); // O- + O2+
 	    Prob4 = Prob3 + 1.0 - exp(-1*dt*sigv[12].val*data[ID+3*Gsize].den*info[3].np2c*dx*dy); // O- + O+
-	    Prob5 = Prob4 + 1.0 - exp(-1*dt*sigv[13].val*Fluid[CID+Csize].ave_den); // O- + O2A
+	    Prob5 = Prob4 + 1.0 - exp(-1*dt*sigv[13].val*Fluid[ID+Gsize].n); // O- + O2A
 	    Tprob = Prob5;
 		//printf("Case[%d] : 1[%1.2e] 2[%1.2e] 3[%1.2e] 4[%1.2e] 5[%1.2e]\n",isp,Prob1, Prob2, Prob3, Prob4, Prob5);
 		Randn = 1;
@@ -2288,21 +2330,14 @@ __device__ void ArO2_O_negative_TEST(int Gsize, int ngy, int TID, int nvel, floa
 	data[TID].PtNullMCCInCell = Null;
 }
 __device__ void  ArO2_Collision_Check_TEST(int Gsize, int Csize, int ngy, int TID, float dt, int MCCn, float dtm, float dx, float dy,
-                                        curandState *states, Species *info, GPG *data, GCP *sp, MCC_sigmav *sigv, GGA *BG, GFC *Fluid){
+                                        curandState *states, Species *info, GPG *data, GCP *sp, MCC_sigmav *sigv, GGA *BG, GFG *Fluid){
 	int i,j,k,index,Randn;
-	int ID,isp,CID,PNMC,MPNC;
+	int ID,isp,PNMC,MPNC;
     int PNC,Flag;
-	int nx,ny,ngx;
 	float Tprob,Prob1,Prob2,Prob3,Prob4,Prob5,Prob6,Prob7,Prob8,Prob9;
 	float R1;
 	ID = TID%Gsize;
     isp = TID/Gsize;
-	nx = ID/ngy;
-	ny = ID%ngy;
-	ngx = Gsize/ngy;
-	if(nx == ngx-1) nx--;
-	if(ny == ngy-1) ny--;
-	CID = ny + (ngy-1)*nx;
 	curandState LocalStates = states[TID];
 	PNC = data[TID].PtNumInCell;
 	MPNC = data[TID].MaxPtNumInCell;

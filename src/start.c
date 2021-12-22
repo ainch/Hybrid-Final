@@ -769,10 +769,20 @@ void InputRead() {
       printf("IonizationRate = %g\n",(float)json_object_get_number(BufObject2,"IonizationRate"));
    }
    */
-   /*
-   BufObject = json_object_get_object(SubObject4,"ContinuityBreakPoint");
-   printf("Margin(%) = %g\n",(float)json_object_get_number(BufObject,"Margin(%)"));
-   */
+   
+   BufObject = json_object_get_object(SubObject4,"ContinuitySteadyState");
+   CSS_Flag = 0;
+   for(isp=0;isp<nfsp;isp++){
+      FG[isp].CSS_Flag = (int)json_object_get_number(BufObject,"Flag");
+      if(FG[isp].CSS_Flag) CSS_Flag = 1;
+      FG[isp].CSS_Check = (int)((float)json_object_get_number(BufObject,"Check") * (float)N_ave); 
+      FG[isp].CSS_Conver = (float)json_object_get_number(BufObject,"Margin");
+   }
+   if(CSS_Flag){
+      for(isp=0;isp<nfsp;isp++){
+         FG[isp].CSS_Flag = 1;
+      }
+   }
    BufObject = json_object_get_object(SubObject4,"PowerDrivenOption");
    PD_intv = (int)((float)DT_PIC * (float)json_object_get_number(BufObject,"Interval"));
    if(PD_intv == 0) PD_intv = 5 * DT_PIC;
@@ -1987,8 +1997,7 @@ void FieldSolverSetting(){
    }
 }
 void GasSetting(){
-   int i,isp,CID;
-   float xx,yy,wv;
+   int i,isp;
    printf("Gas and Particle Setting\n");
    PtD = (HCP *) malloc(nsp * sizeof(HCP));  //__Host_Charged_Particle
    Host_G_sp = (GPG *) malloc(Gsize * nsp * sizeof(GPG)); //__Global_Particle_Gsize_Data
@@ -2005,9 +2014,10 @@ void GasSetting(){
 	   SP[isp].Escale = 0.5 * SP[isp].mass / CQ;
 	   SP[isp].Ascale = SP[isp].qm * dt;
       SP[isp].Denscale = SP[isp].np2c/dx/dy;
+      SP[isp].MCCscale = 1/SP[isp].np2c*dx*dy*dt;
       if(isp ==0){
-         SP[isp].St_num = 0;
-         SP[isp].End_num = SP[isp].St_num + SP[isp].MAXNP - 1;
+         SP[0].St_num = 0;
+         SP[0].End_num = SP[0].St_num + SP[0].MAXNP - 1;
       }else{
          SP[isp].St_num = SP[isp-1].End_num + 1;
          SP[isp].End_num = SP[isp].St_num + SP[isp].MAXNP - 1;
@@ -2037,48 +2047,6 @@ void GasSetting(){
          Host_G_sp[isp*Gsize+i].sum_den = 0.0;
          Host_G_sp[isp*Gsize+i].ave_den = 0.0;
          Host_G_sp[isp*Gsize+i].sigma = 0.0;
-      }
-   }
-   Host_C_F = (GFC *) malloc(nfsp * Csize * sizeof(GFC)); //__Global_Fluid_Gsize_Data
-   if(FG[0].Loadtype == 0)       printf("\tFluid Load Type : UNIFORM\n");
-   else if(FG[0].Loadtype == 1)  printf("\tFluid Load Type : EXPONETIAL\n");
-   else if(FG[0].Loadtype == 2)  printf("\tFluid Load Type : COSINE\n");
-   else if(FG[0].Loadtype == 4){
-      printf("\tFluid Load Type : SmartLoad\n");
-      printf("\tError : not yet!\n");
-      exit(1);
-   }
-   for(isp=0;isp<nfsp;isp++){
-      FG[isp].ave_Den = 0;
-      for(i=0;i<Csize;i++){
-         CID = isp*Csize + i;
-         Host_C_F[CID].D = 0.0f;
-         Host_C_F[CID].den = 0.0f;
-         Host_C_F[CID].sum_den = 0.0f;
-         Host_C_F[CID].ave_den = 0.0f;
-         Host_C_F[CID].Source = 0.0f;
-         if(DumpFlag == 0){
-            xx = (float) ((int)i/ncy) * dx;
-			   yy = (float) ((int)i%ncy) * dy;
-            if(vec_C[i].PlasmaRegion != 0){
-               if(FG[0].Loadtype == 0){ // UNIFORM
-                  Host_C_F[CID].den = FG[isp].InitDens;
-                  Host_C_F[CID].ave_den = FG[isp].InitDens;
-                  //printf("DEN[%d]= %g\n",CID,Host_C_F[CID].den);
-               }else if(FG[0].Loadtype == 1){// EXPONETIAL
-           	      wv = exp(-1 * ((xx - FG[0].x_center)/FG[0].x_fall)*((xx - FG[0].x_center)/FG[0].x_fall))
-                        *exp(-1 * ((yy - FG[0].y_center)/FG[0].y_fall)*((yy - FG[0].y_center)/FG[0].y_fall));
-				      Host_C_F[CID].den = FG[isp].InitDens * wv;
-				      Host_C_F[CID].ave_den = FG[isp].InitDens * wv;
-                  //printf("DEN[%d]= %g\n",CID,Host_C_F[CID].den);
-               }else if(FG[0].Loadtype == 2){// COSINE
-                  wv = fabs(cos((xx - FG[0].x_center)*M_PI/2/FG[0].x_fall)*cos((yy - FG[0].y_center)*M_PI/2/FG[0].y_fall));
-				      Host_C_F[CID].den = FG[isp].InitDens * wv;
-				      Host_C_F[CID].ave_den = FG[isp].InitDens * wv;
-               }
-               FG[isp].ave_Den += Host_C_F[CID].den;
-            }
-         }
       }
    }
 }

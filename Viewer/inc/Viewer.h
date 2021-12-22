@@ -17,8 +17,8 @@ extern GGA *vec_G;
 extern GCA *vec_C;
 extern GCP *Host_sp;
 extern GPG *Host_G_sp;
-extern GFC *Host_C_F;
-extern GFG *Host_G_F;
+extern GFC *Fluid_sp;
+extern GFG *Fluid_Den, *dev_FG_Den;
 extern float *MCC_rate, *ave_MCC_rate;
 extern float *vec_Potential, *ave_Potential; // [Gsize] potential
 extern float *vec_Source, *ave_Source; // [Gsize] Charge density 

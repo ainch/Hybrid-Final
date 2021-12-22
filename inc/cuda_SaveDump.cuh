@@ -17,8 +17,8 @@ extern Species *dev_info_sp;// particle species
 extern HCP *PtD;
 extern GCP *Host_sp, *dev_sp;
 extern GPG *Host_G_sp, *dev_G_sp;
-extern GFC *Host_C_F, *dev_C_F;
-extern GFG *Host_G_F, *dev_G_F;
+extern GFC *Fluid_sp;
+extern GFG *Fluid_Den, *dev_FG_Den;
 extern GGA *vec_G, *dev_GvecSet;
 extern float *MCC_rate, *ave_MCC_rate, *dev_ave_MCC_rate;
 extern float *RCstack, *dev_RCstack;
@@ -63,6 +63,8 @@ extern float EndTime;
 extern float Margin_ave_np;
 extern int Flag_ave_np, Same_ave_np, Stack_ave_np;
 extern int Basic_Flag; // 0 : Basic, 1: OTHERS
+extern int Conti_Flag;
+extern GFC *Fluid_sp;
 extern void Copy_GCPtoHCP(Species *info, GCP *A, HCP *B, GPG *C);
 #ifndef __CUDA_SAVEDUMP_CUH__
 #define __CUDA_SAVEDUMP_CUH__

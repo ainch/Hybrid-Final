@@ -1,367 +1,302 @@
 #include "cuda_Fluid.cuh"
 
 void Set_Fluid_cuda(){
-    int isp,i,j,GID;
+    int isp,i,j,k,GID;
     int size,grid,block,mingrid; 
-    Conti_Flag = 0;
-    
+
     checkCudaErrors(cudaMalloc((void**)&dev_FG, nfsp * sizeof(Fluid)));
     checkCudaErrors(cudaMemcpy(dev_FG, FG, nfsp * sizeof(Fluid), cudaMemcpyHostToDevice));
 
-    // Density, D, nfsp * Csize
-    checkCudaErrors(cudaMalloc((void**)&dev_C_F, nfsp * Csize *  sizeof(GFC)));
-    checkCudaErrors(cudaMemcpy(dev_C_F, Host_C_F, nfsp * Csize *  sizeof(GFC), cudaMemcpyHostToDevice));
+    Sync_Fluid_GFCtoGFG_forDen(Fluid_sp, Fluid_Den); 
+    checkCudaErrors(cudaMalloc((void**)&dev_FG_Den, nfsp * Gsize * sizeof(GFG)));
+    checkCudaErrors(cudaMemcpy(dev_FG_Den, Fluid_Den, nfsp * Gsize * sizeof(GFG), cudaMemcpyHostToDevice));
 
-    // Flux_x, Flux_y,  Gummel_ax,bx,ay,by : [nfsp] * [Gsize]
-    Host_G_F = (GFG *) malloc(nfsp * Gsize * sizeof(GFG)); //__Global_Fluid_Gsize_Data
-    for(isp=0;isp<nfsp;isp++){
-        for(i=0;i<Gsize;i++){
-            GID = isp*Gsize + i;
-            Host_G_F[GID].Flux_x = 0.0f;
-            Host_G_F[GID].Gummel_ax = 0.0f;
-            Host_G_F[GID].Gummel_bx = 0.0f;
-            Host_G_F[GID].Flux_y = 0.0f;
-            Host_G_F[GID].Gummel_ay = 0.0f;
-            Host_G_F[GID].Gummel_by = 0.0f;
-        }
-    }
-    checkCudaErrors(cudaMalloc((void**)&dev_G_F, nfsp * Gsize *  sizeof(GFG)));
-    checkCudaErrors(cudaMemcpy(dev_G_F, Host_G_F, nfsp * Gsize *  sizeof(GFG), cudaMemcpyHostToDevice));
-
+    checkCudaErrors(cudaMalloc((void**)&dev_FG_Src, nfsp * Gsize * sizeof(GFG)));
+    checkCudaErrors(cudaMemcpy(dev_FG_Src, Fluid_Src, nfsp * Gsize * sizeof(GFG), cudaMemcpyHostToDevice));
+   
     // Calculate Diffusion coefficient
-    if(MainGas == ARGON) Cal_D_Argon<<<CONTI_GRID,CONTI_BLOCK>>>(nfsp,ncy,Csize,Total_Pressure,dev_CvecSet,dev_GvecSet,dev_C_F);
-    if(MainGas == OXYGEN) Cal_D_Oxygen<<<CONTI_GRID,CONTI_BLOCK>>>(nfsp,ncy,Csize,Total_Pressure,dev_CvecSet,dev_GvecSet,dev_C_F);
-    if(MainGas == ARO2) Cal_D_ArO2<<<CONTI_GRID,CONTI_BLOCK>>>(nfsp,ncy,Csize,Total_Pressure,dev_CvecSet,dev_GvecSet,dev_C_F);
-    checkCudaErrors(cudaMemcpy(Host_C_F, dev_C_F, nfsp * Csize *  sizeof(GFC), cudaMemcpyDeviceToHost));
+    if(MainGas == ARGON) 
+        Cal_D_Argon(vec_C,vec_G,Fluid_sp);
+    else if(MainGas == OXYGEN) 
+        Cal_D_Oxygen(vec_C,vec_G,Fluid_sp);
+    else if(MainGas == ARO2) 
+        Cal_D_ArO2(vec_C,vec_G,Fluid_sp);
 
-    // Region check
-    Conti_xnum = Cal_XRegion_check();
-    Conti_ynum = Cal_YRegion_check();
-    // number of tri cal = nfsp * Conti_xnum + nfsp * Conti_ynum
-    // tridiag data size = nfsp * (3 * ncx * Conti_ynum)
-    // tridiag data size = nfsp * (3 * ncy * Conti_xnum)
-    size = nfsp * Conti_xnum;
-    cudaOccupancyMaxPotentialBlockSize(&mingrid,&block,(void*)Cal_D_Argon,0,size); 
-    grid = (size + block - 1) / block;
-    CONTIx_GRID = dim3(grid, 1, 1);
-    CONTIx_BLOCK = dim3(block, 1, 1);
-    size = nfsp * Conti_ynum;
-    cudaOccupancyMaxPotentialBlockSize(&mingrid,&block,(void*)Cal_D_Argon,0,size); 
-    grid = (size + block - 1) / block;
-    CONTIy_GRID = dim3(grid, 1, 1);
-    CONTIy_BLOCK = dim3(block, 1, 1);
-    //
-    Conti_x = (Con_RegionX *) malloc(nfsp * Conti_xnum * sizeof(Con_RegionX));
-    Conti_y = (Con_RegionY *) malloc(nfsp * Conti_ynum * sizeof(Con_RegionY));
-    for(isp=0;isp<nfsp;isp++){
-        Set_Con_Region(isp, Conti_x, Conti_y);
-        Set_Con_Boundary(isp, Conti_x, Conti_y);
-    } 
-    checkCudaErrors(cudaMalloc((void**)&dev_Conti_x, nfsp * Conti_xnum *  sizeof(Con_RegionX)));
-    checkCudaErrors(cudaMemcpy(dev_Conti_x, Conti_x, nfsp * Conti_xnum *  sizeof(Con_RegionX), cudaMemcpyHostToDevice));
-    checkCudaErrors(cudaMalloc((void**)&dev_Conti_y, nfsp * Conti_ynum *  sizeof(Con_RegionY)));
-    checkCudaErrors(cudaMemcpy(dev_Conti_y, Conti_y, nfsp * Conti_ynum *  sizeof(Con_RegionY), cudaMemcpyHostToDevice));
+    // Gummel coefficient
+    calculate_gummel_coef_x();
+    calculate_gummel_coef_y();
 
-    // Calculate Gummel Coef 
-    calculate_gummel_coef_x<<<CONTIx_GRID,CONTIx_BLOCK>>>(nfsp, Conti_xnum, ngy, Gsize, Csize, dx, dev_Conti_x, dev_FG, dev_C_F, dev_G_F);
-    calculate_gummel_coef_y<<<CONTIy_GRID,CONTIy_BLOCK>>>(nfsp, Conti_ynum, ngy, Gsize, Csize, dy, dev_Conti_y, dev_FG, dev_C_F, dev_G_F);
-
-    // Calculate Tridiagonal A matrix 
-    // tridiag size 3 * ncx * Conti_xnum
-    // tridiag size 3 * ncy * Conti_ynum
-    cudaDeviceSynchronize();
-    //exit(1);
+    for(isp=0;isp<nfsp;isp++) {
+        Calculate_Flux_x(isp);
+        Calculate_Flux_y(isp);
+    }
 }
-__global__ void calculate_gummel_coef_x(int nfsp, int size, int ngy, int Gsize,int Csize, float dx, Con_RegionX *val, Fluid *info, GFC *Cdata, GFG *Gdata){
-    int TID = threadIdx.x + blockIdx.x * blockDim.x;
-    if(TID>=nfsp*size) return;
-    int i,isp,ID;
-    ID = TID%size;
-    isp = TID/size;
-    int x1,x2,yy;
-    float aa=0,bb;
-    
-    x1=val[TID].x1;
-	x2=val[TID].x2;
-	yy=val[TID].yy;
-    Gdata[isp*Gsize + x1*ngy+yy].Gummel_bx =- val[TID].fg1*(-0.25*info[isp].Vel);
-    Gdata[isp*Gsize + x1*ngy+yy].Gummel_ax =  0;
-	for(i=x1+1;i<=x2;i++){
-		bb=(Cdata[isp*Csize + (i-1)*(ngy-1)+yy].D + Cdata[isp*Csize + i*(ngy-1)+yy].D)/2;
-		Gdata[isp*Gsize + i*ngy+yy].Gummel_ax=bb/dx;
-		Gdata[isp*Gsize + i*ngy+yy].Gummel_bx=bb/dx;
-        //printf("%g ",bb/dx);
+void Solve_Continuity_eqn(){
+    int isp;
+    for(isp=0;isp<nfsp;isp++) {
+		Solve_Density_x(isp);
+		Calculate_Flux_x(isp);
+		Solve_Density_y(isp);
+		Calculate_Flux_y(isp);
 	}
-    Gdata[isp*Gsize + (x2+1)*ngy+yy].Gummel_bx = 0;
-    Gdata[isp*Gsize + (x2+1)*ngy+yy].Gummel_ax =- val[TID].fg2*(0.25*info[isp].Vel);
-
 }
-__global__ void calculate_gummel_coef_y(int nfsp, int size, int ngy, int Gsize,int Csize, float dy, Con_RegionY *val, Fluid *info, GFC *Cdata, GFG *Gdata){
-    int TID = threadIdx.x + blockIdx.x * blockDim.x;
-    if(TID>=nfsp*size) return;
-    int j,isp,ID;
-    ID = TID%size;
-    isp = TID/size;
+void Solve_Continuity_eqn_check(){
+    int isp;
+    for(isp=0;isp<nfsp;isp++) {
+        if(FG[isp].CSS_Flag){
+		    Solve_Density_x(isp);
+		    Calculate_Flux_x(isp);
+		    Solve_Density_y(isp);
+		    Calculate_Flux_y(isp);
+        }
+	}
+}
+void Calculate_Flux_x(int isp){
+    int i, k, x1, x2, yy;
+	float left_den, right_den;
+    GFC *pointer;
+    Con_RegionX *pointer2;
+    pointer = &(Fluid_sp[isp]);
+    pointer2 = &(Conti_x[isp]);
+
+	for(k=0;k<Conti_xnum;k++){
+		x1=pointer2->x1[k];
+		x2=pointer2->x2[k];
+		yy=pointer2->yy[k];
+		pointer->flux_x[x1][yy] = -Conti_x[isp].fg1[k] * pointer->gummel_bx[x1][yy] * pointer->den[x1][yy];
+		for(i=x1+1;i<=x2;i++) {
+			left_den = pointer->den[i-1][yy];
+			right_den = pointer->den[i][yy];
+			pointer->flux_x[i][yy] = pointer->gummel_ax[i][yy]*left_den - pointer->gummel_bx[i][yy]*right_den;
+		}
+		pointer->flux_x[x2+1][yy] = Conti_x[isp].fg2[k]*pointer->gummel_ax[x2+1][yy]*pointer->den[x2][yy];
+	}
+}
+void Calculate_Flux_y(int isp){
+    int j, k, y1, y2, xx;
+	float lower_den, upper_den;
+    GFC *pointer;
+    Con_RegionY * pointer2;
+    pointer = &(Fluid_sp[isp]);
+    pointer2 = &(Conti_y[isp]);
+
+	for(k=0;k<Conti_ynum;k++){
+		xx=pointer2->xx[k];
+		y1=pointer2->y1[k];
+		y2=pointer2->y2[k];
+		pointer->flux_y[xx][y1] = -Conti_y[isp].fg1[k]*pointer->gummel_by[xx][y1]*pointer->den[xx][y1];
+		for(j=y1+1;j<=y2;j++) {
+			lower_den = pointer->den[xx][j-1];
+			upper_den = pointer->den[xx][j];
+			pointer->flux_y[xx][j] = pointer->gummel_ay[xx][j]*lower_den - pointer->gummel_by[xx][j]*upper_den;
+		}
+		pointer->flux_y[xx][y2+1] = Conti_y[isp].fg2[k]*pointer->gummel_ay[xx][y2+1]*pointer->den[xx][y2];
+	}
+}
+void Solve_Density_x(int isp){
+    int k,i,x1,x2,yy,num,xx;
+    float src, ga, gb, gc;
+    float subd[ngx], diag[ngx], superd[ngx], rhs[ngx], density[ngx], gam[ngx];
+    float del_f;
+    GFC *pointer;
+    Con_RegionX *pointer2;
+    pointer = &(Fluid_sp[isp]);
+    pointer2 = &(Conti_x[isp]);
+    del_f = dtc/dx;
+    for(k=0;k<Conti_xnum;k++){
+        x1=pointer2->x1[k];
+		x2=pointer2->x2[k];
+		yy=pointer2->yy[k];
+		num = x2-x1+1;
+		for(i=0;i<num;i++) {
+			xx = i + x1;
+            ga =  -pointer->gummel_ax[xx][yy]*del_f;
+            gb =  1+(pointer->gummel_ax[xx+1][yy]+pointer->gummel_bx[xx][yy])*del_f;
+            gc =  -pointer->gummel_bx[xx+1][yy]*del_f;
+            src = pointer->den[xx][yy] + pointer->Source[xx][yy]*dtc - (pointer->flux_y[xx][yy+1]-pointer->flux_y[xx][yy])*dtc/dy;
+            subd[i] =  ga;
+			diag[i] = gb;
+			superd[i] = gc;
+			rhs[i] =  src;
+		}
+        tridiag(subd,diag,superd,rhs,density,gam,0,num-1);
+        for(i=0;i<num;i++) {
+			if(vec_C[(i+x1)*ncy+yy].PlasmaRegion == 1 && density[i] > 1e9){
+				pointer->den[i+x1][yy] = density[i];
+            }else{
+				pointer->den[i+x1][yy] = 0.0f;
+			}
+		}
+    }
+}
+void Solve_Density_y(int isp){
+    int k,j,xx,y1,y2,num,yy;
+    float src, ga, gb, gc;
+    float subd[ngy], diag[ngy], superd[ngy], rhs[ngy], density[ngy], gam[ngy];
+    float del_f;
+    GFC *pointer;
+    Con_RegionY * pointer2;
+    pointer = &(Fluid_sp[isp]);
+    pointer2 = &(Conti_y[isp]);
+    del_f = dtc/dy;
+    for(k=0;k<Conti_ynum;k++){
+		xx=pointer2->xx[k];
+		y1=pointer2->y1[k];
+		y2=pointer2->y2[k];
+		num = y2-y1+1;
+		for(j=0;j<num;j++) {
+			yy = j + y1;
+            ga =  -pointer->gummel_ay[xx][yy]*del_f;
+            gb =  1+(pointer->gummel_ay[xx][yy+1]+pointer->gummel_by[xx][yy])*del_f;
+            gc =  -pointer->gummel_by[xx][yy+1]*del_f;
+            src = pointer->den[xx][yy] + pointer->Source[xx][yy]*dtc - (pointer->flux_x[xx+1][yy]-pointer->flux_x[xx][yy])*dtc/dx;
+            subd[j] = ga;
+			diag[j] = gb;
+			superd[j] = gc;
+			rhs[j] = src;
+		}
+		tridiag(subd,diag,superd,rhs,density,gam,0,num-1);
+        for(j=0;j<num;j++) {
+			if(vec_C[xx*ncy+j+y1].PlasmaRegion == 1 && density[j] > 1e9){
+				pointer->den[xx][j+y1]=density[j];
+            }else{
+				pointer->den[xx][j+y1]=0.0f;
+			}
+		}
+	}
+}
+int tridiag(float *a, float *b, float *c, float *d, float *x, float *gam, int min, int max)
+{
+	int j;
+	float bet;
+
+	x[min]=d[min]/(bet=b[min]);
+	for(j=min+1;j<=max;j++) {
+		gam[j-1]=c[j-1]/bet;
+		bet=b[j]-a[j]*c[j-1]/bet;
+		x[j]=(d[j]-a[j]*x[j-1])/bet;
+		if(bet==0) return 0;
+	}
+
+	for(j=max-1;j>=min;j--) x[j] -= gam[j]*x[j+1];
+
+	return 1;
+}
+void calculate_gummel_coef_x(){
+    int isp,k,i;
+    int x1,x2,yy;
+    for(isp=0;isp<nfsp;isp++){
+        for(k=0;k<Conti_xnum;k++){
+		    x1=Conti_x[isp].x1[k];
+		    x2=Conti_x[isp].x2[k];
+		    yy=Conti_x[isp].yy[k];
+		    Fluid_sp[isp].gummel_bx[x1][yy]=-Conti_x[isp].fg1[k] * (-0.25*sqrt(vec_G[x1*ngy+yy].Temp*1.38e-23/FG[isp].mass));
+		    Fluid_sp[isp].gummel_ax[x1][yy]=0;
+		    for(i=x1+1;i<=x2;i++){
+			    Fluid_sp[isp].gummel_ax[i][yy] = (Fluid_sp[isp].D[i-1][yy] + Fluid_sp[isp].D[i-1][yy])/2/dx;
+			    Fluid_sp[isp].gummel_bx[i][yy] = Fluid_sp[isp].gummel_ax[i][yy];
+		    }
+		    Fluid_sp[isp].gummel_ax[x2+1][yy]=Conti_x[isp].fg2[k] * (0.25*sqrt(vec_G[x2*ngy+yy].Temp*1.38e-23/FG[isp].mass));
+		    Fluid_sp[isp].gummel_bx[x2+1][yy]=0;
+	    }
+    }
+}
+void calculate_gummel_coef_y(){
+    int isp,k,j;
     int xx,y1,y2;
     float aa=0,bb;
-
-    xx=val[TID].xx;
-	y1=val[TID].y1;
-	y2=val[TID].y2;
-    Gdata[isp*Gsize + xx*ngy+y1].Gummel_by =- val[TID].fg1*(-0.25*info[isp].Vel);
-    Gdata[isp*Gsize + xx*ngy+y1].Gummel_ay =  0;
-	for(j=y1+1;j<=y2;j++){
-		bb=(Cdata[isp*Csize + xx*(ngy-1)+j-1].D + Cdata[isp*Csize + xx*(ngy-1)+j].D)/2;
-		Gdata[isp*Gsize + xx*ngy+j].Gummel_ay=bb/dy;
-		Gdata[isp*Gsize + xx*ngy+j].Gummel_by=bb/dy;
-	}
-    Gdata[isp*Gsize + xx*ngy+y2+1].Gummel_by = 0;
-    Gdata[isp*Gsize + xx*ngy+y2+1].Gummel_ay =- val[TID].fg2*(0.25*info[isp].Vel);
-
-}
-void Set_Con_Boundary(int isp, Con_RegionX *Cx,Con_RegionY *Cy){
-    int i, j ,k,GID,GID1,GID2,GID3;
-	int x1, x2, y1, y2, xx, yy;
-	for(i=0;i<Conti_xnum;i++) {
-		x1=Cx[i].x1;
-		x2=Cx[i].x2;
-		yy=Cx[i].yy;
-        GID = x1*ngy + yy;
-        GID1 = x1*ngy + yy+1;
-        GID2 = (x2+1)*ngy + yy;
-        GID3 = (x2+1)*ngy + yy + 1;
-		if(vec_G[GID].Boundary==NEUMANN || vec_G[GID1].Boundary==NEUMANN) {
-			if(x1==0) 
-                Cx[isp*Conti_xnum+i].fg1=0;
-			else 
-                Cx[isp*Conti_xnum+i].fg1=FG[isp].Gamma1;
-		}
-		else if(vec_G[GID].Boundary==DIELECTRIC) {
-			Cx[isp*Conti_xnum+i].fg1=FG[isp].Gamma1;
-		}
-		else if(vec_G[GID].Boundary==CONDUCTOR) {
-			Cx[isp*Conti_xnum+i].fg1=FG[isp].Gamma1;
-		}
-		else Cx[isp*Conti_xnum+i].fg1=FG[isp].Gamma1;
-
-		if(vec_G[GID2].Boundary==NEUMANN || vec_G[GID3].Boundary==NEUMANN) {
-			if(x2==ncx-1) Cx[isp*Conti_xnum+i].fg2=0;
-			else Cx[isp*Conti_xnum+i].fg2=FG[isp].Gamma1;
-		}
-		else if(vec_G[GID2].Boundary==DIELECTRIC) {
-			Cx[isp*Conti_xnum+i].fg2=FG[isp].Gamma1;
-		}
-		else if(vec_G[GID2].Boundary==CONDUCTOR) {
-			Cx[isp*Conti_xnum+i].fg2=FG[isp].Gamma1;
-		}
-		else Cx[isp*Conti_xnum+i].fg2=FG[isp].Gamma1;
-
-	}
-	for(i=0;i<Conti_ynum;i++) {
-        xx=Cy[i].xx;
-		y1=Cy[i].y1;
-		y2=Cy[i].y2;
-        GID = xx*ngy + y1;
-        GID1 = (xx+1)*ngy + y1;
-        GID2 = xx*ngy + y2 + 1;
-        GID3 = (xx+1)*ngy + y2+1;
-		if(vec_G[GID].Boundary==NEUMANN || vec_G[GID1].Boundary==NEUMANN) {
-			if(y1==0) Cy[isp*Conti_ynum+i].fg1=0;
-			else Cy[isp*Conti_ynum+i].fg1=FG[isp].Gamma1;
-		}
-		else if(vec_G[GID].Boundary==DIELECTRIC) {
-			Cy[isp*Conti_ynum+i].fg1=FG[isp].Gamma1;
-		}
-		else if(vec_G[GID].Boundary==CONDUCTOR) {
-			Cy[isp*Conti_ynum+i].fg1=FG[isp].Gamma1;
-		}
-		else Cy[isp*Conti_ynum+i].fg1=FG[isp].Gamma1;
-		if(vec_G[GID2].Boundary==NEUMANN || vec_G[GID3].Boundary==NEUMANN) {
-			if(y2==ncy-1) Cy[isp*Conti_xnum+i].fg2=0;
-			else Cy[isp*Conti_ynum+i].fg2=FG[isp].Gamma1;
-		}
-		else if(vec_G[GID2].Boundary==DIELECTRIC) {
-			Cy[isp*Conti_ynum+i].fg2=FG[isp].Gamma1;
-		}
-		else if(vec_G[GID2].Boundary==CONDUCTOR) {
-			Cy[isp*Conti_ynum+i].fg2=FG[isp].Gamma1;
-		}
-		else Cy[isp*Conti_ynum+i].fg2=FG[isp].Gamma1;
-	}
-}
-void Set_Con_Region(int isp, Con_RegionX *Cx,Con_RegionY *Cy){
-    int i, j ,k,add,CID,CID1,CID2;
-	int x1, x2, y1, y2, xx, yy;
-	k=0;
-	for(j=0;j<ncy;j++) {
-		for(i=0;i<ncx;i++) {
-            CID = i*ncy + j;
-            CID1 = (i-1)*ncy + j;
-            CID2 = (i+1)*ncy + j;
-			if(vec_C[CID].PlasmaRegion == 1) { // plasma
-				if(i == 0) { //left side wallCycle of check
-					Cx[isp * Conti_xnum + k].x1 = i;
-					Cx[isp * Conti_xnum + k].yy = j;
-				}
-				else if(vec_C[CID1].PlasmaRegion != 1) { // if left side is not plasma region
-					Cx[isp * Conti_xnum + k].x1 = i;
-					Cx[isp * Conti_xnum + k].yy = j;
-				}
-				if(i == ncx-1) { //right side wall
-					Cx[isp * Conti_xnum + k].x2 = i;
-					k++;
-				}
-				else if(vec_C[CID2].PlasmaRegion != 1) { // if Right side is not plasma region
-					Cx[isp * Conti_xnum + k].x2 = i;
-					k++;
-				}
-			}
-		}
-	}
-	k=0;
-	for(i=0;i<ncx;i++) {
-		for(j=0;j<ncy;j++) {
-            CID = i*ncy + j;
-            CID1 = i*ncy + j-1;
-            CID2 = i*ncy + j+1;
-			if(vec_C[CID].PlasmaRegion == 1) {
-				if(j == 0) {
-					Cy[isp * Conti_ynum + k].xx = i;
-					Cy[isp * Conti_ynum + k].y1 = j;
-				}
-				else if(vec_C[CID1].PlasmaRegion != 1) {
-					Cy[isp * Conti_ynum + k].xx = i;
-					Cy[isp * Conti_ynum + k].y1 = j;
-				}
-
-				if(j == ncy-1) {
-					Cy[isp * Conti_ynum + k].y2 = j;
-					k++;
-				}
-				else if(vec_C[CID2].PlasmaRegion != 1) {
-					Cy[isp * Conti_ynum + k].y2 = j;
-					k++;
-				}
-			}
-		}
-	}
-}
-int Cal_XRegion_check(){
-    int i,j,k;
-    k=0;
-    for(j=0;j<ncy;j++){
-        for(i=0;i<ncx;i++){
-            if(vec_C[i*ncy+j].PlasmaRegion == 1){
-                if(i == ncx-1) {
-                    k++;
-                }else if(vec_C[(i+1)*ncy+j].PlasmaRegion != 1) {
-                    k++;
-                }
-            }
+    for(isp=0;isp<nfsp;isp++){
+        for(k=0;k<Conti_ynum;k++){
+		    xx=Conti_y[isp].xx[k];
+		    y1=Conti_y[isp].y1[k];
+		    y2=Conti_y[isp].y2[k];
+            Fluid_sp[isp].gummel_by[xx][y1]=-Conti_y[isp].fg1[k] * (-0.25*sqrt(vec_G[xx*ngy+y1].Temp*1.38e-23/FG[isp].mass));
+		    Fluid_sp[isp].gummel_ay[xx][y1]=0;
+		    for(j=y1+1;j<=y2;j++){
+			    Fluid_sp[isp].gummel_ay[xx][j] = (Fluid_sp[isp].D[xx][j-1] + Fluid_sp[isp].D[xx][j])/2/dy;
+			    Fluid_sp[isp].gummel_by[xx][j] = Fluid_sp[isp].gummel_ay[xx][j];
+		    }
+		    Fluid_sp[isp].gummel_ay[xx][y2+1]=Conti_y[isp].fg2[k] * (0.25*sqrt(vec_G[xx*ngy+y2].Temp*1.38e-23/FG[isp].mass));
+		    Fluid_sp[isp].gummel_by[xx][y2+1]=0;
         }
     }
-    return k;
 }
-int Cal_YRegion_check(){
-    int i,j,k;
-    k=0;
-    for(i=0;i<ncx;i++){
-        for(j=0;j<ncy;j++){
-            if(vec_C[i*ncy+j].PlasmaRegion == 1){
-                if(j == ncy-1) {
-                    k++;
-                }else if(vec_C[i*ncy+j+1].PlasmaRegion != 1) {
-                    k++;
-                }
-            }
-        }
-    }
-    return k;
-}
-__global__ void Cal_D_Argon(int nfsp, int ncy, int Csize, float press, GCA *vec_C, GGA *vec_G, GFC *data){
-    int TID = threadIdx.x + blockIdx.x * blockDim.x;
-    if(TID>=nfsp*Csize) return;
-    int ID = TID%Csize;
-    int xi = ID/ncy;
-    int yi = ID%ncy;
-    int GID;
+void Cal_D_Argon(GCA *vecC, GGA *vecG, GFC *data){
+    int isp,i,j,CID,GID;
     float T = 0.0f;
     float epsi_k = 124.0f; 	// epsilon/K from Viscosity
 	float sigmasq = 11.682724f; 	// r0, A. from Viscosity (3.418)^2
     float omega;
-
-    GID = xi * (ncy+1) + yi;
-    T = 0.25*(vec_G[GID].Temp + vec_G[GID+1].Temp + vec_G[GID+ncy+1].Temp + vec_G[GID+ncy+2].Temp);
-    omega = Ar_meta_omega(T/epsi_k);
-    data[TID].D = 1.997279e-4*sqrt(T/39.948)*T/(press*sigmasq*omega)*20;
+    for(isp=0;isp<nfsp;isp++){
+        for(i=0;i<ncx;i++){
+		    for(j=0;j<ncy;j++){
+                CID = i * ncy + j;
+                GID = i * ngy + j;
+                T = 0.25*(vecG[GID].Temp + vecG[GID+1].Temp + vecG[GID+ngy].Temp + vecG[GID+ngy+1].Temp);
+                omega = Ar_meta_omega(T/epsi_k);
+                data[isp].D[i][j] = 1.997279e-4*sqrt(T/39.948)*T/(Total_Pressure*sigmasq*omega)*20;
+            }
+        }
+    }
     //printf("D[%d] = %g\n",TID,data[TID].D);
 }
-__global__ void Cal_D_Oxygen(int nfsp, int ncy, int Csize, float press, GCA *vec_C, GGA *vec_G, GFC *data){
-    int TID = threadIdx.x + blockIdx.x * blockDim.x;
-    if(TID>=nfsp*Csize) return;
-    int ID = TID%Csize;
-    int isp = TID/Csize;
-    int xi = ID/ncy;
-    int yi = ID%ncy;
-    int GID;
+void Cal_D_Oxygen(GCA *vecC, GGA *vecG, GFC *data){
+    int isp,i,j,CID,GID;
     float T = 0.0f;
 	float sigmasq1 = 0.10892f; 	// r0, A. from Viscosity 1/(3.03)^2  for OP  OD
     float sigmasq2 = 0.08650f; 	// r0, A. from Viscosity 1/(3.40)^2  for O2A O2B
-
-    GID = xi * (ncy+1) + yi;
-    T = 0.25*(vec_G[GID].Temp + vec_G[GID+1].Temp + vec_G[GID+ncy+1].Temp + vec_G[GID+ncy+2].Temp);
-    if(isp <= 1){
-        // D = [(2.63X10^3)/P/(SIGMA)^2] * sqrt( T^3 *(Ma+Mb)/2/Ma/Mb);
-        data[TID].D = 2.63e-3*sqrt(T*T*T*24/32/32)/press*sigmasq2;
-        //if(ID == 510) printf("D2[%d] = %g\n",TID,data[TID].D);
-    }else{
-        // D = [(2.63X10^3)/P/(SIGMA)^2] * sqrt( T^3 *(Ma+Mb)/2/Ma/Mb);
-        data[TID].D = 2.63e-3*sqrt(T*T*T*24/16/16)/press*sigmasq1;
-        //if(ID == 510) printf("D1[%d] = %g\n",TID,data[TID].D);
+    float omega;
+    for(isp=0;isp<nfsp;isp++){
+        for(i=0;i<ncx;i++){
+		    for(j=0;j<ncy;j++){
+                CID = i * ncy + j;
+                GID = i * ngy + j;
+                T = 0.25*(vecG[GID].Temp + vecG[GID+1].Temp + vecG[GID+ngy].Temp + vecG[GID+ngy+1].Temp);
+                if(isp <= 1){
+                    // D = [(2.63X10^3)/P/(SIGMA)^2] * sqrt( T^3 *(Ma+Mb)/2/Ma/Mb);
+                    data[isp].D[i][j] = 2.63e-3*sqrt(T*T*T*24/32/32)/Total_Pressure*sigmasq2;
+                }else{
+                     // D = [(2.63X10^3)/P/(SIGMA)^2] * sqrt( T^3 *(Ma+Mb)/2/Ma/Mb);
+                    data[isp].D[i][j] = 2.63e-3*sqrt(T*T*T*24/16/16)/Total_Pressure*sigmasq1;  
+                }
+            }
+        }
     }
 }
-__global__ void Cal_D_ArO2(int nfsp, int ncy, int Csize, float press, GCA *vec_C, GGA *vec_G, GFC *data){
-    int TID = threadIdx.x + blockIdx.x * blockDim.x;
-    if(TID>=nfsp*Csize) return;
-    int ID = TID%Csize;
-    int isp = TID/Csize;
-    int xi = ID/ncy;
-    int yi = ID%ncy;
-    int GID;
+void Cal_D_ArO2(GCA *vecC, GGA *vecG, GFC *data){   
+    int isp,i,j,CID,GID;
     float T = 0.0f;
-    //float epsi_k = 124.0f; 	// epsilon/K from Viscosity
-	//float sigmasq = 11.682724f; // r0, A. from Viscosity (3.418)^2  for AR meta
-    float sigmasq0 = 0.08559f;  // r0, A. from Viscosity 1/(3.418)^2 for AR meta
+	float sigmasq0 = 0.08559f;  // r0, A. from Viscosity 1/(3.418)^2 for AR meta
 	float sigmasq1 = 0.10892f; 	// r0, A. from Viscosity 1/(3.03)^2  for OP  OD
     float sigmasq2 = 0.08650f; 	// r0, A. from Viscosity 1/(3.40)^2  for O2A O2B
-    //float omega;
-
-    GID = xi * (ncy+1) + yi;
-    T = 0.25*(vec_G[GID].Temp + vec_G[GID+1].Temp + vec_G[GID+ncy+1].Temp + vec_G[GID+ncy+2].Temp);
-    if(isp == 0){
-        //omega = Ar_meta_omega(T/epsi_k);
-        //data[TID].D = 1.997279e-4*sqrt(T/39.948)*T/(press*sigmasq*omega)*20;
-        data[TID].D = 2.63e-3*sqrt(T*T*T*24/39.948/39.948)/press*sigmasq0;
-        //if(ID == 510) printf("D0[%d] = %g\n",TID,data[TID].D);
-    }else if(isp == 1){
-        // D = [(2.63X10^3)/P/(SIGMA)^2] * sqrt( T^3 *(Ma+Mb)/2/Ma/Mb);
-        data[TID].D = 2.63e-3*sqrt(T*T*T*24/32/32)/press*sigmasq2;
-        //if(ID == 510) printf("D1[%d] = %g\n",TID,data[TID].D);
-    }else if(isp == 2){
-        // D = [(2.63X10^3)/P/(SIGMA)^2] * sqrt( T^3 *(Ma+Mb)/2/Ma/Mb);
-        data[TID].D = 2.63e-3*sqrt(T*T*T*24/32/32)/press*sigmasq2;
-        //if(ID == 510) printf("D2[%d] = %g\n",TID,data[TID].D);
-    }else if(isp == 3){
-        // D = [(2.63X10^3)/P/(SIGMA)^2] * sqrt( T^3 *(Ma+Mb)/2/Ma/Mb);
-        data[TID].D = 2.63e-3*sqrt(T*T*T*24/16/16)/press*sigmasq1;
-        //if(ID == 510) printf("D3[%d] = %g\n",TID,data[TID].D);
-    }else if(isp == 4){
-        // D = [(2.63X10^3)/P/(SIGMA)^2] * sqrt( T^3 *(Ma+Mb)/2/Ma/Mb);
-        data[TID].D = 2.63e-3*sqrt(T*T*T*24/16/16)/press*sigmasq1;
-        //if(ID == 510) printf("D4[%d] = %g\n",TID,data[TID].D);
+    float omega;
+    for(isp=0;isp<nfsp;isp++){
+        for(i=0;i<ncx;i++){
+		    for(j=0;j<ncy;j++){
+                CID = i * ncy + j;
+                GID = i * ngy + j;
+                T = 0.25*(vecG[GID].Temp + vecG[GID+1].Temp + vecG[GID+ngy].Temp + vecG[GID+ngy+1].Temp);
+                if(isp == 0){
+                    //data[TID].D = 1.997279e-4*sqrt(T/39.948)*T/(press*sigmasq*omega)*20;
+                    data[isp].D[i][j] = 2.63e-3*sqrt(T*T*T*24/39.948/39.948)/Total_Pressure*sigmasq0;
+                }else if(isp == 1){
+                    // D = [(2.63X10^3)/P/(SIGMA)^2] * sqrt( T^3 *(Ma+Mb)/2/Ma/Mb);
+                    data[isp].D[i][j] = 2.63e-3*sqrt(T*T*T*24/32/32)/Total_Pressure*sigmasq2;
+                }else if(isp == 2){
+                    // D = [(2.63X10^3)/P/(SIGMA)^2] * sqrt( T^3 *(Ma+Mb)/2/Ma/Mb);
+                    data[isp].D[i][j] = 2.63e-3*sqrt(T*T*T*24/32/32)/Total_Pressure*sigmasq2;
+                }else if(isp == 3){
+                    // D = [(2.63X10^3)/P/(SIGMA)^2] * sqrt( T^3 *(Ma+Mb)/2/Ma/Mb);
+                    data[isp].D[i][j] = 2.63e-3*sqrt(T*T*T*24/16/16)/Total_Pressure*sigmasq1;
+                }else if(isp == 4){
+                    // D = [(2.63X10^3)/P/(SIGMA)^2] * sqrt( T^3 *(Ma+Mb)/2/Ma/Mb);
+                    data[isp].D[i][j] = 2.63e-3*sqrt(T*T*T*24/16/16)/Total_Pressure*sigmasq1;
+                }
+            }
+        }
     }
 }
-__device__ float Ar_meta_omega(float value){
+float Ar_meta_omega(float value){
     int   i;
 	float tstar[27] = {0.250, 0.267, 0.286, 0.308, 0.333, 0.364, 0.400, 0.444,
 	                   0.500, 0.571, 0.667, 0.800, 1.000, 1.330, 2.000, 2.500,
@@ -382,4 +317,34 @@ __device__ float Ar_meta_omega(float value){
 				temp2=omega[i]*temp1+omega[i-1]*(1-temp1);
 			}
 	return temp2;
+}
+void Sync_Fluid_GFCtoGFG_forDen(GFC *A, GFG *B){ // [ncx][ncy] --> [Gsize], cpu DATA > GPU
+    int isp,i,j,GID;
+    float buf;
+    for(isp=0;isp<nfsp;isp++){
+        buf = 0.0f;
+        for(i=0;i<ncx;i++){
+		    for(j=0;j<ncy;j++){
+                GID = isp * Gsize + i * ngy + j;
+                B[GID].n = A[isp].den[i][j];
+                if(i == ncx-1 || j == ncy-1){
+                    GID = isp * Gsize + (i+1) * ngy + j+1;
+                    B[GID].n = A[isp].den[i][j];
+                }
+                buf += A[isp].den[i][j];
+            }
+        }
+        FG[isp].ave_Den = buf/Csize;
+    }
+}
+void Sync_Fluid_GFGtoGFC_forSource(GFG *A, GFC *B){ // [nsp*Gsize+Gsize] --> [ncx][ncy], GPU data > CPU
+    int isp,i,j,GID;
+    for(isp=0;isp<nfsp;isp++){
+        for(i=0;i<ncx;i++){
+		    for(j=0;j<ncy;j++){
+                GID = isp * Gsize + i * ngy + j;
+                B[isp].Source[i][j] = A[GID].n;
+            }
+        }
+    }
 }

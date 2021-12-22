@@ -17,19 +17,18 @@ void start_cuda(){
 	case ARGON:
 		MCC	= MCC_Ar_cuda;
 		MCC_Basic = MCC_Ar_cuda;
-		CONTIEQ = NULL;
 		break;
 	case OXYGEN:
 		MCC		= MCC_O2_cuda;
 		MCC_Basic = MCC_O2_cuda;
-		CONTIEQ = NULL;
 		break;
 	case ARO2:
 		MCC		= MCC_ArO2_cuda;
 		MCC_Basic = MCC_ArO2_cuda;
-		CONTIEQ = NULL;
 		break;
 	}
+	if(CSS_Flag) CONTIEQ = Solve_Continuity_eqn_check;
+	else CONTIEQ = Solve_Continuity_eqn;
 	DEPOSIT = Deposit_cuda;
 	DIAG    = Diagnostic;
 }
