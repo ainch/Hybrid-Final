@@ -22,7 +22,6 @@ extern "C" void main_cuda()
 	Set_Diagnostic_cuda();
     Set_SortBoundary_cuda();
 	Set_MatrixPCG_cuda();
-	if(Lap_Field_Solver_Test) PCG_Laplace_TEST();
     //else{
     PCG_SOLVER_Laplace();
     Set_Fluid_cuda();

@@ -6,10 +6,9 @@ OPENMP=-fopenmp
 OPENMP_CUDA=-Xcompiler -fopenmp -lgomp
 # CFLAGS = -O3
 CFLAGS =
-CUFLAGS= -arch=sm_75 -use_fast_math --ptxas-options=-v -rdc=true
-# CUFLAGS= -gencode arch=compute_52,code=sm_52 -use_fast_math --ptxas-options=-v
+CUFLAGS= -arch=sm_70 -use_fast_math --ptxas-options=-v -rdc=true
 LFLAGS = -lm
-CUDA_DIR=/usr/local/cuda-10.2
+CUDA_DIR=/usr/local/cuda-10.0
 IDIR = -I$(CUDA_DIR)/include -Iinc
 LIBS  = -L$(CUDA_DIR)/lib64 -lm -ldl -lcurand -lcublas -lcusparse -lcusolver -lcufft #-lefence
 SRC_DIR := ./src
@@ -29,7 +28,6 @@ C_OBJS = $(OBJ_DIR)/main.o \
 CU_OBJS = $(OBJ_DIR)/cuda_main.o \
           $(OBJ_DIR)/cuda_start.o \
           $(OBJ_DIR)/cuda_Init.o \
-          $(OBJ_DIR)/cuda_Field_SpeedTest.o  \
           $(OBJ_DIR)/cuda_Field.o \
           $(OBJ_DIR)/cuda_Particle.o \
           $(OBJ_DIR)/cuda_mcc.o \
@@ -61,7 +59,6 @@ CU_H_FILES = inc/xypic.cuh \
              inc/cuda_main.cuh \
              inc/cuda_start.cuh \
              inc/cuda_Init.cuh \
-             inc/cuda_Field_SpeedTest.cuh \
              inc/cuda_Field.cuh \
              inc/cuda_Particle.cuh \
              inc/cuda_mcc.cuh \
