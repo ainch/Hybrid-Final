@@ -14,8 +14,8 @@ extern void MFInit(float **M,float C,int sizeX,int sizeY);
 
 #ifndef __PARTICLE_H__
 #define __PARTICLE_H__
-int h_nvel;
-float *vsave;
+extern int h_nvel;
+extern float *vsave;
 float F(float v);
 float frand();
 void maxwellv(float *vx_local, float *vy_local, float *vz_local, float vti);

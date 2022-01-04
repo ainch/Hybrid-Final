@@ -50,31 +50,31 @@ extern "C" float frand();
 #ifndef __CUDA_FIELD_CUH__
 #define __CUDA_FIELD_CUH__
 namespace cg = cooperative_groups;
-int nz = 5*A_size;
-int N = A_size;
-float *dev_A,*dev_TA;	
-int *dev_Aj,*dev_Ai;
-float *dev_b,*dev_Tb;
-int   *vec_A_idx;
-int   *dev_A_idx;
-float *dev_M;
-float *dev_AP,*dev_X,*dev_R,*dev_Z,*dev_P;
-double *dot_result;
-float *dot_result2;
-int *FIter;
-GGA *dev_GvecSet;
-GCA *dev_CvecSet;
-float *dev_CondCharge;
-float *dev_phi;     // PCG Solution
-float *dev_phi_buf; // Sigma or buf
-size_t pitch;
-float *Lap_TEMP_Sol; // Temperature Solution of Laplace Equation
-float *Lap_PHI_Sol; // Each of conductor Phi Solution of Laplace Equation, This is Device value
+extern int nz;
+extern int N;
+extern float *dev_A,*dev_TA;	
+extern int *dev_Aj,*dev_Ai;
+extern float *dev_b,*dev_Tb;
+extern int   *vec_A_idx;
+extern int   *dev_A_idx;
+extern float *dev_M;
+extern float *dev_AP,*dev_X,*dev_R,*dev_Z,*dev_P;
+extern double *dot_result;
+extern float *dot_result2;
+extern int *FIter;
+extern GGA *dev_GvecSet;
+extern GCA *dev_CvecSet;
+extern float *dev_CondCharge;
+extern float *dev_phi;     // PCG Solution
+extern float *dev_phi_buf; // Sigma or buf
+extern size_t pitch;
+extern float *Lap_TEMP_Sol; // Temperature Solution of Laplace Equation
+extern float *Lap_PHI_Sol; // Each of conductor Phi Solution of Laplace Equation, This is Device value
 float **Lap_SIG_Sol; // Each of conductor Sigma Solution of Laplace Equation for external circuit
 float *Pois_SIG_Sol; // Each of conductor Sigma Solution of Poisson Equation for external circuit
-float *TotPotential;
-float *LapPotential;
-float *dev_Sigma, *dev_Source;
+extern float *TotPotential;
+extern float *LapPotential;
+extern float *dev_Sigma, *dev_Source;
 void Set_MatrixPCG_cuda();
 void PCG_SOLVER_Laplace();
 void PCG_SOLVER();

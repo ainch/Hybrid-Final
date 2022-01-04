@@ -18,8 +18,8 @@ extern float gputime;
 extern cudaEvent_t start, stop;
 #ifndef __CUDA_FLUID_CUH__
 #define __CUDA_FLUID_CUH__
-Fluid *dev_FG;
-GFG *dev_FG_Den, *dev_FG_Src;
+extern Fluid *dev_FG;
+extern GFG *dev_FG_Den, *dev_FG_Src;
 void Set_Fluid_cuda();
 void Sync_Fluid_GFCtoGFG_forDen(GFC *A, GFG *B);
 void Sync_Fluid_GFGtoGFC_forSource(GFG *A, GFC *B);

@@ -9,12 +9,12 @@ extern GGA *vec_G;
 extern Fluid *FG;	// fluid species
 #ifndef __FLUID_H__
 #define __FLUID_H__
-int Conti_Flag;
-GFC *Fluid_sp;
-GFG *Fluid_Den, *Fluid_Src;
-int Conti_xnum, Conti_ynum;
-Con_RegionX *Conti_x;
-Con_RegionY *Conti_y;
+extern int Conti_Flag;
+extern GFC *Fluid_sp;
+extern GFG *Fluid_Den, *Fluid_Src;
+extern int Conti_xnum, Conti_ynum;
+extern Con_RegionX *Conti_x;
+extern Con_RegionY *Conti_y;
 void Fluid_Setting();
 int Cal_XRegion_check();
 int Cal_YRegion_check();

@@ -17,104 +17,104 @@ extern void SetParticleLoad(int isp, float Ninit, int load_type, float x_left,fl
 #ifndef __START_H__
 #define __START_H__
 // C Variable declaration
-int PRINT_Flag;
-int device_num;
-float xlength,ylength,zlength;
-int ngx,ngy,Gsize;
-int ncx,ncy,Csize;
-float dx,dy;
-float idxy,idx,idy,dx2,dy2,dxdy2,hdx,hdy,r_eps0;
-float dt_dx, dt_dy;
-float fncx,fncy,fngx,fngy;
-float *x_Garray,*y_Garray;
-float *x_Carray,*y_Carray;
-int BoundaryNUM;
-int *BoundaryX0,*BoundaryY0,*BoundaryX1,*BoundaryY1,*BoundaryBC;
-float *BoundaryTEMP;
-int CondNUM,CondNUMR;  // CondNUMR is Real Conductor number
-int*CondM_ID, *CondX0,*CondX1,*CondY0,*CondY1;
-float *CondTEMP,*CondR,*CondL,*CondC;
-int SrcNUM;
-int *SrcM_ID;
-float *SrcDC, *SrcPOWER, *SrcAC, *SrcFREQ, *Src2piFREQ, *SrcPHASE, *SrcRPHASE;
-int External_Flag; // 0 : Voltage driven, 1: Power driven
-float Min_FREQ, Max_FREQ;
-int DielNUM,DielNUMR;
-int *DielM_ID, *DielX0, *DielX1, *DielY0, *DielY1;
-float *DielEPS;
-GGA *vec_G;
-GCA *vec_C;
-int **StructureIndex;
-int *vec_StructureIndex;
+extern int PRINT_Flag;
+extern int device_num;
+extern float xlength,ylength,zlength;
+extern int ngx,ngy,Gsize;
+extern int ncx,ncy,Csize;
+extern float dx,dy;
+extern float idxy,idx,idy,dx2,dy2,dxdy2,hdx,hdy,r_eps0;
+extern float dt_dx, dt_dy;
+extern float fncx,fncy,fngx,fngy;
+extern float *x_Garray,*y_Garray;
+extern float *x_Carray,*y_Carray;
+extern int BoundaryNUM;
+extern int *BoundaryX0,*BoundaryY0,*BoundaryX1,*BoundaryY1,*BoundaryBC;
+extern float *BoundaryTEMP;
+extern int CondNUM,CondNUMR;  // CondNUMR is Real Conductor number
+extern int*CondM_ID, *CondX0,*CondX1,*CondY0,*CondY1;
+extern float *CondTEMP,*CondR,*CondL,*CondC;
+extern int SrcNUM;
+extern int *SrcM_ID;
+extern float *SrcDC, *SrcPOWER, *SrcAC, *SrcFREQ, *Src2piFREQ, *SrcPHASE, *SrcRPHASE;
+extern int External_Flag; // 0 : Voltage driven, 1: Power driven
+extern float Min_FREQ, Max_FREQ;
+extern int DielNUM,DielNUMR;
+extern int *DielM_ID, *DielX0, *DielX1, *DielY0, *DielY1;
+extern float *DielEPS;
+extern GGA *vec_G;
+extern GCA *vec_C;
+extern int **StructureIndex;
+extern int *vec_StructureIndex;
 //
-int MainGas; // Gas type 0:argon, 1:oxygen, 2:argon/oxygen
-int nsp, nfsp, nBG;
-Species *SP;// particle species
-Fluid *FG;	// fluid species
-BackG *BG;	// background species
-HCP *PtD;
-GPG *Host_G_sp;
-float Total_Pressure;
+extern int MainGas; // Gas type 0:argon, 1:oxygen, 2:argon/oxygen
+extern int nsp, nfsp, nBG;
+extern Species *SP;// particle species
+extern Fluid *FG;	// fluid species
+extern BackG *BG;	// background species
+extern HCP *PtD;
+extern GPG *Host_G_sp;
+extern float Total_Pressure;
 //
-int DT_PIC;  // Number of 1 cycle step
-int DT_CONTI; // How many times PIC dt?
-int Lap_Field_Solver_Test,Lap_Field_Solver_Flag,Lap_Field_Solver_Save;
-float PCGtol;
-float PCGtol2;
-int HISTMAX;
-int dHIST;
-int NP_LIMIT; //Each of particle limit
-int N_ave;
-int N_smt;  // Number of smoothing every timestep
-int ConstB_Flag; // Magnetic field 
-int PD_intv;
-float PD_Ratio;
-int CSS_Flag;
+extern int DT_PIC;  // Number of 1 cycle step
+extern int DT_CONTI; // How many times PIC dt?
+extern int Lap_Field_Solver_Test,Lap_Field_Solver_Flag,Lap_Field_Solver_Save;
+extern float PCGtol;
+extern float PCGtol2;
+extern int HISTMAX;
+extern int dHIST;
+extern int NP_LIMIT; //Each of particle limit
+extern int N_ave;
+extern int N_smt;  // Number of smoothing every timestep
+extern int ConstB_Flag; // Magnetic field 
+extern int PD_intv;
+extern float PD_Ratio;
+extern int CSS_Flag;
 //
-float EndTime;
-float Margin_ave_np;
-int Flag_ave_np, Same_ave_np;
-int Basic_Flag; // 0 : Basic, 1: OTHERS
+extern float EndTime;
+extern float Margin_ave_np;
+extern int Flag_ave_np, Same_ave_np;
+extern int Basic_Flag; // 0 : Basic, 1: OTHERS
 //
-int nRct_cx,nRct_rc; // Number of reaction _ cross section or Reaction rate
-int TnRct; // Total Number of reaction 
-int mMnum;
-CollF *Coll_Flag;
-int Msize;
-float *MCC_rate,*ave_MCC_rate;
+extern int nRct_cx,nRct_rc; // Number of reaction _ cross section or Reaction rate
+extern int TnRct; // Total Number of reaction 
+extern int mMnum;
+extern CollF *Coll_Flag;
+extern int Msize;
+extern float *MCC_rate,*ave_MCC_rate;
 //
-int FieldIter;
-int A_size;
-float *A_val,*TA_val;
-int *Ai,*Aj;
-int **A_idx;
-float *MatM,**cond_b,*temp_b;
-float *phi_cond;
-float **AM,*V_t,*b_t,*extq,*extq_1,*extq_2,*extq_3;
-float *CondCharge;
-float *Surf_charge,*Old_Surf_charge,*Old2_Surf_charge;
+extern int FieldIter;
+extern int A_size;
+extern float *A_val,*TA_val;
+extern int *Ai,*Aj;
+extern int **A_idx;
+extern float *MatM,**cond_b,*temp_b;
+extern float *phi_cond;
+extern float **AM,*V_t,*b_t,*extq,*extq_1,*extq_2,*extq_3;
+extern float *CondCharge;
+extern float *Surf_charge,*Old_Surf_charge,*Old2_Surf_charge;
 //
-int init_dump_num;
-int OVER_dump_order;
-int dump_order;
-int dump_num;
-float *dump_cycle;
-int TecplotS_CX_Flag;
-int TecplotS_Gsize_Flag;
-int TecplotS_Particle_Flag;
-int TecplotS_Particle_Num;
-int TecplotS_2D_Flag;
-int TecplotS_2D_Ncycle;
-int TecplotS_Movie_Flag;
-int TecplotS_Movie_Ncycle;
-int TecplotS_Movie_Frame;
-int TecplotS_Movie_SCYCLE;
-int TecplotS_Movie_Count;
-int TecplotS_PT_Movie_Flag;
-int TecplotS_PT_Movie_Ncycle;
-int TecplotS_PT_Movie_Frame;
-int TecplotS_PT_Movie_SCYCLE;
-int TecplotS_PT_Movie_Count;
+extern int init_dump_num;
+extern int OVER_dump_order;
+extern int dump_order;
+extern int dump_num;
+extern float *dump_cycle;
+extern int TecplotS_CX_Flag;
+extern int TecplotS_Gsize_Flag;
+extern int TecplotS_Particle_Flag;
+extern int TecplotS_Particle_Num;
+extern int TecplotS_2D_Flag;
+extern int TecplotS_2D_Ncycle;
+extern int TecplotS_Movie_Flag;
+extern int TecplotS_Movie_Ncycle;
+extern int TecplotS_Movie_Frame;
+extern int TecplotS_Movie_SCYCLE;
+extern int TecplotS_Movie_Count;
+extern int TecplotS_PT_Movie_Flag;
+extern int TecplotS_PT_Movie_Ncycle;
+extern int TecplotS_PT_Movie_Frame;
+extern int TecplotS_PT_Movie_SCYCLE;
+extern int TecplotS_PT_Movie_Count;
 //
 void InputRead();
 void Geometry_setting();

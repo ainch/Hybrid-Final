@@ -12,12 +12,12 @@ extern float *VFMalloc(int size);
 extern void VFInit(float *V,float C,int size);
 #ifndef __PHYSICSDATA_H__
 #define __PHYSICSDATA_H__
-float LOGX_MIN,LOGX_MAX;
-float dLOGX,idLOGX;
-int N_LOGX;
-ArCollD *Ar_Data;
-O2CollD *O2_Data;
-ArO2CollD *ArO2_Data;
+extern float LOGX_MIN,LOGX_MAX;
+extern float dLOGX,idLOGX;
+extern int N_LOGX;
+extern ArCollD *Ar_Data;
+extern O2CollD *O2_Data;
+extern ArO2CollD *ArO2_Data;
 void CrossSection(int* Cxnum, int* CXsize, float *CXx, float *CXy);
 float ArSigmaEl(float energy);
 float ArSigmaEx(float energy);

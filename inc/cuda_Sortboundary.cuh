@@ -15,8 +15,8 @@ extern curandState *devStates;
 extern void Deposit_cuda();
 #ifndef __CUDA_MOVE_CUH__
 #define __CUDA_MOVE_CUH__
-int *dev_StructureIndex;
-int *ReArgFlag;
+extern int *dev_StructureIndex;
+extern int *ReArgFlag;
 void Set_SortBoundary_cuda();
 void SortBounndary_cuda();
 __global__ void ReArgPtcls(int Gsize, int nsp, int ngy, curandState *states, Species *info, GCP *sp, GPG *data);
