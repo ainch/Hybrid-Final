@@ -2,7 +2,7 @@ EXEC = cuda_viewer
 
 CC = gcc
 NVCC = nvcc
-CUFLAGS= -arch=sm_70 -use_fast_math --ptxas-options=-v -rdc=true
+CUFLAGS= -arch=sm_60 -use_fast_math --ptxas-options=-v -rdc=true
 LFLAGS = -lm
 CUDA_DIR=/usr/local/cuda-10.0
 Xgrafix_DIR=/usr/local/xgrafix

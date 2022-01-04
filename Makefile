@@ -6,7 +6,7 @@ OPENMP=-fopenmp
 OPENMP_CUDA=-Xcompiler -fopenmp -lgomp
 # CFLAGS = -O3
 CFLAGS =
-CUFLAGS= -arch=sm_70 -use_fast_math --ptxas-options=-v -rdc=true
+CUFLAGS= -arch=sm_60 -use_fast_math --ptxas-options=-v -rdc=true
 LFLAGS = -lm
 CUDA_DIR=/usr/local/cuda-10.0
 IDIR = -I$(CUDA_DIR)/include -Iinc
