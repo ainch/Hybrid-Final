@@ -28,7 +28,8 @@ def change_global_to_extern(path_file):
                 and line != '' and line != '\t' \
                 and '*/' not in line and '/*' not in line \
                 and 'typedef' not in line and 'namespace' not in line:
-                line_new = 'extern' + ' ' + line
+                if ';' in line:
+                    line_new = 'extern' + ' ' + line
         if ')' in line:
             num_parentheses = num_parentheses - 1
         if '}' in line:
