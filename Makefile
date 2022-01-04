@@ -41,7 +41,8 @@ CU_OBJS = $(OBJ_DIR)/cuda_main.o \
           $(OBJ_DIR)/cuda_Combination.o \
           $(OBJ_DIR)/cuda_Tecplot.o \
           $(OBJ_DIR)/cuda_Diagnostic.o \
-          $(OBJ_DIR)/cuda_SaveDump.o 
+          $(OBJ_DIR)/cuda_SaveDump.o \
+          $(OBJ_DIR)/Variables.o
 
 C_H_FILES = inc/xypic.h \
             inc/main.h \
