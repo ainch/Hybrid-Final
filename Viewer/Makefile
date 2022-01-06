@@ -1,13 +1,15 @@
 EXEC = cuda_viewer
 
 CC = gcc
-NVCC = gcc
-CFLAGS = -O3 
+NVCC = nvcc
+CUFLAGS= -arch=sm_60 -use_fast_math --ptxas-options=-v -rdc=true
 LFLAGS = -lm
+CUDA_DIR=/usr/local/cuda-10.0
 Xgrafix_DIR=/usr/local/xgrafix
 Xgrafix2_DIR=/usr/X11R6
-IDIR = -I$(Xgrafix_DIR)/include -I$(Xgrafix2_DIR)/include/X11 -Iinc
-LIBS  = -L/usr/X11R6/lib -L/usr/local/xgrafix/lib  -L/usr/local/lib -L/usr/lib64\
+IDIR = -I$(Xgrafix_DIR)/include -I$(Xgrafix2_DIR)/include/X11 -I$(CUDA_DIR)/include -Iinc
+LIBS  = -L/usr/X11R6/lib -L/usr/local/xgrafix/lib -L/usr/local/lib -L/usr/lib64\
+ -L$(CUDA_DIR)/lib64\
  -lXGC250 -ltk8.5 -ltcl8.5 -lXpm -lX11 -lm -ldl 
 SRC_DIR := ./src
 OBJ_DIR := ./obj
@@ -24,7 +26,8 @@ C_OBJS = $(OBJ_DIR)/Main_Viewer.o \
           $(OBJ_DIR2)/Efield.o \
           $(OBJ_DIR2)/Fluid.o \
           $(OBJ_DIR2)/Tecplot.o \
-          $(OBJ_DIR2)/Particle.o
+          $(OBJ_DIR2)/Particle.o \
+          $(OBJ_DIR2)/Variables.o
 
 C_H_FILES = inc/xypic.h \
             inc/Main_Viewer.h \
@@ -47,10 +50,10 @@ $(OBJ_DIR):
 	@mkdir -p $(OBJ_DIR)
 
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c $(C_H_FILES)
-	$(CC) -c -o $@ $< $(CFLAGS) $(IDIR) $(LIBS)
+	$(NVCC) -c -o $@ $< $(CUFLAGS) $(IDIR) $(LIBS)
 
-$(EXEC): $(C_OBJS) 
-	$(CC) -o $@ $^ $(CFLAGS) $(IDIR) $(LIBS) 
+$(EXEC): $(C_OBJS) $(CU_OBJS)
+	$(NVCC) -o $@ $^ $(CUFLAGS) $(IDIR) $(LIBS) 
 
 clean:
 	@rm -rf $(OBJ_DIR) Potential.txt $(EXEC)

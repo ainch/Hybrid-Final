@@ -77,12 +77,12 @@ extern void Sync_Fluid_GFCtoGFG_forDen(GFC *A, GFG *B);
 extern void Sync_Fluid_GFGtoGFC_forSource(GFG *A, GFC *B);
 #ifndef __CUDA_DIAGNOSTIC_CUH__
 #define __CUDA_DIAGNOSTIC_CUH__
-float *Host_G_buf, *Host_C_buf;
-float *dev_sum_Potential, *dev_ave_Potential;
-float *dev_sum_Source, *dev_ave_Source;
-float *dev_sum_Sigma, *dev_ave_Sigma;
-float *dev_sum_Ex, *dev_ave_Ex;
-float *dev_sum_Ey, *dev_ave_Ey;
+extern float *Host_G_buf, *Host_C_buf;
+extern float *dev_sum_Potential, *dev_ave_Potential;
+extern float *dev_sum_Source, *dev_ave_Source;
+extern float *dev_sum_Sigma, *dev_ave_Sigma;
+extern float *dev_sum_Ex, *dev_ave_Ex;
+extern float *dev_sum_Ey, *dev_ave_Ey;
 void Diagnostic();
 void Diagnostic_Basic();
 void Set_Diagnostic_cuda();

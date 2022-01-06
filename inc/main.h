@@ -21,14 +21,14 @@ extern void main_cuda();
 
 #ifndef __MAIN_H__
 #define __MAIN_H__
-long int seed; // related to Random number
-double t;  // real time
-int tstep; // number of time step
-int cstep; // Number of Cycle step
-int DumpFlag; // Dump File ON,OFF
-char InputFile[80]; // INPUT FILE NAME
-char DumpFile[80];  // DUMP FILE NAME
-char *ConstBFile;  // DUMP FILE NAME
+extern long int seed; // related to Random number
+extern double t;  // real time
+extern int tstep; // number of time step
+extern int cstep; // Number of Cycle step
+extern int DumpFlag; // Dump File ON,OFF
+extern char InputFile[80]; // INPUT FILE NAME
+extern char DumpFile[80];  // DUMP FILE NAME
+extern char *ConstBFile;  // DUMP FILE NAME
 void display_title();
 void display_finish();
 void (*EFIELD)();

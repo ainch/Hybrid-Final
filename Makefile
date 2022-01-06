@@ -6,7 +6,7 @@ OPENMP=-fopenmp
 OPENMP_CUDA=-Xcompiler -fopenmp -lgomp
 # CFLAGS = -O3
 CFLAGS =
-CUFLAGS= -arch=sm_70 -use_fast_math --ptxas-options=-v -rdc=true
+CUFLAGS= -arch=sm_60 -use_fast_math --ptxas-options=-v -rdc=true
 LFLAGS = -lm
 CUDA_DIR=/usr/local/cuda-10.0
 IDIR = -I$(CUDA_DIR)/include -Iinc
@@ -41,7 +41,8 @@ CU_OBJS = $(OBJ_DIR)/cuda_main.o \
           $(OBJ_DIR)/cuda_Combination.o \
           $(OBJ_DIR)/cuda_Tecplot.o \
           $(OBJ_DIR)/cuda_Diagnostic.o \
-          $(OBJ_DIR)/cuda_SaveDump.o 
+          $(OBJ_DIR)/cuda_SaveDump.o \
+          $(OBJ_DIR)/Variables.o
 
 C_H_FILES = inc/xypic.h \
             inc/main.h \

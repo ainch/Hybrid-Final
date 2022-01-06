@@ -11,10 +11,10 @@ extern HCP *PtD;
 extern GPG *Host_G_sp;
 #ifndef __CUDA_PARTICLE_CUH__
 #define __CUDA_PARTICLE_CUH__
-int Total_maxnp;
-GCP *Host_sp, *dev_sp;
-GPG *dev_G_sp;
-Species *dev_info_sp;
+extern int Total_maxnp;
+extern GCP *Host_sp, *dev_sp;
+extern GPG *dev_G_sp;
+extern Species *dev_info_sp;
 void Set_Particle_cuda();
 void GCPInit(int size, GCP *A);
 void Copy_HCPtoGCP(Species *info, HCP *A,GCP *B, GPG *C);

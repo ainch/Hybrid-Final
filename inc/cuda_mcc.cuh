@@ -111,14 +111,14 @@ extern __device__ void ArO2_O_negative_TEST(int Gsize, int ngy, int TID, int nve
 
 #ifndef __CUDA_MCC_CUH__
 #define __CUDA_MCC_CUH__
-float *dev_MCC_rate,*dev_ave_MCC_rate;
-float *dev_RCstack,*dev_stack;
-CollF *dev_Coll_Flag;
-ArCollD *dev_ArCX;
-O2CollD *dev_O2CX;
-ArO2CollD *dev_ArO2CX;
-MCC_sigmav *Host_SigmaV;
-MCC_sigmav *dev_SigmaV;
+extern float *dev_MCC_rate,*dev_ave_MCC_rate;
+extern float *dev_RCstack,*dev_stack;
+extern CollF *dev_Coll_Flag;
+extern ArCollD *dev_ArCX;
+extern O2CollD *dev_O2CX;
+extern ArO2CollD *dev_ArO2CX;
+extern MCC_sigmav *Host_SigmaV;
+extern MCC_sigmav *dev_SigmaV;
 void MCC_Ar_cuda();
 void MCC_O2_cuda();
 void MCC_ArO2_cuda();

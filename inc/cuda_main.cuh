@@ -61,15 +61,15 @@ extern void Diagnostic();
 extern void Diagnostic_Basic();
 #ifndef __CUDA_MAIN_CUH__
 #define __CUDA_MAIN_CUH__
-float time_sum;
-float gputime;
-cudaEvent_t start, stop;
-float 	totaltime,gputime_field,gputime_efield;
-float 	gputime_move,gputime_mcc,gputime_deposit;
-float 	gputime_diag,gputime_sort,gputime_Tec;
-float 	gputime_continue,gputime_dump;
-int		TotalT_D;
-int		TotalT_H;
-int		TotalT_M;
-int		TotalT_S;
+extern float time_sum;
+extern float gputime;
+extern cudaEvent_t start, stop;
+extern float 	totaltime,gputime_field,gputime_efield;
+extern float 	gputime_move,gputime_mcc,gputime_deposit;
+extern float 	gputime_diag,gputime_sort,gputime_Tec;
+extern float 	gputime_continue,gputime_dump;
+extern int		TotalT_D;
+extern int		TotalT_H;
+extern int		TotalT_M;
+extern int		TotalT_S;
 #endif

@@ -40,7 +40,7 @@ extern GCP *Host_sp, *dev_sp;
 extern void Copy_GCPtoHCP(Species *info, GCP *A,HCP *B, GPG *C);
 #ifndef __CUDA_TECPLOT_CUH__
 #define __CUDA_TECPLOT_CUH__
-int PT_Movie_S_count;
+extern int PT_Movie_S_count;
 void Tecplot_save();
 void Tecplot_Gsize_Movie(int Init);
 void Tecplot_PT_Movie(int Init,int isp);

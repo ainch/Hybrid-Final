@@ -31,7 +31,7 @@ extern void Diagnostic();
 extern void Diagnostic_Basic();
 #ifndef __CUDA_START_CUH__
 #define __CUDA_START_CUH__
-cudaDeviceProp prop;
+extern cudaDeviceProp prop;
 void info_Device(); 	// Select GPU
 void start_cuda();		// Select Module
 #endif
