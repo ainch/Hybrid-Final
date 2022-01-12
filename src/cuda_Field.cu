@@ -109,7 +109,7 @@ void PCG_SOLVER(){
         (void*)&dev_Z, (void*)&N,     (void*)&nz,   (void*)&PCGtol2,
         (void*)&FIter, (void*)&dot_result2,
     };
-	cudaLaunchCooperativeKernel((void *)PCG_float,FIELD_GRID,FIELD_BLOCK, kernelArgs, sMemSize, NULL);
+	cudaLaunchCooperativeKernel((void *)PCG_float2,FIELD_GRID,FIELD_BLOCK, kernelArgs, sMemSize, NULL);
     cudaDeviceSynchronize();
     PCG_Deposit<<<FIELD_GRID2,FIELD_BLOCK2>>>(Gsize, dev_A_idx, dev_GvecSet, dev_X, dev_phi);
     cudaMemset((void *) dev_phi_buf, 0.0, Gsize * sizeof(float));
@@ -323,7 +323,8 @@ __device__ void CopyVector(float *srcA, float *destB, int size, const cg::grid_g
     for (int i=grid.thread_rank(); i < size; i+= grid.size()) destB[i] = srcA[i];
 }
 __device__ void Vec_x_Vec(float *vecA, float *vecB, float *vecC, int size, const cg::thread_block &cta, const cg::grid_group &grid){
-    for (int i=grid.thread_rank(); i < size; i+=grid.size()) vecC[i] = (vecA[i] * vecB[i]);
+    for (int i=grid.thread_rank(); i < size; i+=grid.size()) 
+		vecC[i] = (vecA[i] * vecB[i]);
 }
 __global__ void PCG(int *I, int *J, float *val, float *x, float *M, float *Ax, float *p, float *r, float *Z, 
             int N, int nnz, float tol2, int *Iter, double *d_result){
@@ -902,14 +903,13 @@ __global__ void PCG_float(int *I, int *J, float *val, float *x, float *M, float 
         if (threadIdx.x == 0 && blockIdx.x == 0){
             *Iter = *Iter + 1;
             *d_result = 0.0f;  
-        } 
+        }
         cg::sync(grid);
         Vec_Dot_Sum_F(p, Ax, d_result, N, cta, grid);
         cg::sync(grid);
         Temp = *d_result;
         alpha = (Temp)? rsold/Temp:0.0f;
-		//if(threadIdx.x == 0 && blockIdx.x == 0) printf("Iter = %d, temp = %g,  Res = %g AL = %g\n",*Iter,Temp,rsold,alpha);
-        A_x_X_p_Y(alpha, p, x, N, grid);
+		A_x_X_p_Y(alpha, p, x, N, grid);
         nalpha = -alpha;
         A_x_X_p_Y(nalpha, Ax, r, N, grid);
         Vec_x_Vec(M, r, Z, N, cta, grid);
@@ -926,6 +926,83 @@ __global__ void PCG_float(int *I, int *J, float *val, float *x, float *M, float 
         //rnew = 0.0;
     }
     //if(threadIdx.x == 0 && blockIdx.x == 0 ) printf("End Iter = %d, Res = %g, b = %g, a = %g\n",*Iter,Temp,alpha,beta,rsold);
+}
+__global__ void PCG_float2(int *I, int *J, float *val, float *x, float *M, float *Ax, float *p, float *r, float *Z, 
+            int N, int nnz, float tol2, int *Iter, float *d_result){
+    //Jacovi diagonal preconditioner version
+    cg::thread_block cta = cg::this_thread_block();
+    cg::grid_group grid = cg::this_grid();
+    int max_iter = 100000;
+    float a = 1.0f;
+    float na = -1.0f;
+    float rsold,rnew,Temp;
+    float nalpha,alpha,beta;
+    rsold = 0.0f;
+    if (threadIdx.x == 0 && blockIdx.x == 0){
+        *Iter = 0;
+        *d_result = 0.0f;  
+    } 
+    Mat_x_Vec(I, J, val, nnz, N, a, x, Ax, cta, grid); 
+    A_x_X_p_Y(na, Ax, r, N, grid); 
+    Vec_x_Vec(M, r, Z, N, cta, grid);
+    CopyVector(Z, p, N, grid);
+    cg::sync(grid);
+    Vec_Dot_Sum_F(r, Z, d_result, N, cta, grid); 
+    cg::sync(grid);
+    rsold = *d_result;
+
+	
+
+    while (rsold > tol2 && *Iter <= max_iter){
+        Mat_x_Vec(I, J, val, nnz, N, a, p, Ax, cta, grid);
+        if (threadIdx.x == 0 && blockIdx.x == 0){
+            *Iter = *Iter + 1;
+            *d_result = 0.0f;  
+        }
+        cg::sync(grid);
+        Vec_Dot_Sum_F(p, Ax, d_result, N, cta, grid);
+        cg::sync(grid);
+        Temp = *d_result;
+        alpha = (Temp)? rsold/Temp:0.0f;
+		nalpha = -alpha;
+		//A_x_X_p_Y(alpha, p, x, N, grid);
+        {
+			for (int i=grid.thread_rank(); i < N; i+= grid.size()) 
+			{
+				x[i] = alpha*p[i] + x[i];
+			}
+		}
+        //A_x_X_p_Y(nalpha, Ax, r, N, grid);
+		{
+			for (int i=grid.thread_rank(); i < N; i+= grid.size())
+			{
+				r[i] = nalpha*Ax[i] + r[i];
+			}
+		}
+        //Vec_x_Vec(M, r, Z, N, cta, grid);
+        {
+			for (int i=grid.thread_rank(); i < N; i+=grid.size())
+			{
+				Z[i] = M[i] * r[i];
+			}
+		}
+		if (threadIdx.x == 0 && blockIdx.x == 0){
+            *d_result = 0.0f;  
+        } 
+        cg::sync(grid);
+        Vec_Dot_Sum_F(r, Z, d_result, N, cta, grid);
+        cg::sync(grid);
+        rnew = *d_result;
+        beta = (rsold) ? rnew/rsold: 0.0f;
+        //A_x_Y_p_X(beta, Z, p, N, grid);
+		{
+			for (int i=grid.thread_rank(); i < N; i+= grid.size()) 
+			{
+				p[i] = beta*p[i] + Z[i];	
+			}
+		}
+        rsold = rnew;
+    }
 }
 __device__ void Vec_Dot_Sum_F(float *vecA, float *vecB, float *result, int size, const cg::thread_block &cta, const cg::grid_group &grid)
 {

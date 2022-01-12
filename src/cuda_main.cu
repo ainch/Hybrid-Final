@@ -109,7 +109,8 @@ extern "C" void main_cuda()
         }
     }
     KEY2 = 0, KEY1 = 0, KEY0 = 0; // Save DumpFile version setting; 
-    while(t<1e-3){
+    for(int i=0;i<10000;i++)
+    {
         t+=dt; // real time
         tstep++; // step
         if((tstep%CYCLE_NUM) == 0) cstep++;
