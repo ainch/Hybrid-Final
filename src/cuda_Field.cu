@@ -109,7 +109,7 @@ void PCG_SOLVER(){
         (void*)&dev_Z, (void*)&N,     (void*)&nz,   (void*)&PCGtol2,
         (void*)&FIter, (void*)&dot_result2,
     };
-	cudaLaunchCooperativeKernel((void *)PCG_float2,FIELD_GRID,FIELD_BLOCK, kernelArgs, sMemSize, NULL);
+	cudaLaunchCooperativeKernel((void *)PCG_float,FIELD_GRID,FIELD_BLOCK, kernelArgs, sMemSize, NULL);
     cudaDeviceSynchronize();
     PCG_Deposit<<<FIELD_GRID2,FIELD_BLOCK2>>>(Gsize, dev_A_idx, dev_GvecSet, dev_X, dev_phi);
     cudaMemset((void *) dev_phi_buf, 0.0, Gsize * sizeof(float));
@@ -874,7 +874,7 @@ void cofactor(float **matrix, float size) {
 		free(m_cofactor[i]);
 	free(m_cofactor);
 }
-__global__ void PCG_float(int *I, int *J, float *val, float *x, float *M, float *Ax, float *p, float *r, float *Z, 
+__global__ void PCG_float2(int *I, int *J, float *val, float *x, float *M, float *Ax, float *p, float *r, float *Z, 
             int N, int nnz, float tol2, int *Iter, float *d_result){
     //Jacovi diagonal preconditioner version
     cg::thread_block cta = cg::this_thread_block();
@@ -927,7 +927,7 @@ __global__ void PCG_float(int *I, int *J, float *val, float *x, float *M, float 
     }
     //if(threadIdx.x == 0 && blockIdx.x == 0 ) printf("End Iter = %d, Res = %g, b = %g, a = %g\n",*Iter,Temp,alpha,beta,rsold);
 }
-__global__ void PCG_float2(int *I, int *J, float *val, float *x, float *M, float *Ax, float *p, float *r, float *Z, 
+__global__ void PCG_float(int *I, int *J, float *val, float *x, float *M, float *Ax, float *p, float *r, float *Z, 
             int N, int nnz, float tol2, int *Iter, float *d_result){
     //Jacovi diagonal preconditioner version
     cg::thread_block cta = cg::this_thread_block();
@@ -951,13 +951,14 @@ __global__ void PCG_float2(int *I, int *J, float *val, float *x, float *M, float
     cg::sync(grid);
     rsold = *d_result;
 
-	
-
-    while (rsold > tol2 && *Iter <= max_iter){
+	float p_local, r_local;
+	int iter_local = 0;
+    while(rsold > tol2 && iter_local <= max_iter)
+	{
         Mat_x_Vec(I, J, val, nnz, N, a, p, Ax, cta, grid);
         if (threadIdx.x == 0 && blockIdx.x == 0){
-            *Iter = *Iter + 1;
-            *d_result = 0.0f;  
+            iter_local++;
+            *d_result = 0.0f;
         }
         cg::sync(grid);
         Vec_Dot_Sum_F(p, Ax, d_result, N, cta, grid);
@@ -965,44 +966,40 @@ __global__ void PCG_float2(int *I, int *J, float *val, float *x, float *M, float
         Temp = *d_result;
         alpha = (Temp)? rsold/Temp:0.0f;
 		nalpha = -alpha;
-		//A_x_X_p_Y(alpha, p, x, N, grid);
-        {
-			for (int i=grid.thread_rank(); i < N; i+= grid.size()) 
-			{
-				x[i] = alpha*p[i] + x[i];
-			}
-		}
+
         //A_x_X_p_Y(nalpha, Ax, r, N, grid);
+        //Vec_x_Vec(M, r, Z, N, cta, grid);
 		{
 			for (int i=grid.thread_rank(); i < N; i+= grid.size())
 			{
-				r[i] = nalpha*Ax[i] + r[i];
-			}
-		}
-        //Vec_x_Vec(M, r, Z, N, cta, grid);
-        {
-			for (int i=grid.thread_rank(); i < N; i+=grid.size())
-			{
-				Z[i] = M[i] * r[i];
+				r_local = nalpha*Ax[i] + r[i];
+				Z[i] = M[i] * r_local;
+				r[i] = r_local;
 			}
 		}
 		if (threadIdx.x == 0 && blockIdx.x == 0){
-            *d_result = 0.0f;  
+            *d_result = 0.0f;
         } 
         cg::sync(grid);
         Vec_Dot_Sum_F(r, Z, d_result, N, cta, grid);
         cg::sync(grid);
         rnew = *d_result;
         beta = (rsold) ? rnew/rsold: 0.0f;
-        //A_x_Y_p_X(beta, Z, p, N, grid);
+		//A_x_X_p_Y(alpha, p, x, N, grid);
+		//A_x_Y_p_X(beta, Z, p, N, grid);
 		{
 			for (int i=grid.thread_rank(); i < N; i+= grid.size()) 
 			{
-				p[i] = beta*p[i] + Z[i];	
+				p_local = p[i];
+				x[i] = alpha*p_local + x[i];
+				p[i] = beta*p_local + Z[i];
 			}
 		}
-        rsold = rnew;
+		rsold = rnew;
     }
+	if (threadIdx.x == 0 && blockIdx.x == 0){
+		*Iter = iter_local;
+	}
 }
 __device__ void Vec_Dot_Sum_F(float *vecA, float *vecB, float *result, int size, const cg::thread_block &cta, const cg::grid_group &grid)
 {
