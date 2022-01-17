@@ -955,8 +955,19 @@ __global__ void PCG_float(int *I, int *J, float *val, float *x, float *M, float 
 	int iter_local = 0;
     while(rsold > tol2 && iter_local <= max_iter)
 	{
-        Mat_x_Vec(I, J, val, nnz, N, a, p, Ax, cta, grid);
-        if (threadIdx.x == 0 && blockIdx.x == 0){
+        //Mat_x_Vec(I, J, val, nnz, N, a, p, Ax, cta, grid);
+        {
+			for (int i=grid.thread_rank(); i < N; i+= grid.size())    {
+				int row_elem = I[i];
+				int next_row_elem = I[i+1];
+				float output = 0.0;
+				for (int j=row_elem-1; j < next_row_elem-1; j++){
+					output +=  val[j] * p[J[j]-1];
+				}
+				Ax[i] = a * output;
+			}
+		}
+		if (threadIdx.x == 0 && blockIdx.x == 0){
             iter_local++;
             *d_result = 0.0f;
         }
