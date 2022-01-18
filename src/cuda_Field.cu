@@ -109,6 +109,7 @@ void PCG_SOLVER(){
         (void*)&dev_Z, (void*)&N,     (void*)&nz,   (void*)&PCGtol2,
         (void*)&FIter, (void*)&dot_result2,
     };
+	checkCudaErrors(cudaMemset((void *) dot_result2,  0, 1e3 * sizeof(float)));
 	cudaLaunchCooperativeKernel((void *)PCG_float,FIELD_GRID,FIELD_BLOCK, kernelArgs, sMemSize, NULL);
     cudaDeviceSynchronize();
     PCG_Deposit<<<FIELD_GRID2,FIELD_BLOCK2>>>(Gsize, dev_A_idx, dev_GvecSet, dev_X, dev_phi);
@@ -135,6 +136,7 @@ void PCG_SOLVER_Laplace(){
         checkCudaErrors(cudaMemset((void *) dev_X, 0, N * sizeof(float)));
         cudaEventCreate(&start); cudaEventCreate(&stop);
 	    cudaEventRecord( start, 0 );
+		checkCudaErrors(cudaMemset((void *) dot_result2,  0, 1e4 * sizeof(float)));
         checkCudaErrors(cudaLaunchCooperativeKernel((void *)PCG_float,FIELD_GRID,FIELD_BLOCK, kernelArgs, sMemSize, NULL));
         checkCudaErrors(cudaDeviceSynchronize());
         cudaEventRecord( stop, 0 ); cudaEventSynchronize( stop );
@@ -161,6 +163,8 @@ void PCG_SOLVER_Laplace(){
     	printf("/***********Calculate temperature distribution**********/\n");
     	checkCudaErrors(cudaMemcpy(dev_R, dev_Tb, N * sizeof(float),cudaMemcpyDeviceToDevice));
     	checkCudaErrors(cudaMemset((void *) dev_X, 0, N * sizeof(float)));
+		
+		checkCudaErrors(cudaMemset((void *) dot_result2,  0, 1e4 * sizeof(float)));
 		checkCudaErrors(cudaLaunchCooperativeKernel((void *)PCG_float,FIELD_GRID,FIELD_BLOCK, kernelArgs, sMemSize, NULL));
 		printf(" - Iter = %d, rsold^2 = %g\n",*FIter,*dot_result2);
 		printf("/*******************************************************/\n");
@@ -230,7 +234,7 @@ void Set_MatrixPCG_cuda(){
     //Unified memory value for Field residual
     cudaMallocManaged((void **)&dot_result, sizeof(double));
     *dot_result = 0.0;
-	cudaMallocManaged((void **)&dot_result2, sizeof(float));
+	cudaMallocManaged((void **)&dot_result2, sizeof(float) * 10000);
     *dot_result2 = 0.0;
     cudaMallocManaged((void **)&FIter, sizeof(int));
     *FIter = 0;
@@ -940,7 +944,6 @@ __global__ void PCG_float(int *I, int *J, float *val, float *x, float *M, float 
     rsold = 0.0f;
     if (threadIdx.x == 0 && blockIdx.x == 0){
         *Iter = 0;
-        *d_result = 0.0f;  
     } 
     Mat_x_Vec(I, J, val, nnz, N, a, x, Ax, cta, grid); 
     A_x_X_p_Y(na, Ax, r, N, grid); 
@@ -957,7 +960,8 @@ __global__ void PCG_float(int *I, int *J, float *val, float *x, float *M, float 
 	{
         //Mat_x_Vec(I, J, val, nnz, N, a, p, Ax, cta, grid);
         {
-			for (int i=grid.thread_rank(); i < N; i+= grid.size())    {
+			for (int i=grid.thread_rank(); i < N; i+= grid.size())    
+			{
 				int row_elem = I[i];
 				int next_row_elem = I[i+1];
 				float output = 0.0;
@@ -967,14 +971,10 @@ __global__ void PCG_float(int *I, int *J, float *val, float *x, float *M, float 
 				Ax[i] = a * output;
 			}
 		}
-		if (threadIdx.x == 0 && blockIdx.x == 0){
-            iter_local++;
-            *d_result = 0.0f;
-        }
+		iter_local++;
+        Vec_Dot_Sum_F(p, Ax, d_result + iter_local * 2 - 1, N, cta, grid);
         cg::sync(grid);
-        Vec_Dot_Sum_F(p, Ax, d_result, N, cta, grid);
-        cg::sync(grid);
-        Temp = *d_result;
+        Temp = d_result[iter_local * 2 - 1];
         alpha = (Temp)? rsold/Temp:0.0f;
 		nalpha = -alpha;
 
@@ -988,13 +988,9 @@ __global__ void PCG_float(int *I, int *J, float *val, float *x, float *M, float 
 				r[i] = r_local;
 			}
 		}
-		if (threadIdx.x == 0 && blockIdx.x == 0){
-            *d_result = 0.0f;
-        } 
+        Vec_Dot_Sum_F(r, Z, d_result + 2 * iter_local, N, cta, grid);
         cg::sync(grid);
-        Vec_Dot_Sum_F(r, Z, d_result, N, cta, grid);
-        cg::sync(grid);
-        rnew = *d_result;
+        rnew = d_result[2 * iter_local];
         beta = (rsold) ? rnew/rsold: 0.0f;
 		//A_x_X_p_Y(alpha, p, x, N, grid);
 		//A_x_Y_p_X(beta, Z, p, N, grid);
@@ -1009,6 +1005,7 @@ __global__ void PCG_float(int *I, int *J, float *val, float *x, float *M, float 
 		rsold = rnew;
     }
 	if (threadIdx.x == 0 && blockIdx.x == 0){
+		d_result[0] = d_result[2 * iter_local];
 		*Iter = iter_local;
 	}
 }
