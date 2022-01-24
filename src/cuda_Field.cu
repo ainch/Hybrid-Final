@@ -956,17 +956,176 @@ __global__ void PCG_float(int *I, int *J, float *val, float *x, float *M, float 
 
 	float p_local, r_local;
 	int iter_local = 0;
+	
+	int cnt;
+
+	float val_reg_0, val_reg_1, val_reg_2, val_reg_3, val_reg_4, val_reg_5, val_reg_6, val_reg_7, val_reg_8, val_reg_9;
+	float val_reg_10, val_reg_11, val_reg_12, val_reg_13, val_reg_14;
+	int J_reg_0, J_reg_1, J_reg_2, J_reg_3, J_reg_4, J_reg_5, J_reg_6, J_reg_7, J_reg_8, J_reg_9;
+	int J_reg_10, J_reg_11, J_reg_12, J_reg_13, J_reg_14;
+
+	cnt = 0;
+	for (int i=grid.thread_rank(); i < N; i+= grid.size())    
+	{
+		int row_elem = I[i];
+		int next_row_elem = I[i+1];
+		float output = 0.0;
+		for (int j=row_elem-1; j < next_row_elem-1; j++){
+			if(cnt == 0)
+			{
+				val_reg_0 = val[j];
+				J_reg_0 = J[j];
+			}
+			else if(cnt == 1)
+			{
+				val_reg_1 = val[j];
+				J_reg_1 = J[j];
+			}
+			else if(cnt == 2)
+			{
+				val_reg_2 = val[j];
+				J_reg_2 = J[j];
+			}
+			else if(cnt == 3)
+			{
+				val_reg_3 = val[j];
+				J_reg_3 = J[j];
+			}
+			else if(cnt == 4)
+			{
+				val_reg_4 = val[j];
+				J_reg_4 = J[j];
+			}
+			else if(cnt == 5)
+			{
+				val_reg_5 = val[j];
+				J_reg_5 = J[j];
+			}
+			else if(cnt == 6)
+			{
+				val_reg_6 = val[j];
+				J_reg_6 = J[j];
+			}
+			else if(cnt == 7)
+			{
+				val_reg_7 = val[j];
+				J_reg_7 = J[j];
+			}
+			else if(cnt == 8)
+			{
+				val_reg_8 = val[j];
+				J_reg_8 = J[j];
+			}
+			else if(cnt == 9)
+			{
+				val_reg_9 = val[j];
+				J_reg_9 = J[j];
+			}
+			else if(cnt == 10)
+			{
+				val_reg_10 = val[j];
+				J_reg_10 = J[j];
+			}
+			else if(cnt == 11)
+			{
+				val_reg_11 = val[j];
+				J_reg_11 = J[j];
+			}
+			else if(cnt == 12)
+			{
+				val_reg_12 = val[j];
+				J_reg_12 = J[j];
+			}
+			else if(cnt == 13)
+			{
+				val_reg_13 = val[j];
+				J_reg_13 = J[j];
+			}
+			else if(cnt == 14)
+			{
+				val_reg_14 = val[j];
+				J_reg_14 = J[j];
+			}
+			++cnt;
+		}
+	}
+
     while(rsold > tol2 && iter_local <= max_iter)
 	{
         //Mat_x_Vec(I, J, val, nnz, N, a, p, Ax, cta, grid);
         {
-			for (int i=grid.thread_rank(); i < N; i+= grid.size())    
+			cnt = 0;
+			for (int i=grid.thread_rank(); i < N; i+= grid.size())
 			{
 				int row_elem = I[i];
 				int next_row_elem = I[i+1];
 				float output = 0.0;
 				for (int j=row_elem-1; j < next_row_elem-1; j++){
-					output +=  val[j] * p[J[j]-1];
+					if(cnt == 0)
+					{
+						output +=  val_reg_0 * p[J_reg_0-1];
+					}
+					else if(cnt == 1)
+					{
+						output +=  val_reg_1 * p[J_reg_1-1];
+					}
+					else if(cnt == 2)
+					{
+						output +=  val_reg_2 * p[J_reg_2-1];
+					}
+					else if(cnt == 3)
+					{
+						output +=  val_reg_3 * p[J_reg_3-1];
+					}
+					else if(cnt == 4)
+					{
+						output +=  val_reg_4 * p[J_reg_4-1];
+					}
+					else if(cnt == 5)
+					{
+						output +=  val_reg_5 * p[J_reg_5-1];
+					}
+					else if(cnt == 6)
+					{
+						output +=  val_reg_6* p[J_reg_6-1];
+					}
+					else if(cnt == 7)
+					{
+						output +=  val_reg_7 * p[J_reg_7-1];
+					}
+					else if(cnt == 8)
+					{
+						output +=  val_reg_8 * p[J_reg_8-1];
+					}
+					else if(cnt == 9)
+					{
+						output +=  val_reg_9 * p[J_reg_9-1];
+					}
+					else if(cnt == 10)
+					{
+						output +=  val_reg_10 * p[J_reg_10-1];
+					}
+					else if(cnt == 11)
+					{
+						output +=  val_reg_11 * p[J_reg_11-1];
+					}
+					else if(cnt == 12)
+					{
+						output +=  val_reg_12 * p[J_reg_12-1];
+					}
+					else if(cnt == 13)
+					{
+						output +=  val_reg_13 * p[J_reg_13-1];
+					}
+					else if(cnt == 14)
+					{
+						output +=  val_reg_14 * p[J_reg_14-1];
+					}
+					else
+					{
+						output += val[j] * p[J[j]-1];
+					}
+					cnt++;
 				}
 				Ax[i] = a * output;
 			}
