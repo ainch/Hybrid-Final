@@ -101,6 +101,35 @@ void Efield_cuda(){ // External circuit
     //Main_Variable_printorSave(); // for TEST
 	cudaDeviceSynchronize();
 }
+
+static float * Pois_SIG_Sol_tmp;
+
+static void __global__ update
+(
+	float * Pois_SIG_Sol_tmp,
+	GGA * const Field, 
+	float * const dev_phi_buf, 
+	int Gsize,
+	int CondNUMR
+)
+{
+	cg::thread_block group_block  = cg::this_thread_block();
+	int tid = blockIdx.x * blockDim.x + threadIdx.x;
+	__shared__ float a_shd[128];
+	
+	int id_cond = 0;
+	float area;
+	float potential;
+	if(tid < Gsize)
+	{
+		id_cond = Field[tid].CondID;
+		area = Field[tid].Area;
+		potential = dev_phi_buf[tid];
+		if(id_cond != 0)
+			atomicAdd(Pois_SIG_Sol_tmp + id_cond - 1, area * potential);
+	}
+}
+
 void PCG_SOLVER(){
     int i;
 	void *kernelArgs[] = {
@@ -118,7 +147,40 @@ void PCG_SOLVER(){
 	cudaMemcpy(Host_G_buf, dev_phi_buf, Gsize * sizeof(float),cudaMemcpyDeviceToHost);
 	VFInit(Pois_SIG_Sol,0.0,CondNUMR); 
 	cudaDeviceSynchronize();
-	for (i = 0; i < Gsize; i++) if (vec_G[i].CondID) Pois_SIG_Sol[vec_G[i].CondID - 1] += Host_G_buf[i] * vec_G[i].Area;
+	
+	if(false)
+	{
+		for (i = 0; i < Gsize; i++) 
+		if (vec_G[i].CondID) 
+		Pois_SIG_Sol[vec_G[i].CondID - 1] += Host_G_buf[i] * vec_G[i].Area;
+		for(int j=0;j<CondNUMR;j++)
+			printf("%.12f ", Pois_SIG_Sol[j]);
+		puts("");
+	}
+
+	if(true){
+		dim3 dim_num_block = dim3(Gsize / 128 + 1);
+		dim3 dim_size_block = dim3(128);
+		checkCudaErrors(cudaMemset((void *) Pois_SIG_Sol_tmp, 0.0f, CondNUMR * sizeof(float)));
+		
+		update<<<dim_num_block, dim_size_block>>>
+		(
+			Pois_SIG_Sol_tmp, dev_GvecSet,
+			dev_phi_buf, Gsize, CondNUMR
+		);
+	
+		cudaDeviceSynchronize();
+		checkCudaErrors
+		(
+			cudaMemcpy
+			(
+				Pois_SIG_Sol, Pois_SIG_Sol_tmp, CondNUMR * sizeof(float), cudaMemcpyDeviceToHost
+			)
+		);
+		
+		//printf("%.12f %.12f %.12f\n", Pois_SIG_Sol[0],Pois_SIG_Sol[1],Pois_SIG_Sol[2]);
+	}
+
 }
 void PCG_SOLVER_Laplace(){
     int j,k;
@@ -189,6 +251,7 @@ void Set_MatrixPCG_cuda(){
     checkCudaErrors(cudaMemset((void *) dev_phi, 0.0, Gsize * sizeof(float)));
     checkCudaErrors(cudaMalloc((void**) &dev_phi_buf, Gsize * sizeof(float)));
     checkCudaErrors(cudaMemset((void *) dev_phi_buf, 0.0, Gsize * sizeof(float)));
+	checkCudaErrors(cudaMalloc((void**) &Pois_SIG_Sol_tmp, CondNUMR * sizeof(float)));
     Lap_SIG_Sol = MFMalloc(CondNUMR,CondNUMR);
     MFInit(Lap_SIG_Sol,0.0,CondNUMR,CondNUMR);
     Pois_SIG_Sol = VFMalloc(CondNUMR);
