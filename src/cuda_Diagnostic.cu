@@ -1,4 +1,39 @@
 #include "cuda_Diagnostic.cuh"
+
+#include <cooperative_groups.h>
+#include <cuda_runtime.h>
+
+namespace cg = cooperative_groups;
+
+static float * Host_G_buf_tmp;
+static float * Surf_charge_tmp;
+
+static void __global__ update
+(
+	float * Surf_charge_tmp,
+	GGA * const Field, 
+	float * const dev_phi_buf,
+	int Gsize,
+	int CondNUMR
+)
+{
+	cg::thread_block group_block  = cg::this_thread_block();
+	int tid = blockIdx.x * blockDim.x + threadIdx.x;
+	__shared__ float a_shd[128];
+	
+	int id_cond = 0;
+	float area;
+	float potential;
+	if(tid < Gsize)
+	{
+		id_cond = Field[tid].CondID;
+		area = Field[tid].Area;
+		potential = dev_phi_buf[tid];
+        if(id_cond != 0)
+           atomicAdd(Surf_charge_tmp + id_cond - 1, area * potential);
+	}
+}
+
 void Diagnostic(){
     int i, j, k, isp, index;
     static int power_init = 0;
@@ -104,12 +139,31 @@ void Diagnostic(){
 		Old_Surf_charge[i] = Surf_charge[i];
 		Surf_charge[i] = 0.0f;
 	}
-	for (i = 0; i < Gsize; i++) {
-		if (vec_G[i].CondID) {
-			index = vec_G[i].CondID - 1;
-			Surf_charge[index] += Host_G_buf[i] * vec_G[i].Area;
-		}
-	}
+    
+    checkCudaErrors(cudaMemset((void *) Surf_charge_tmp, 0.0, CondNUMR * sizeof(float)));
+            
+    dim3 dim_num_block = dim3(Gsize / 128 + 1);
+    dim3 dim_size_block = dim3(128);
+
+    cudaMemcpy
+    (
+        Host_G_buf_tmp, Host_G_buf, Gsize * sizeof(float), cudaMemcpyHostToDevice
+    );
+
+    update<<<dim_num_block, dim_size_block>>>
+    (
+        Surf_charge_tmp, dev_GvecSet,
+        Host_G_buf_tmp, Gsize, CondNUMR
+    );
+
+    checkCudaErrors
+    (
+        cudaMemcpy
+        (
+            Surf_charge, Surf_charge_tmp, CondNUMR * sizeof(float), cudaMemcpyDeviceToHost
+        )
+    );
+	
     // Power driven and Dual frequency;
     cudaMemcpy(CondCharge, dev_CondCharge, nsp * CondNUMR * sizeof(float),cudaMemcpyDeviceToHost);
     power_total = 0;
@@ -681,6 +735,9 @@ void Set_Diagnostic_cuda(){
     Host_C_buf = VFMalloc(Csize);
     VFInit(Host_G_buf,0.0,Gsize);
     VFInit(Host_C_buf,0.0,Csize);
+
+    checkCudaErrors(cudaMalloc((void**)&Host_G_buf_tmp, sizeof(float) * Gsize));
+    checkCudaErrors(cudaMalloc((void**) &Surf_charge_tmp, CondNUMR * sizeof(float)));
 
     checkCudaErrors(cudaMalloc((void**)&dev_sum_Potential, Gsize * sizeof(float)));
 	checkCudaErrors(cudaMemset((void *)dev_sum_Potential, 0.0f, Gsize * sizeof(float)));

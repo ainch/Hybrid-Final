@@ -83,6 +83,7 @@ extern float *dev_sum_Source, *dev_ave_Source;
 extern float *dev_sum_Sigma, *dev_ave_Sigma;
 extern float *dev_sum_Ex, *dev_ave_Ex;
 extern float *dev_sum_Ey, *dev_ave_Ey;
+extern float *dev_phi_buf;
 void Diagnostic();
 void Diagnostic_Basic();
 void Set_Diagnostic_cuda();
