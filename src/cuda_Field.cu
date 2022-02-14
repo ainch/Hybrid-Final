@@ -1017,7 +1017,7 @@ __global__ void PCG_float(int *I, int *J, float *val, float *x, float *M, float 
     cg::sync(grid);
     rsold = *d_result;
 
-	float p_local, r_local;
+	float p_local, r_local, z_local;
 	int iter_local = 0;
 	
 	int cnt;
@@ -1123,30 +1123,25 @@ __global__ void PCG_float(int *I, int *J, float *val, float *x, float *M, float 
 
         //A_x_X_p_Y(nalpha, Ax, r, N, grid);
         //Vec_x_Vec(M, r, Z, N, cta, grid);
+		//Vec_Dot_Sum_F(r, Z, d_result + 2 * iter_local, N, cta, grid);
 		{
+			float temp_sum = 0.0f;
 			cnt = 0;
 			for (int i=grid.thread_rank(); i < N; i+= grid.size())
 			{
 				r_local = nalpha*Ax[i] + r[i];
 				if(cnt == 0)
 				{
-					Z[i] = M_reg_0 * r_local;
+					z_local = M_reg_0 * r_local;
 				}
 				else
 				{
-					Z[i] = M[i] * r_local;
+					z_local = M[i] * r_local;
 				}
+				temp_sum += z_local * r_local;
 				r[i] = r_local;
+				Z[i] = z_local;
 			}
-		}
-        //Vec_Dot_Sum_F(r, Z, d_result + 2 * iter_local, N, cta, grid);
-        {
-			float temp_sum = 0.0f;
-			for (int i=grid.thread_rank(); i < N; i+=grid.size())
-			{
-				temp_sum += (float) (r[i] * Z[i]);
-			}
-			cg::sync(tile32);
 			for (int offset = 16; offset > 0; offset /= 2)
 				temp_sum += __shfl_down_sync(0xffffffff, temp_sum, offset);
 			if (tile32.thread_rank() == 0) 
@@ -1154,6 +1149,7 @@ __global__ void PCG_float(int *I, int *J, float *val, float *x, float *M, float 
 				atomicAdd(d_result + 2 * iter_local, temp_sum);
 			}
 		}
+
 		cg::sync(grid);
         rnew = d_result[2 * iter_local];
         beta = (rsold) ? rnew/rsold: 0.0f;
