@@ -1072,6 +1072,8 @@ __global__ void PCG_float(int *I, int *J, float *val, float *x, float *M, float 
 		}
 	}
 
+    cg::thread_block_tile<32> tile32 = cg::tiled_partition<32>(cta);
+
     while(rsold > tol2 && iter_local <= max_iter)
 	{
         //Mat_x_Vec(I, J, val, nnz, N, a, p, Ax, cta, grid);
@@ -1137,8 +1139,22 @@ __global__ void PCG_float(int *I, int *J, float *val, float *x, float *M, float 
 				r[i] = r_local;
 			}
 		}
-        Vec_Dot_Sum_F(r, Z, d_result + 2 * iter_local, N, cta, grid);
-        cg::sync(grid);
+        //Vec_Dot_Sum_F(r, Z, d_result + 2 * iter_local, N, cta, grid);
+        {
+			float temp_sum = 0.0f;
+			for (int i=grid.thread_rank(); i < N; i+=grid.size())
+			{
+				temp_sum += (float) (r[i] * Z[i]);
+			}
+			cg::sync(tile32);
+			for (int offset = 16; offset > 0; offset /= 2)
+				temp_sum += __shfl_down_sync(0xffffffff, temp_sum, offset);
+			if (tile32.thread_rank() == 0) 
+			{
+				atomicAdd(d_result + 2 * iter_local, temp_sum);
+			}
+		}
+		cg::sync(grid);
         rnew = d_result[2 * iter_local];
         beta = (rsold) ? rnew/rsold: 0.0f;
 		//A_x_X_p_Y(alpha, p, x, N, grid);
