@@ -1073,50 +1073,16 @@ __global__ void PCG_float(int *I, int *J, float *val, float *x, float *M, float 
 	}
 
     cg::thread_block_tile<32> tile32 = cg::tiled_partition<32>(cta);
+	
+	Mat_x_Vec(I, J, val, nnz, N, a, p, Ax, cta, grid);
+	iter_local++;
+	Vec_Dot_Sum_F(p, Ax, d_result + iter_local * 2 - 1, N, cta, grid);
+	cg::sync(grid);
 
     while(rsold > tol2 && iter_local <= max_iter)
 	{
         //Mat_x_Vec(I, J, val, nnz, N, a, p, Ax, cta, grid);
-        {
-			cnt = 0;
-			for (int i=grid.thread_rank(); i < N; i+= grid.size())
-			{
-				int row_elem = I[i];
-				int next_row_elem = I[i+1];
-				float output = 0.0;
-				for (int j=row_elem-1; j < next_row_elem-1; j++){
-					if(cnt == 0)
-					{
-						output +=  val_reg_0 * p[J_reg_0-1];
-					}
-					else if(cnt == 1)
-					{
-						output +=  val_reg_1 * p[J_reg_1-1];
-					}
-					else if(cnt == 2)
-					{
-						output +=  val_reg_2 * p[J_reg_2-1];
-					}
-					else if(cnt == 3)
-					{
-						output +=  val_reg_3 * p[J_reg_3-1];
-					}
-					else if(cnt == 4)
-					{
-						output +=  val_reg_4 * p[J_reg_4-1];
-					}
-					else
-					{
-						output += val[j] * p[J[j]-1];
-					}
-					cnt++;
-				}
-				Ax[i] = a * output;
-			}
-		}
-		iter_local++;
-        Vec_Dot_Sum_F(p, Ax, d_result + iter_local * 2 - 1, N, cta, grid);
-        cg::sync(grid);
+
         Temp = d_result[iter_local * 2 - 1];
         alpha = (Temp)? rsold/Temp:0.0f;
 		nalpha = -alpha;
@@ -1164,6 +1130,46 @@ __global__ void PCG_float(int *I, int *J, float *val, float *x, float *M, float 
 			}
 		}
 		rsold = rnew;
+		{
+			cnt = 0;
+			for (int i=grid.thread_rank(); i < N; i+= grid.size())
+			{
+				int row_elem = I[i];
+				int next_row_elem = I[i+1];
+				float output = 0.0;
+				for (int j=row_elem-1; j < next_row_elem-1; j++){
+					if(cnt == 0)
+					{
+						output +=  val_reg_0 * p[J_reg_0-1];
+					}
+					else if(cnt == 1)
+					{
+						output +=  val_reg_1 * p[J_reg_1-1];
+					}
+					else if(cnt == 2)
+					{
+						output +=  val_reg_2 * p[J_reg_2-1];
+					}
+					else if(cnt == 3)
+					{
+						output +=  val_reg_3 * p[J_reg_3-1];
+					}
+					else if(cnt == 4)
+					{
+						output +=  val_reg_4 * p[J_reg_4-1];
+					}
+					else
+					{
+						output += val[j] * p[J[j]-1];
+					}
+					cnt++;
+				}
+				Ax[i] = a * output;
+			}
+		}
+		iter_local++;
+        Vec_Dot_Sum_F(p, Ax, d_result + iter_local * 2 - 1, N, cta, grid);
+        cg::sync(grid);
     }
 	if (threadIdx.x == 0 && blockIdx.x == 0){
 		d_result[0] = d_result[2 * iter_local];
