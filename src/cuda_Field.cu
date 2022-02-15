@@ -1081,8 +1081,6 @@ __global__ void PCG_float(int *I, int *J, float *val, float *x, float *M, float 
 
     while(rsold > tol2 && iter_local <= max_iter)
 	{
-        //Mat_x_Vec(I, J, val, nnz, N, a, p, Ax, cta, grid);
-
         Temp = d_result[iter_local * 2 - 1];
         alpha = (Temp)? rsold/Temp:0.0f;
 		nalpha = -alpha;
@@ -1121,6 +1119,7 @@ __global__ void PCG_float(int *I, int *J, float *val, float *x, float *M, float 
         beta = (rsold) ? rnew/rsold: 0.0f;
 		//A_x_X_p_Y(alpha, p, x, N, grid);
 		//A_x_Y_p_X(beta, Z, p, N, grid);
+        //Mat_x_Vec(I, J, val, nnz, N, a, p, Ax, cta, grid);
 		{
 			for (int i=grid.thread_rank(); i < N; i+= grid.size()) 
 			{
@@ -1168,11 +1167,25 @@ __global__ void PCG_float(int *I, int *J, float *val, float *x, float *M, float 
 			}
 		}
 		iter_local++;
-        Vec_Dot_Sum_F(p, Ax, d_result + iter_local * 2 - 1, N, cta, grid);
+        //Vec_Dot_Sum_F(p, Ax, d_result + iter_local * 2 - 1, N, cta, grid);
+		{
+			float temp_sum = 0.0f;
+			cnt = 0;
+			for (int i=grid.thread_rank(); i < N; i+= grid.size())
+			{
+				temp_sum += Ax[i] * p[i];
+			}
+			for (int offset = 16; offset > 0; offset /= 2)
+				temp_sum += __shfl_down_sync(0xffffffff, temp_sum, offset);
+			if (tile32.thread_rank() == 0) 
+			{
+				atomicAdd(d_result + 2 * iter_local - 1, temp_sum);
+			}
+		}
         cg::sync(grid);
     }
 	if (threadIdx.x == 0 && blockIdx.x == 0){
-		d_result[0] = d_result[2 * iter_local];
+		d_result[0] = d_result[2 * iter_local - 2];
 		*Iter = iter_local;
 	}
 }
