@@ -101,15 +101,14 @@ __device__ void Direct_Argon_Electron(int Gsize, int ngy, int ID, int MCCn, floa
 			mask = mask0 | mask1;
 			
 			int st = 0;
-			while(mask != 0)
+			while(mask0 != 0)
 			{
 				Colltype = 1;
-				int lb = __ffs(mask);
+				int lb = __ffs(mask0);
 				i = (y + st + lb - 1) * Gsize + info[0].St_num + ID;
+				Target = (int)0;
 				
 				{
-					if((1<<(lb-1)) & mask0)	Target = (int)0;
-					if((1<<(lb-1)) & mask1)	Target = (int)1;
 					// Calculate energy
 					VX = sp[i].vx;
 					VY = sp[i].vy;
@@ -118,52 +117,34 @@ __device__ void Direct_Argon_Electron(int Gsize, int ngy, int ID, int MCCn, floa
 					vel = sqrt(dum);
 					VX/=vel; VY/=vel; VZ/=vel;
 					engy = info[0].Escale * dum;
-					switch(Target){
-						case 0:{
-							R2 = curand_uniform(&LocalStates) * sigv[0].val / vel;
-							// 0. e + Ar > e + Ar 			Elastic Scattering
-							SumSigma = Argon_CrossSection(0, engy, N_LOGX, idLOGX, CX);
-							if(R2<=SumSigma){
-							// 1. e + Ar > e + Ar* 			Excitation to Total Excited state
-								Colltype = 0;
-								MCCR[ID*TnRct]++;
-							}else if(engy > info_CX[1].Th_e && R2<=(SumSigma += Argon_CrossSection(1, engy, N_LOGX, idLOGX, CX))){
-								Colltype = 0;
-								engy-=info_CX[1].Th_e;
-								vel=sqrt(fabs(engy)/info[0].Escale);
-								MCCR[ID*TnRct+1]++;
-							// 2. e + Ar > e + Ar* 			Excitation to AR4SM
-							}else if(engy > info_CX[2].Th_e && R2<=(SumSigma += Argon_CrossSection(2, engy, N_LOGX, idLOGX, CX))){
-								Colltype = 0;
-								engy-=info_CX[2].Th_e;
-								vel=sqrt(fabs(engy)/info[0].Escale);
-								MCCR[ID*TnRct+2]++;
-							// 3. e + Ar > e + e + Ar^		Direct ionization
-							}else if(engy > info_CX[3].Th_e && R2<=(SumSigma += Argon_CrossSection(3, engy, N_LOGX, idLOGX, CX))){
-								Colltype = 2;
-								engy-=info_CX[3].Th_e;
-								rengy=10.0*__tanf(curand_uniform(&LocalStates)*atan(engy/20.0));
-								engy-=rengy;
-								vel = sqrt(fabs(rengy)/info[0].Escale);
-								vel2 = sqrt(fabs(engy)/info[0].Escale);
-								MCCR[ID*TnRct+3]++;
-							}
-							break;
-						}
-						case 1:{
-							R2 = curand_uniform(&LocalStates)*sigv[1].val / vel;
-							// 4. e + Ar* > e + e + Ar^		step ionization
-							SumSigma = Argon_CrossSection(4, engy, N_LOGX, idLOGX, CX);
-							if(engy > info_CX[4].Th_e && R2<=SumSigma){
-								Colltype = 2;
-								engy-=info_CX[4].Th_e;
-								rengy=10.0*__tanf(curand_uniform(&LocalStates)*atan(engy/20.0));
-								engy-=rengy;
-								vel = sqrt(fabs(rengy)/info[0].Escale);
-								vel2 = sqrt(fabs(engy)/info[0].Escale);
-								MCCR[ID*TnRct+4]++;
-							}
-							break;
+					{
+						R2 = curand_uniform(&LocalStates) * sigv[0].val / vel;
+						// 0. e + Ar > e + Ar 			Elastic Scattering
+						SumSigma = Argon_CrossSection(0, engy, N_LOGX, idLOGX, CX);
+						if(R2<=SumSigma){
+						// 1. e + Ar > e + Ar* 			Excitation to Total Excited state
+							Colltype = 0;
+							MCCR[ID*TnRct]++;
+						}else if(engy > info_CX[1].Th_e && R2<=(SumSigma += Argon_CrossSection(1, engy, N_LOGX, idLOGX, CX))){
+							Colltype = 0;
+							engy-=info_CX[1].Th_e;
+							vel=sqrt(fabs(engy)/info[0].Escale);
+							MCCR[ID*TnRct+1]++;
+						// 2. e + Ar > e + Ar* 			Excitation to AR4SM
+						}else if(engy > info_CX[2].Th_e && R2<=(SumSigma += Argon_CrossSection(2, engy, N_LOGX, idLOGX, CX))){
+							Colltype = 0;
+							engy-=info_CX[2].Th_e;
+							vel=sqrt(fabs(engy)/info[0].Escale);
+							MCCR[ID*TnRct+2]++;
+						// 3. e + Ar > e + e + Ar^		Direct ionization
+						}else if(engy > info_CX[3].Th_e && R2<=(SumSigma += Argon_CrossSection(3, engy, N_LOGX, idLOGX, CX))){
+							Colltype = 2;
+							engy-=info_CX[3].Th_e;
+							rengy=10.0*__tanf(curand_uniform(&LocalStates)*atan(engy/20.0));
+							engy-=rengy;
+							vel = sqrt(fabs(rengy)/info[0].Escale);
+							vel2 = sqrt(fabs(engy)/info[0].Escale);
+							MCCR[ID*TnRct+3]++;
 						}
 					}
 					if(Colltype == 0){ // Just energy loss
@@ -203,11 +184,81 @@ __device__ void Direct_Argon_Electron(int Gsize, int ngy, int ID, int MCCn, floa
 				}
 	
 				mask0 = mask0 >> lb;
-				mask1 = mask1 >> lb;
-				mask = mask >> lb;
 				st += lb;
 			}
 			
+			st = 0;
+			while(mask1 != 0)
+			{
+				Colltype = 1;
+				int lb = __ffs(mask);
+				i = (y + st + lb - 1) * Gsize + info[0].St_num + ID;
+				
+				Target = (int)1;
+				
+				{
+					// Calculate energy
+					VX = sp[i].vx;
+					VY = sp[i].vy;
+					VZ = sp[i].vz;
+					dum = VX*VX+VY*VY+VZ*VZ;
+					vel = sqrt(dum);
+					VX/=vel; VY/=vel; VZ/=vel;
+					engy = info[0].Escale * dum;
+					{
+						R2 = curand_uniform(&LocalStates)*sigv[1].val / vel;
+						// 4. e + Ar* > e + e + Ar^		step ionization
+						SumSigma = Argon_CrossSection(4, engy, N_LOGX, idLOGX, CX);
+						if(engy > info_CX[4].Th_e && R2<=SumSigma){
+							Colltype = 2;
+							engy-=info_CX[4].Th_e;
+							rengy=10.0*__tanf(curand_uniform(&LocalStates)*atan(engy/20.0));
+							engy-=rengy;
+							vel = sqrt(fabs(rengy)/info[0].Escale);
+							vel2 = sqrt(fabs(engy)/info[0].Escale);
+							MCCR[ID*TnRct+4]++;
+						}
+					}
+					if(Colltype == 0){ // Just energy loss
+						dev_anewvel(engy,vel,&VX,&VY,&VZ,0,massRatio,curand_uniform(&LocalStates),curand_uniform(&LocalStates));
+						sp[i].vx = VX;
+						sp[i].vy = VY;
+						sp[i].vz = VZ;
+					}else if(Colltype == 2){ //ionization 
+						//printf("Ionization 1 ! \n");
+						///// scatter the created electron
+						index = info[0].St_num + ID + (PNC + AddPt) * Gsize; 
+						sp[index].CellID = ID;
+						sp[index].x = sp[i].x;
+						sp[index].y = sp[i].y;
+						sp[index].vx = VX;
+						sp[index].vy = VY;
+						sp[index].vz = VZ;
+						dev_anewvel(rengy,vel,&sp[index].vx,&sp[index].vy,&sp[index].vz,0,massRatio,curand_uniform(&LocalStates),curand_uniform(&LocalStates));
+						///// assign velocities to the created ion
+						index = info[1].St_num + ID + (PNC2 + AddPt) * Gsize; 
+						sp[index].CellID = ID + Gsize;
+						sp[index].x = sp[i].x;
+						sp[index].y = sp[i].y;
+						sp[index].vx = VX;
+						sp[index].vy = VY;
+						sp[index].vz = VZ;
+						//printf("\n[%d][%d] ionization \n",ID,ID+Gsize);
+						n = (nvel-1)*curand_uniform(&LocalStates);
+						dev_maxwellv(&sp[index].vx,&sp[index].vy,&sp[index].vz,vsave[n],BG[ID].BackVel1,curand_uniform(&LocalStates),curand_uniform(&LocalStates));
+						///// scatter the incident electron
+						dev_anewvel(engy,vel2,&VX,&VY,&VZ,0,massRatio,curand_uniform(&LocalStates),curand_uniform(&LocalStates));
+						sp[i].vx = VX;
+						sp[i].vy = VY;
+						sp[i].vz = VZ;
+						AddPt++;
+					}
+				}
+	
+				mask1 = mask1 >> lb;
+				st += lb;
+			}
+
 			y += 30;
 		}
 	}
