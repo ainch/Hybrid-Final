@@ -966,10 +966,26 @@ __global__ void PCG_float(int *I, int *J, float *val, float *x, float *M, float 
 	cg::sync(grid);
 	rsold = *d_result;
 	int iter_local = 0;
+	float temp_sum = 0.0f;
+    cg::thread_block_tile<32> tile32 = cg::tiled_partition<32>(cta);
+	
 	while (rsold > tol2 && *Iter <= max_iter){
 		Mat_x_Vec(I, J, val, nnz, N, a, p, Ax, cta, grid);
 		++iter_local;
-		Vec_Dot_Sum_F(p, Ax, d_result + iter_local * 2 - 1, N, cta, grid);
+		//Vec_Dot_Sum_F(p, Ax, d_result + iter_local * 2 - 1, N, cta, grid);
+		{
+			temp_sum = 0.0f;
+			for (int i=grid.thread_rank(); i < N; i+= grid.size())
+			{
+				temp_sum += p[i] * Ax[i];
+			}
+			for (int offset = 16; offset > 0; offset /= 2)
+				temp_sum += __shfl_down_sync(0xffffffff, temp_sum, offset);
+			if (tile32.thread_rank() == 0) 
+			{
+				atomicAdd(d_result + 2 * iter_local - 1, temp_sum);
+			}
+		}
 		cg::sync(grid);
 		Temp = d_result[iter_local * 2 - 1];
 		alpha = (Temp)? rsold/Temp:0.0f;
@@ -977,7 +993,20 @@ __global__ void PCG_float(int *I, int *J, float *val, float *x, float *M, float 
 		nalpha = -alpha;
 		A_x_X_p_Y(nalpha, Ax, r, N, grid);
 		Vec_x_Vec(M, r, Z, N, cta, grid);
-		Vec_Dot_Sum_F(r, Z, d_result + iter_local * 2, N, cta, grid);
+		//Vec_Dot_Sum_F(r, Z, d_result + iter_local * 2, N, cta, grid);
+		{
+			temp_sum = 0.0f;
+			for (int i=grid.thread_rank(); i < N; i+= grid.size())
+			{
+				temp_sum += r[i] * Z[i];
+			}
+			for (int offset = 16; offset > 0; offset /= 2)
+				temp_sum += __shfl_down_sync(0xffffffff, temp_sum, offset);
+			if (tile32.thread_rank() == 0) 
+			{
+				atomicAdd(d_result + 2 * iter_local, temp_sum);
+			}
+		}
 		cg::sync(grid);
 		rnew = d_result[iter_local * 2];
 		beta = (rsold) ? rnew/rsold: 0.0f;
