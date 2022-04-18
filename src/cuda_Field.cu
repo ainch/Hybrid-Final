@@ -969,10 +969,51 @@ __global__ void PCG_float(int *I, int *J, float *val, float *x, float *M, float 
 	float temp_sum = 0.0f;
     cg::thread_block_tile<32> tile32 = cg::tiled_partition<32>(cta);
 	
+	int cnt;	
+	float val_reg_0, val_reg_1, val_reg_2, val_reg_3, val_reg_4;
+	int J_reg_0, J_reg_1, J_reg_2, J_reg_3, J_reg_4;
+	
+	cnt = 0;
+	for (int i=grid.thread_rank(); i < N; i+= grid.size())    
+	{
+		int row_elem = I[i];
+		int next_row_elem = I[i+1];
+		float output = 0.0;
+		for (int j=row_elem-1; j < next_row_elem-1; j++){
+			if(cnt == 0)
+			{
+				val_reg_0 = val[j];
+				J_reg_0 = J[j];
+			}
+			else if(cnt == 1)
+			{
+				val_reg_1 = val[j];
+				J_reg_1 = J[j];
+			}
+			else if(cnt == 2)
+			{
+				val_reg_2 = val[j];
+				J_reg_2 = J[j];
+			}
+			else if(cnt == 3)
+			{
+				val_reg_3 = val[j];
+				J_reg_3 = J[j];
+			}
+			else if(cnt == 4)
+			{
+				val_reg_4 = val[j];
+				J_reg_4 = J[j];
+			}
+			++cnt;
+		}
+	}
+
 	while (rsold > tol2 && *Iter <= max_iter)
 	{
 		//Mat_x_Vec(I, J, val, nnz, N, a, p, Ax, cta, grid);
 		{
+			cnt = 0;
 			for (int i=grid.thread_rank(); i < N; i+= grid.size())    
 			{
 				int row_elem = I[i];
@@ -980,7 +1021,31 @@ __global__ void PCG_float(int *I, int *J, float *val, float *x, float *M, float 
 				float output = 0.0;
 				for (int j=row_elem-1; j < next_row_elem-1; j++)
 				{
-					output +=  val[j] * p[J[j]-1];
+					if(cnt == 0)
+					{
+						output +=  val_reg_0 * p[J_reg_0-1];
+					}
+					else if(cnt == 1)
+					{
+						output +=  val_reg_1 * p[J_reg_1-1];
+					}
+					else if(cnt == 2)
+					{
+						output +=  val_reg_2 * p[J_reg_2-1];
+					}
+					else if(cnt == 3)
+					{
+						output +=  val_reg_3 * p[J_reg_3-1];
+					}
+					else if(cnt == 4)
+					{
+						output +=  val_reg_4 * p[J_reg_4-1];
+					}
+					else
+					{
+						output += val[j] * p[J[j]-1];
+					}
+					++cnt;
 				}
 				Ax[i] = output;
 			}
