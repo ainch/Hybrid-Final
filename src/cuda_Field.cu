@@ -941,6 +941,53 @@ void cofactor(float **matrix, float size) {
 		free(m_cofactor[i]);
 	free(m_cofactor);
 }
+__global__ void PCG_float(int *I, int *J, float *val, float *x, float *M, float *Ax, float *p, float *r, float *Z, 
+	int N, int nnz, float tol2, int *Iter, float *d_result){
+	//Jacovi diagonal preconditioner version
+	cg::thread_block cta = cg::this_thread_block();
+	cg::grid_group grid = cg::this_grid();
+	//int TID = blockDim.x*(gridDim.x*blockIdx.y+blockIdx.x)+threadIdx.x;
+	int max_iter = 100000;
+	float a = 1.0f;
+	float na = -1.0f;
+	float rsold,rnew,Temp;
+	float nalpha,alpha,beta;
+	rsold = 0.0f;
+	if (threadIdx.x == 0 && blockIdx.x == 0){
+		*Iter = 0;
+		*d_result = 0.0f;  
+	} 
+	Mat_x_Vec(I, J, val, nnz, N, a, x, Ax, cta, grid); 
+	A_x_X_p_Y(na, Ax, r, N, grid); 
+	Vec_x_Vec(M, r, Z, N, cta, grid);
+	CopyVector(Z, p, N, grid);
+	cg::sync(grid);
+	Vec_Dot_Sum_F(r, Z, d_result, N, cta, grid); 
+	cg::sync(grid);
+	rsold = *d_result;
+	int iter_local = 0;
+	while (rsold > tol2 && *Iter <= max_iter){
+		Mat_x_Vec(I, J, val, nnz, N, a, p, Ax, cta, grid);
+		++iter_local;
+		Vec_Dot_Sum_F(p, Ax, d_result + iter_local * 2 - 1, N, cta, grid);
+		cg::sync(grid);
+		Temp = d_result[iter_local * 2 - 1];
+		alpha = (Temp)? rsold/Temp:0.0f;
+		A_x_X_p_Y(alpha, p, x, N, grid);
+		nalpha = -alpha;
+		A_x_X_p_Y(nalpha, Ax, r, N, grid);
+		Vec_x_Vec(M, r, Z, N, cta, grid);
+		Vec_Dot_Sum_F(r, Z, d_result + iter_local * 2, N, cta, grid);
+		cg::sync(grid);
+		rnew = d_result[iter_local * 2];
+		beta = (rsold) ? rnew/rsold: 0.0f;
+		A_x_Y_p_X(beta, Z, p, N, grid);
+		rsold = rnew;
+		//rnew = 0.0;
+	}
+	*Iter = iter_local;
+	//if(threadIdx.x == 0 && blockIdx.x == 0 ) printf("End Iter = %d, Res = %g, b = %g, a = %g\n",*Iter,Temp,alpha,beta,rsold);
+}
 __global__ void PCG_float2(int *I, int *J, float *val, float *x, float *M, float *Ax, float *p, float *r, float *Z, 
             int N, int nnz, float tol2, int *Iter, float *d_result){
     //Jacovi diagonal preconditioner version
@@ -994,7 +1041,7 @@ __global__ void PCG_float2(int *I, int *J, float *val, float *x, float *M, float
     }
     //if(threadIdx.x == 0 && blockIdx.x == 0 ) printf("End Iter = %d, Res = %g, b = %g, a = %g\n",*Iter,Temp,alpha,beta,rsold);
 }
-__global__ void PCG_float(int *I, int *J, float *val, float *x, float *M, float *Ax, float *p, float *r, float *Z, 
+__global__ void PCG_float3(int *I, int *J, float *val, float *x, float *M, float *Ax, float *p, float *r, float *Z, 
             int N, int nnz, float tol2, int *Iter, float *d_result){
     //Jacovi diagonal preconditioner version
     cg::thread_block cta = cg::this_thread_block();
