@@ -138,7 +138,7 @@ void PCG_SOLVER(){
         (void*)&dev_Z, (void*)&N,     (void*)&nz,   (void*)&PCGtol2,
         (void*)&FIter, (void*)&dot_result2,
     };
-	checkCudaErrors(cudaMemset((void *) dot_result2,  0, 1e3 * sizeof(float)));
+	checkCudaErrors(cudaMemset((void *) dot_result2,  0, 1e5 * sizeof(float)));
 	cudaLaunchCooperativeKernel((void *)PCG_float,FIELD_GRID,FIELD_BLOCK, kernelArgs, sMemSize, NULL);
     cudaDeviceSynchronize();
     PCG_Deposit<<<FIELD_GRID2,FIELD_BLOCK2>>>(Gsize, dev_A_idx, dev_GvecSet, dev_X, dev_phi);
@@ -177,8 +177,6 @@ void PCG_SOLVER(){
 				Pois_SIG_Sol, Pois_SIG_Sol_tmp, CondNUMR * sizeof(float), cudaMemcpyDeviceToHost
 			)
 		);
-		
-		//printf("%.12f %.12f %.12f\n", Pois_SIG_Sol[0],Pois_SIG_Sol[1],Pois_SIG_Sol[2]);
 	}
 
 }
@@ -297,7 +295,7 @@ void Set_MatrixPCG_cuda(){
     //Unified memory value for Field residual
     cudaMallocManaged((void **)&dot_result, sizeof(double));
     *dot_result = 0.0;
-	cudaMallocManaged((void **)&dot_result2, sizeof(float) * 10000);
+	cudaMallocManaged((void **)&dot_result2, sizeof(float) * 100000);
     *dot_result2 = 0.0;
     cudaMallocManaged((void **)&FIter, sizeof(int));
     *FIter = 0;
