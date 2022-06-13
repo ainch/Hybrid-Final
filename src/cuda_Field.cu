@@ -138,7 +138,7 @@ void PCG_SOLVER(){
         (void*)&dev_Z, (void*)&N,     (void*)&nz,   (void*)&PCGtol2,
         (void*)&FIter, (void*)&dot_result2,
     };
-	checkCudaErrors(cudaMemset((void *) dot_result2,  0, 1e5 * sizeof(float)));
+	checkCudaErrors(cudaMemset((void *) dot_result2,  0, 200004 * sizeof(float)));
 	cudaLaunchCooperativeKernel((void *)PCG_float,FIELD_GRID,FIELD_BLOCK, kernelArgs, sMemSize, NULL);
     cudaDeviceSynchronize();
     PCG_Deposit<<<FIELD_GRID2,FIELD_BLOCK2>>>(Gsize, dev_A_idx, dev_GvecSet, dev_X, dev_phi);
@@ -196,7 +196,7 @@ void PCG_SOLVER_Laplace(){
         checkCudaErrors(cudaMemset((void *) dev_X, 0, N * sizeof(float)));
         cudaEventCreate(&start); cudaEventCreate(&stop);
 	    cudaEventRecord( start, 0 );
-		checkCudaErrors(cudaMemset((void *) dot_result2,  0, 1e4 * sizeof(float)));
+		checkCudaErrors(cudaMemset((void *) dot_result2,  0, 200004 * sizeof(float)));
         checkCudaErrors(cudaLaunchCooperativeKernel((void *)PCG_float,FIELD_GRID,FIELD_BLOCK, kernelArgs, sMemSize, NULL));
         checkCudaErrors(cudaDeviceSynchronize());
         cudaEventRecord( stop, 0 ); cudaEventSynchronize( stop );
@@ -224,7 +224,7 @@ void PCG_SOLVER_Laplace(){
     	checkCudaErrors(cudaMemcpy(dev_R, dev_Tb, N * sizeof(float),cudaMemcpyDeviceToDevice));
     	checkCudaErrors(cudaMemset((void *) dev_X, 0, N * sizeof(float)));
 		
-		checkCudaErrors(cudaMemset((void *) dot_result2,  0, 1e4 * sizeof(float)));
+		checkCudaErrors(cudaMemset((void *) dot_result2,  0, 200004 * sizeof(float)));
 		checkCudaErrors(cudaLaunchCooperativeKernel((void *)PCG_float,FIELD_GRID,FIELD_BLOCK, kernelArgs, sMemSize, NULL));
 		printf(" - Iter = %d, rsold^2 = %g\n",*FIter,*dot_result2);
 		printf("/*******************************************************/\n");
@@ -295,7 +295,8 @@ void Set_MatrixPCG_cuda(){
     //Unified memory value for Field residual
     cudaMallocManaged((void **)&dot_result, sizeof(double));
     *dot_result = 0.0;
-	cudaMallocManaged((void **)&dot_result2, sizeof(float) * 100000);
+	
+	cudaMallocManaged((void **)&dot_result2, sizeof(float) * 200004);
     *dot_result2 = 0.0;
     cudaMallocManaged((void **)&FIter, sizeof(int));
     *FIter = 0;
@@ -1007,7 +1008,7 @@ __global__ void PCG_float(int *I, int *J, float *val, float *x, float *M, float 
 		}
 	}
 
-	while (rsold > tol2 && *Iter <= max_iter)
+	while (rsold > tol2 && iter_local <= max_iter)
 	{
 		//Mat_x_Vec(I, J, val, nnz, N, a, p, Ax, cta, grid);
 		{
@@ -1049,8 +1050,8 @@ __global__ void PCG_float(int *I, int *J, float *val, float *x, float *M, float 
 			}
 		}
 		++iter_local;
-		//Vec_Dot_Sum_F(p, Ax, d_result + iter_local * 2 - 1, N, cta, grid);
-		{
+		Vec_Dot_Sum_F(p, Ax, d_result + iter_local * 2 - 1, N, cta, grid);
+		if(false){
 			temp_sum = 0.0f;
 			for (int i=grid.thread_rank(); i < N; i+= grid.size())
 			{
@@ -1070,8 +1071,8 @@ __global__ void PCG_float(int *I, int *J, float *val, float *x, float *M, float 
 		nalpha = -alpha;
 		A_x_X_p_Y(nalpha, Ax, r, N, grid);
 		Vec_x_Vec(M, r, Z, N, cta, grid);
-		//Vec_Dot_Sum_F(r, Z, d_result + iter_local * 2, N, cta, grid);
-		{
+		Vec_Dot_Sum_F(r, Z, d_result + iter_local * 2, N, cta, grid);
+		if(false){
 			temp_sum = 0.0f;
 			for (int i=grid.thread_rank(); i < N; i+= grid.size())
 			{
