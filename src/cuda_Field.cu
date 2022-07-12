@@ -148,16 +148,6 @@ void PCG_SOLVER(){
 	VFInit(Pois_SIG_Sol,0.0,CondNUMR); 
 	cudaDeviceSynchronize();
 	
-	if(false)
-	{
-		for (i = 0; i < Gsize; i++) 
-		if (vec_G[i].CondID) 
-		Pois_SIG_Sol[vec_G[i].CondID - 1] += Host_G_buf[i] * vec_G[i].Area;
-		for(int j=0;j<CondNUMR;j++)
-			printf("%.12f ", Pois_SIG_Sol[j]);
-		puts("");
-	}
-
 	if(true){
 		dim3 dim_num_block = dim3(Gsize / 128 + 1);
 		dim3 dim_size_block = dim3(128);
@@ -177,6 +167,15 @@ void PCG_SOLVER(){
 				Pois_SIG_Sol, Pois_SIG_Sol_tmp, CondNUMR * sizeof(float), cudaMemcpyDeviceToHost
 			)
 		);
+	}
+	else
+	{
+		for (i = 0; i < Gsize; i++) 
+		if (vec_G[i].CondID) 
+		Pois_SIG_Sol[vec_G[i].CondID - 1] += Host_G_buf[i] * vec_G[i].Area;
+		for(int j=0;j<CondNUMR;j++)
+			printf("%.12f ", Pois_SIG_Sol[j]);
+		puts("");
 	}
 
 }

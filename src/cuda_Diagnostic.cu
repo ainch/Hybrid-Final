@@ -133,6 +133,7 @@ void Diagnostic(){
     }
     if(Basic_Flag<-1) if(cstep > abs(Basic_Flag)) Basic_Flag = 0;
     // Calculate Current for Power driven or External circuit 
+    
     cudaMemcpy(Host_G_buf, dev_Sigma, Gsize * sizeof(float),	cudaMemcpyDeviceToHost);
 	for (i = 0; i < CondNUMR; i++) {
 		Old2_Surf_charge[i] = Old_Surf_charge[i];
@@ -140,29 +141,41 @@ void Diagnostic(){
 		Surf_charge[i] = 0.0f;
 	}
     
-    checkCudaErrors(cudaMemset((void *) Surf_charge_tmp, 0.0, CondNUMR * sizeof(float)));
+    if(false)
+    {
+        checkCudaErrors(cudaMemset((void *) Surf_charge_tmp, 0.0, CondNUMR * sizeof(float)));
             
-    dim3 dim_num_block = dim3(Gsize / 128 + 1);
-    dim3 dim_size_block = dim3(128);
-
-    cudaMemcpy
-    (
-        Host_G_buf_tmp, Host_G_buf, Gsize * sizeof(float), cudaMemcpyHostToDevice
-    );
-
-    update<<<dim_num_block, dim_size_block>>>
-    (
-        Surf_charge_tmp, dev_GvecSet,
-        Host_G_buf_tmp, Gsize, CondNUMR
-    );
-
-    checkCudaErrors
-    (
+        dim3 dim_num_block = dim3(Gsize / 128 + 1);
+        dim3 dim_size_block = dim3(128);
+    
         cudaMemcpy
         (
-            Surf_charge, Surf_charge_tmp, CondNUMR * sizeof(float), cudaMemcpyDeviceToHost
-        )
-    );
+            Host_G_buf_tmp, Host_G_buf, Gsize * sizeof(float), cudaMemcpyHostToDevice
+        );
+    
+        update<<<dim_num_block, dim_size_block>>>
+        (
+            Surf_charge_tmp, dev_GvecSet,
+            Host_G_buf_tmp, Gsize, CondNUMR
+        );
+    
+        checkCudaErrors
+        (
+            cudaMemcpy
+            (
+                Surf_charge, Surf_charge_tmp, CondNUMR * sizeof(float), cudaMemcpyDeviceToHost
+            )
+        );
+    }
+    else
+    {
+        for (i = 0; i < Gsize; i++) {
+            if (vec_G[i].CondID) {
+                index = vec_G[i].CondID - 1;
+                Surf_charge[index] += Host_G_buf[i] * vec_G[i].Area;
+            }
+        }
+    }
 	
     // Power driven and Dual frequency;
     cudaMemcpy(CondCharge, dev_CondCharge, nsp * CondNUMR * sizeof(float),cudaMemcpyDeviceToHost);
