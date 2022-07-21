@@ -965,7 +965,7 @@ __global__ void PCG_float(int *I, int *J, float *val, float *x, float *M, float 
 	rsold = *d_result;
 	int iter_local = 0;
 	float temp_sum = 0.0f;
-    cg::thread_block_tile<32> tile32 = cg::tiled_partition<32>(cta);
+    	cg::thread_block_tile<32> tile32 = cg::tiled_partition<32>(cta);
 	
 	int cnt;	
 	float val_reg_0, val_reg_1, val_reg_2, val_reg_3, val_reg_4;
@@ -1056,19 +1056,6 @@ __global__ void PCG_float(int *I, int *J, float *val, float *x, float *M, float 
 		cg::sync(grid);
 		idx = 2 * (*Iter) - 1;
 		Vec_Dot_Sum_F(p, Ax, &d_result[idx], N, cta, grid);
-		if(false){
-			temp_sum = 0.0f;
-			for (int i=grid.thread_rank(); i < N; i+= grid.size())
-			{
-				temp_sum += p[i] * Ax[i];
-			}
-			for (int offset = 16; offset > 0; offset /= 2)
-				temp_sum += __shfl_down_sync(0xffffffff, temp_sum, offset);
-			if (tile32.thread_rank() == 0) 
-			{
-				atomicAdd(d_result + 2 * iter_local - 1, temp_sum);
-			}
-		}
 		cg::sync(grid);
 		Temp = d_result[idx];
 		alpha = (Temp)? rsold/Temp:0.0f;
@@ -1078,28 +1065,14 @@ __global__ void PCG_float(int *I, int *J, float *val, float *x, float *M, float 
 		Vec_x_Vec(M, r, Z, N, cta, grid);
 		idx = 2 * (*Iter);
 		Vec_Dot_Sum_F(r, Z, &d_result[idx], N, cta, grid);
-		if(false){
-			temp_sum = 0.0f;
-			for (int i=grid.thread_rank(); i < N; i+= grid.size())
-			{
-				temp_sum += r[i] * Z[i];
-			}
-			for (int offset = 16; offset > 0; offset /= 2)
-				temp_sum += __shfl_down_sync(0xffffffff, temp_sum, offset);
-			if (tile32.thread_rank() == 0) 
-			{
-				atomicAdd(d_result + 2 * iter_local, temp_sum);
-			}
-		}
 		cg::sync(grid);
 		rnew = d_result[idx];
 		beta = (rsold) ? rnew/rsold: 0.0f;
 		A_x_Y_p_X(beta, Z, p, N, grid);
 		rsold = rnew;
-		//rnew = 0.0;
 	}
-	//if(threadIdx.x == 0 && blockIdx.x == 0 ) printf("End Iter = %d, Res = %g, b = %g, a = %g\n",*Iter,Temp,alpha,beta,rsold);
 }
+
 __global__ void PCG_float2(int *I, int *J, float *val, float *x, float *M, float *Ax, float *p, float *r, float *Z, 
             int N, int nnz, float tol2, int *Iter, float *d_result){
     //Jacovi diagonal preconditioner version
