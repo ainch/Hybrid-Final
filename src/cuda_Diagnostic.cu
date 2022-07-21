@@ -141,7 +141,7 @@ void Diagnostic(){
 		Surf_charge[i] = 0.0f;
 	}
     
-    if(false)
+    if(true)
     {
         checkCudaErrors(cudaMemset((void *) Surf_charge_tmp, 0.0, CondNUMR * sizeof(float)));
             
