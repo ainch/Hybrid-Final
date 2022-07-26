@@ -952,8 +952,7 @@ __global__ void PCG_float(int *I, int *J, float *val, float *x, float *M, float 
 	float nalpha,alpha,beta;
 	rsold = 0.0f;
 	if (threadIdx.x == 0 && blockIdx.x == 0){
-		*Iter = 0;
-		*d_result = 0.0f;  
+		*Iter = 1;
 	} 
 	Mat_x_Vec(I, J, val, nnz, N, a, x, Ax, cta, grid); 
 	A_x_X_p_Y(na, Ax, r, N, grid); 
@@ -1050,10 +1049,6 @@ __global__ void PCG_float(int *I, int *J, float *val, float *x, float *M, float 
 				Ax[i] = output;
 			}
 		}
-		if(grid.thread_rank() == 0){
-                    *Iter = *Iter + 1;
-		}
-		cg::sync(grid);
 		idx = 2 * (*Iter) - 1;
 		Vec_Dot_Sum_F(p, Ax, &d_result[idx], N, cta, grid);
 		cg::sync(grid);
@@ -1063,8 +1058,11 @@ __global__ void PCG_float(int *I, int *J, float *val, float *x, float *M, float 
 		nalpha = -alpha;
 		A_x_X_p_Y(nalpha, Ax, r, N, grid);
 		Vec_x_Vec(M, r, Z, N, cta, grid);
-		idx = 2 * (*Iter);
+		idx = idx + 1;
 		Vec_Dot_Sum_F(r, Z, &d_result[idx], N, cta, grid);
+                if(grid.thread_rank() == 0){
+			*Iter = *Iter + 1;
+		}
 		cg::sync(grid);
 		rnew = d_result[idx];
 		beta = (rsold) ? rnew/rsold: 0.0f;
